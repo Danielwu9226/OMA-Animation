@@ -19,7 +19,7 @@ python3 brick_breaker.py
 ```
 
 > [!NOTE]
-> Upon running the script, the terminal will ask for a password to unlock secure game assets. If you do not have the password, you can simply press **Enter** to skip it and the game will continue to run normally without those specific assets.
+> Upon running the script, the terminal will ask for a password to unlock the secure game assets. You must enter the correct password to play the game.
 
 
 ### 🎮 Controls

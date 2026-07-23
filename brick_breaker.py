@@ -231,7 +231,23 @@ if MIXER_AVAILABLE:
 print("--------------------------------------------------")
 print("  N E O N   B R E A K E R   -   M A O M I   E D I T I O N  ")
 print("--------------------------------------------------")
-password = input("Enter password to unlock secure assets (or press Enter to skip): ")
+while True:
+    password = input("Enter password to unlock secure assets: ")
+    try:
+        with open("maomi.enc", "rb") as f:
+            data = f.read()
+        key = hashlib.sha256(password.encode('utf-8')).digest()
+        decrypted = bytearray(len(data))
+        for i in range(len(data)):
+            decrypted[i] = data[i] ^ key[i % len(key)]
+            
+        # Try to load it. If it fails (bad password), an exception is thrown.
+        # Use namehint just in case it helps pygame identify the format.
+        MAOMI_IMG = pygame.image.load(io.BytesIO(decrypted), "maomi.jpg")
+        print("Password accepted!")
+        break
+    except Exception as e:
+        print("Incorrect password. Please try again.")
 
 pygame.init()
 
@@ -252,21 +268,12 @@ pygame.display.set_caption("NEON BREAKER - Retro Synthwave Arcade")
 
 
 try:
-    if password:
-        with open("maomi.enc", "rb") as f:
-            data = f.read()
-        key = hashlib.sha256(password.encode('utf-8')).digest()
-        decrypted = bytearray(len(data))
-        for i in range(len(data)):
-            decrypted[i] = data[i] ^ key[i % len(key)]
-        MAOMI_IMG = pygame.image.load(io.BytesIO(decrypted)).convert_alpha()
-    else:
-        raise Exception("Skipped secure load")
-        
+    MAOMI_IMG = MAOMI_IMG.convert_alpha()
     iw, ih = MAOMI_IMG.get_size()
     scale = min((WIDTH * 0.85) / iw, (HEIGHT * 0.85) / ih)
     MAOMI_IMG = pygame.transform.smoothscale(MAOMI_IMG, (int(iw * scale), int(ih * scale)))
-except:
+except Exception as e:
+    print(f"Failed to process image after loading: {e}")
     MAOMI_IMG = pygame.Surface((WIDTH, HEIGHT))
     MAOMI_IMG.fill((100, 0, 0))
 
