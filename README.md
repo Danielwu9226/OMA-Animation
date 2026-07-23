@@ -18,6 +18,10 @@ To start the game, simply run the Python script from your terminal:
 python3 brick_breaker.py
 ```
 
+> [!NOTE]
+> Upon running the script, the terminal will ask for a password to unlock secure game assets. If you do not have the password, you can simply press **Enter** to skip it and the game will continue to run normally without those specific assets.
+
+
 ### 🎮 Controls
 * **Mouse**: Move your mouse left and right to steer the paddle.
 * **Click / Spacebar**: Launch the ball.
