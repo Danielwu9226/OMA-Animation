@@ -22,7 +22,7 @@ python3 brick_breaker.py
 * **Mouse**: Move your mouse left and right to steer the paddle.
 * **Click / Spacebar**: Launch the ball.
 * **P / ESC**: Pause or resume the game.
-* **Cheat Code**: Want to skip straight to the ultimate challenge? Hold `Shift` and press a number key to warp to that level (e.g., `Shift + 0` takes you directly to Level 10).
+
 
 ## 🏆 Level 10 Challenge
 Reach Level 10 to face the Maomi Queen. If you survive (or die trying), you can submit your score to the local Leaderboard!
