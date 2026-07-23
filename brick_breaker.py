@@ -3,6 +3,8 @@ import math
 import random
 import sys
 import array
+import io
+import hashlib
 
 # Sound System Configuration & Synthesis
 SOUNDS = {}
@@ -243,8 +245,23 @@ HEIGHT = 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN | pygame.SCALED)
 pygame.display.set_caption("NEON BREAKER - Retro Synthwave Arcade")
 
+print("--------------------------------------------------")
+print("  N E O N   B R E A K E R   -   M A O M I   E D I T I O N  ")
+print("--------------------------------------------------")
+password = input("Enter password to unlock secure assets (or press Enter to skip): ")
+
 try:
-    MAOMI_IMG = pygame.image.load("maomi.jpg").convert_alpha()
+    if password:
+        with open("maomi.enc", "rb") as f:
+            data = f.read()
+        key = hashlib.sha256(password.encode('utf-8')).digest()
+        decrypted = bytearray(len(data))
+        for i in range(len(data)):
+            decrypted[i] = data[i] ^ key[i % len(key)]
+        MAOMI_IMG = pygame.image.load(io.BytesIO(decrypted)).convert_alpha()
+    else:
+        raise Exception("Skipped secure load")
+        
     iw, ih = MAOMI_IMG.get_size()
     scale = min((WIDTH * 0.85) / iw, (HEIGHT * 0.85) / ih)
     MAOMI_IMG = pygame.transform.smoothscale(MAOMI_IMG, (int(iw * scale), int(ih * scale)))
