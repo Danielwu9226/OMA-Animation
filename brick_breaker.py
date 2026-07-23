@@ -228,6 +228,11 @@ if MIXER_AVAILABLE:
     except:
         pass
 
+print("--------------------------------------------------")
+print("  N E O N   B R E A K E R   -   M A O M I   E D I T I O N  ")
+print("--------------------------------------------------")
+password = input("Enter password to unlock secure assets (or press Enter to skip): ")
+
 pygame.init()
 
 # --- Background Music ---
@@ -245,10 +250,6 @@ HEIGHT = 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN | pygame.SCALED)
 pygame.display.set_caption("NEON BREAKER - Retro Synthwave Arcade")
 
-print("--------------------------------------------------")
-print("  N E O N   B R E A K E R   -   M A O M I   E D I T I O N  ")
-print("--------------------------------------------------")
-password = input("Enter password to unlock secure assets (or press Enter to skip): ")
 
 try:
     if password:
