@@ -1,0 +1,2159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SCENE 2 // The 4-Lane Highway Crossing: The Cat's Great Escape</title>
+  <style>
+    :root {
+      --gold-accent: #f59e0b;
+      --dog-red: #ef4444;
+      --traffic-cyan: #06b6d4;
+      --asphalt-dark: #0f172a;
+      --panel-bg: rgba(13, 17, 28, 0.85);
+      --panel-border: rgba(245, 158, 11, 0.35);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: #030712;
+      color: #f1f5f9;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Cinematic Bars */
+    .cinema-bars {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 44px;
+      background: #000000;
+      z-index: 8;
+      pointer-events: none;
+      transition: transform 0.4s ease;
+    }
+    .cinema-top { top: 0; }
+    .cinema-bottom { bottom: 0; }
+    body.hide-bars .cinema-top { transform: translateY(-100%); }
+    body.hide-bars .cinema-bottom { transform: translateY(100%); }
+
+    /* Screen Overlays */
+    #vignette {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+      box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.8), inset 0 0 40px rgba(10, 20, 35, 0.6);
+    }
+
+    #impact-flash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(239, 68, 68, 0.38);
+      z-index: 7;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.08s ease-out;
+    }
+
+    /* UI Overlay */
+    #ui-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 50px 36px 50px 36px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .brand-title {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #ffffff 0%, var(--gold-accent) 45%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-title .live-pulse {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #38bdf8;
+      box-shadow: 0 0 12px #38bdf8;
+      animation: pulseDot 1.4s infinite;
+    }
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(0.75); opacity: 0.4; }
+    }
+
+    .scene-desc {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #94a3b8;
+      margin-top: 4px;
+      text-transform: uppercase;
+      font-weight: 700;
+      opacity: 0.85;
+    }
+
+    .status-badges {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 4px;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      font-weight: 800;
+      backdrop-filter: blur(8px);
+    }
+    .badge.cat { color: #fcd34d; border-color: rgba(245, 158, 11, 0.4); }
+    .badge.traffic { color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); }
+    .badge.dog { color: #f87171; border-color: rgba(239, 68, 68, 0.4); }
+
+    /* Top Right Controls */
+    .top-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .telemetry-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 8px 16px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 3px;
+    }
+
+    .timer-display {
+      font-family: 'Courier New', monospace;
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--gold-accent);
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+
+    .status-text {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      color: #94a3b8;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .audio-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 5px 12px;
+      backdrop-filter: blur(12px);
+    }
+
+    .audio-btn {
+      background: none;
+      border: none;
+      color: var(--gold-accent);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .volume-slider {
+      -webkit-appearance: none;
+      width: 60px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      outline: none;
+    }
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--gold-accent);
+      cursor: pointer;
+    }
+
+    .scene-nav-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #e2e8f0;
+      padding: 5px 12px;
+      border-radius: 14px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .scene-nav-btn:hover {
+      background: rgba(245, 158, 11, 0.25);
+      border-color: var(--gold-accent);
+      color: #fff;
+    }
+
+    /* Narrative Alert Banner */
+    #action-banner {
+      position: absolute;
+      top: 135px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      padding: 12px 28px;
+      background: rgba(15, 23, 42, 0.94);
+      border: 2px solid var(--gold-accent);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #fff;
+      text-transform: uppercase;
+      box-shadow: 0 0 25px rgba(245, 158, 11, 0.5);
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 20;
+    }
+    #action-banner.active {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Subtitle Cue */
+    #narrative-cue {
+      position: absolute;
+      bottom: 195px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #f8fafc;
+      text-transform: uppercase;
+      background: rgba(0, 0, 0, 0.72);
+      padding: 7px 22px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(6px);
+      text-align: center;
+      pointer-events: none;
+    }
+
+    /* Left-Docked Camera Viewing Bar */
+    .camera-bar {
+      position: absolute;
+      left: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      background: var(--panel-bg);
+      padding: 12px 10px;
+      border-radius: 14px;
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.65);
+      z-index: 25;
+      min-width: 175px;
+    }
+
+    .camera-bar-header {
+      font-size: 10px;
+      letter-spacing: 2px;
+      font-weight: 900;
+      color: var(--gold-accent);
+      text-transform: uppercase;
+      padding: 2px 8px 8px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cam-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #94a3b8;
+      padding: 8px 12px;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      text-align: left;
+    }
+    .cam-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateX(3px);
+    }
+    .cam-btn.active {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(56, 189, 248, 0.45));
+      border-color: var(--gold-accent);
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+      transform: translateX(4px);
+    }
+
+    /* Bottom Timeline Controller */
+    .timeline-container {
+      width: 100%;
+      max-width: 1000px;
+      align-self: center;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: auto;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 12px 20px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6);
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      letter-spacing: 2px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .current-chapter-title {
+      color: var(--gold-accent);
+      text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+    }
+
+    /* Scrubber Track */
+    .scrubber-track {
+      position: relative;
+      width: 100%;
+      height: 8px;
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .scrubber-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #f59e0b 0%, #38bdf8 50%, #10b981 100%);
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+      pointer-events: none;
+    }
+    .scrubber-thumb {
+      position: absolute;
+      top: 50%;
+      left: 0%;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2px solid var(--gold-accent);
+      box-shadow: 0 0 10px var(--gold-accent);
+      transform: translate(-50%, -50%);
+      cursor: grab;
+      pointer-events: none;
+    }
+
+    /* Chapter Bookmarks */
+    .chapter-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      padding-top: 3px;
+    }
+    .chap-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-size: 9px;
+      letter-spacing: 1px;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+      flex: 1;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .chap-btn:hover {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fff;
+    }
+    .chap-btn.active {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: var(--gold-accent);
+      color: var(--gold-accent);
+    }
+
+    /* Controls Bar */
+    .timeline-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2px;
+    }
+    .ctrl-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ctrl-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #f8fafc;
+      padding: 5px 12px;
+      border-radius: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .ctrl-btn:hover {
+      background: rgba(245, 158, 11, 0.25);
+      border-color: var(--gold-accent);
+    }
+    .speed-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .speed-btn.active {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: var(--gold-accent);
+      color: var(--gold-accent);
+    }
+
+    /* Start Modal */
+    #sound-splash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 50;
+      background: radial-gradient(circle at center, rgba(10, 15, 28, 0.94) 0%, rgba(3, 5, 10, 0.98) 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    #sound-splash.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .splash-box {
+      max-width: 580px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 32px 36px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(56, 189, 248, 0.25);
+      backdrop-filter: blur(18px);
+    }
+    .splash-title {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #ffffff 0%, var(--gold-accent) 50%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+    .splash-sub {
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .splash-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      text-align: left;
+      margin-bottom: 24px;
+      font-size: 11px;
+      color: #cbd5e1;
+    }
+    .splash-features div span { color: var(--gold-accent); margin-right: 5px; }
+    .start-btn {
+      background: linear-gradient(135deg, var(--gold-accent) 0%, #ea580c 50%, #0284c7 100%);
+      border: none;
+      color: #ffffff;
+      padding: 12px 38px;
+      font-size: 13px;
+      letter-spacing: 3px;
+      font-weight: 900;
+      text-transform: uppercase;
+      border-radius: 25px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+      transition: all 0.3s;
+    }
+    .start-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 28px rgba(56, 189, 248, 0.6);
+    }
+
+    @media (max-width: 800px) {
+      #ui-overlay { padding: 35px 15px; }
+      .camera-bar { left: 10px; padding: 8px 6px; min-width: 135px; }
+      .cam-btn { font-size: 9px; padding: 6px 8px; }
+      .chapter-buttons { display: none; }
+    }
+  </style>
+
+  <!-- Three.js and OrbitControls via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <div class="cinema-bars cinema-top"></div>
+  <div class="cinema-bars cinema-bottom"></div>
+  <div id="vignette"></div>
+  <div id="impact-flash"></div>
+
+  <div id="canvas-container"></div>
+
+  <!-- Big Dramatic Action Banner -->
+  <div id="action-banner">
+    <span id="banner-icon" style="font-size: 20px;">🚗</span>
+    <div>
+      <div id="banner-title" style="color: var(--gold-accent);">TRAFFIC COLLISION!</div>
+      <div id="banner-desc" style="font-size: 10px; color: #cbd5e1;">ONE DOG HIT BY CAR // CAT LEAPS TO SAFETY</div>
+    </div>
+  </div>
+
+  <!-- Narrative Subtitle Cue -->
+  <div id="narrative-cue">THE CAT DASHES ACROSS THE BUSY 4-LANE HIGHWAY!</div>
+
+  <!-- UI Overlay -->
+  <div id="ui-overlay">
+    <!-- Top Header -->
+    <div class="header">
+      <div>
+        <div class="brand-title">
+          <span class="live-pulse"></span>
+          SCENE 2: THE 4-LANE CROSSING
+        </div>
+        <div class="scene-desc">Dangerous Highway • Cars & Trucks • Dog Bump & Cat Safe</div>
+        <div class="status-badges">
+          <div class="badge cat">🐱 TARGET: GOLDEN CAT CROSSING</div>
+          <div class="badge traffic">🚗 TRAFFIC: 4-WAY ACTIVE HIGHWAY</div>
+          <div class="badge dog">🐕 PACK: 3 DOGS IN PURSUIT</div>
+        </div>
+      </div>
+
+      <div class="top-right">
+        <div style="display:flex; gap:8px; align-items:center;">
+          <a href="alley_chase_cat_dogs.html" class="scene-nav-btn">❮ Scene 1: Alley</a>
+          <div class="audio-controls">
+            <button class="audio-btn" id="audio-btn" onclick="toggleAudioEngine()">
+              <span id="audio-icon">🔊</span>
+              <span id="audio-label">SOUND: ON</span>
+            </button>
+            <input type="range" class="volume-slider" id="vol-slider" min="0" max="1" step="0.05" value="0.8" oninput="setMasterVolume(this.value)" />
+          </div>
+        </div>
+
+        <div class="telemetry-card">
+          <div class="timer-display" id="time-display">00:00.00 / 00:45.00</div>
+          <div class="status-text">CROSSING PROGRESS: <span id="telemetry-prog" style="color:#38bdf8;">LANE 1</span></div>
+          <div class="status-text">CAT STATUS: <span id="telemetry-cat" style="color:#fcd34d;">DODGING TRAFFIC</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Left-Docked Camera Viewing Bar -->
+    <div class="camera-bar" id="camera-bar">
+      <div class="camera-bar-header">📹 VIEWING ANGLE</div>
+      <button class="cam-btn active" id="cam-cinematic" onclick="setCameraMode('cinematic')">🎬 Director View</button>
+      <button class="cam-btn" id="cam-cat" onclick="setCameraMode('cat')">🐱 Cat Crossing Cam</button>
+      <button class="cam-btn" id="cam-dogs" onclick="setCameraMode('dogs')">🐕 Dogs Pursuit Cam</button>
+      <button class="cam-btn" id="cam-human" onclick="setCameraMode('human')">🏏 Bat Hero Cam</button>
+      <button class="cam-btn" id="cam-traffic" onclick="setCameraMode('traffic')">🚗 Traffic Action Cam</button>
+      <button class="cam-btn" id="cam-safe" onclick="setCameraMode('safe')">🏁 Safe Sidewalk Cam</button>
+      <button class="cam-btn" id="cam-orbit" onclick="setCameraMode('orbit')">🎮 Free Orbit</button>
+    </div>
+
+    <!-- Bottom Timeline Controller -->
+    <div class="timeline-container">
+      <div class="timeline-header">
+        <span class="current-chapter-title" id="chapter-title">ACT 1: APPROACHING THE 4-LANE HIGHWAY</span>
+        <span id="speed-label" style="color: #94a3b8;">SPEED: 1.0X</span>
+      </div>
+
+      <div class="scrubber-track" id="scrubber-track">
+        <div class="scrubber-fill" id="scrubber-fill"></div>
+        <div class="scrubber-thumb" id="scrubber-thumb"></div>
+      </div>
+
+      <div class="chapter-buttons">
+        <button class="chap-btn active" onclick="seekToTime(0)">1. Approach Road</button>
+        <button class="chap-btn" onclick="seekToTime(10)">2. Weaving Traffic</button>
+        <button class="chap-btn" onclick="seekToTime(22)">3. Dog Hit by Car!</button>
+        <button class="chap-btn" onclick="seekToTime(32)">4. Human Scares Dogs</button>
+        <button class="chap-btn" onclick="seekToTime(38)">5. Cat Safely Across</button>
+      </div>
+
+      <div class="timeline-actions">
+        <div class="ctrl-group">
+          <button class="ctrl-btn" id="play-pause-btn" onclick="togglePlayPause()">⏸️ PAUSE</button>
+          <button class="ctrl-btn" onclick="restartTimeline()">🔄 REPLAY</button>
+          <button class="ctrl-btn" onclick="toggleLetterbox()">📺 BARS</button>
+        </div>
+
+        <div class="ctrl-group">
+          <span style="font-size: 10px; color: #64748b; font-weight:700;">SPEED:</span>
+          <button class="speed-btn" onclick="setSpeed(0.5, this)">0.5x</button>
+          <button class="speed-btn active" onclick="setSpeed(1.0, this)">1.0x</button>
+          <button class="speed-btn" onclick="setSpeed(2.0, this)">2.0x</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Splash Modal -->
+  <div id="sound-splash">
+    <div class="splash-box">
+      <div class="splash-title">SCENE 2 // THE 4-LANE CROSSING</div>
+      <div class="splash-sub">The Golden Cat Navigates Speeding Cars & Trucks</div>
+      
+      <div class="splash-features">
+        <div><span>🚗</span> 4 Busy Road Lanes with Multi-Colored Cars & Trucks</div>
+        <div><span>🐱</span> Golden Cat Weaving Unscathed Across Traffic</div>
+        <div><span>🐕</span> Bad Dogs in Pursuit — One Gets Bumped by a Car!</div>
+        <div><span>🏏</span> Bat Hero Chasing Down & Warding Off the Dogs</div>
+        <div><span>🔊</span> Real-Time Audio: Car Engines, Horns, Skids & Yelps</div>
+        <div><span>🏁</span> Safe Sidewalk Destination Right Across the Road</div>
+      </div>
+
+      <button class="start-btn" onclick="startExperience()">ENTER THE HIGHWAY ❯</button>
+      <div style="font-size: 10px; color:#64748b; margin-top: 12px; letter-spacing: 1px;">HIGHWAY NOIR SIMULATION // INTERACTIVE AUDIO</div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       1. TIMELINE & NARRATIVE DEFINITIONS
+       ========================================================================= */
+    const TOTAL_DURATION = 45.0;
+    let currentTime = 0.0;
+    let isPlaying = true;
+    let playbackSpeed = 1.0;
+
+    const CHAPTERS = [
+      {
+        startTime: 0,
+        endTime: 10,
+        title: "ACT 1: APPROACHING THE 4-LANE HIGHWAY",
+        cue: "THE GOLDEN CAT EMERGES AT THE BUSY 4-LANE ROAD WITH DOGS AND BAT HERO IN PURSUIT!",
+        cam: "cat"
+      },
+      {
+        startTime: 10,
+        endTime: 22,
+        title: "ACT 2: WEAVING THROUGH SPEEDING CARS & TRUCKS",
+        cue: "CAT WEAVES PAST SPEEDING MULTI-COLORED CARS AND TRUCKS AS ENGINES ROAR!",
+        cam: "traffic"
+      },
+      {
+        startTime: 22,
+        endTime: 32,
+        title: "ACT 3: THE COLLISION // ONE DOG GETS HIT BY A CAR!",
+        cue: "TIRES SCREECH! A CAR BRAKES HARD AND BUMPS ONE OF THE RECKLESS DOGS!",
+        cam: "dogs"
+      },
+      {
+        startTime: 32,
+        endTime: 38,
+        title: "ACT 4: BAT HERO INTERCEPTS THE REMAINING DOGS",
+        cue: "THE HUMAN SWINGS THE BAT TO KEEP THE DOGS BACK AT THE MEDIAN!",
+        cam: "human"
+      },
+      {
+        startTime: 38,
+        endTime: 45,
+        title: "ACT 5: THE CAT CROSSES SAFELY // TRIUMPH!",
+        cue: "THE VALUABLE GOLDEN CAT LEAPS UP ONTO THE SAFE SIDEWALK UNINJURED!",
+        cam: "safe"
+      }
+    ];
+
+    /* =========================================================================
+       2. PROCEDURAL WEB AUDIO SYNTHESIZER ENGINE
+       ========================================================================= */
+    class HighwayAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.masterGain = null;
+        this.isMuted = false;
+        this.initialized = false;
+
+        // Continuous traffic roar
+        this.trafficGain = null;
+        this.trafficFilter = null;
+        this.footstepsCatTimer = 0;
+        this.footstepsDogTimer = 0;
+        this.footstepsHumanTimer = 0;
+      }
+
+      init() {
+        if (this.initialized) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContext();
+
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.setValueAtTime(0.8, this.ctx.currentTime);
+        this.masterGain.connect(this.ctx.destination);
+
+        this.setupTrafficHum();
+        this.initialized = true;
+      }
+
+      setupTrafficHum() {
+        const t = this.ctx.currentTime;
+        const bufferSize = this.ctx.sampleRate * 2.5;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * 0.4;
+        }
+
+        const source = this.ctx.createBufferSource();
+        source.buffer = noiseBuffer;
+        source.loop = true;
+
+        this.trafficFilter = this.ctx.createBiquadFilter();
+        this.trafficFilter.type = 'lowpass';
+        this.trafficFilter.frequency.setValueAtTime(280, t);
+
+        this.trafficGain = this.ctx.createGain();
+        this.trafficGain.gain.setValueAtTime(0.18, t);
+
+        source.connect(this.trafficFilter);
+        this.trafficFilter.connect(this.trafficGain);
+        this.trafficGain.connect(this.masterGain);
+
+        source.start();
+      }
+
+      // Car Engine Rev & Whoosh
+      playEngineWhoosh() {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(80, t);
+        osc.frequency.linearRampToValueAtTime(160, t + 0.3);
+        osc.frequency.exponentialRampToValueAtTime(65, t + 0.85);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(320, t);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.01, t);
+        gain.gain.linearRampToValueAtTime(0.35, t + 0.3);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(t);
+        osc.stop(t + 0.95);
+      }
+
+      // Car Horn / Beeping ("BEEP BEEP!")
+      playCarHorn() {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        const freq1 = 440;
+        const freq2 = 554; // major third interval classic horn chord
+
+        [freq1, freq2].forEach(f => {
+          const osc = this.ctx.createOscillator();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(f, t);
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(f * 1.5, t);
+          filter.Q.setValueAtTime(2.0, t);
+
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0.35, t);
+          gain.gain.setValueAtTime(0.35, t + 0.22);
+          gain.gain.linearRampToValueAtTime(0.01, t + 0.25);
+          // double beep
+          gain.gain.setValueAtTime(0.35, t + 0.32);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.58);
+
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.masterGain);
+
+          osc.start(t);
+          osc.stop(t + 0.6);
+        });
+      }
+
+      // Screeching Brake Skid ("SKRRRRT!")
+      playTireSkid() {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        const bufferSize = this.ctx.sampleRate * 0.8;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const source = this.ctx.createBufferSource();
+        source.buffer = noiseBuffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1400, t);
+        filter.frequency.exponentialRampToValueAtTime(850, t + 0.7);
+        filter.Q.setValueAtTime(5.0, t);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.01, t);
+        gain.gain.linearRampToValueAtTime(0.85, t + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.78);
+
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
+
+        source.start(t);
+        source.stop(t + 0.8);
+      }
+
+      // Dog Hit by Car Impact & Yelp ("THUD + YELP!")
+      playCarDogCollision() {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        // Bumper impact thud
+        const thudOsc = this.ctx.createOscillator();
+        thudOsc.type = 'sine';
+        thudOsc.frequency.setValueAtTime(130, t);
+        thudOsc.frequency.exponentialRampToValueAtTime(32, t + 0.5);
+
+        const thudGain = this.ctx.createGain();
+        thudGain.gain.setValueAtTime(0.9, t);
+        thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+
+        thudOsc.connect(thudGain);
+        thudGain.connect(this.masterGain);
+        thudOsc.start(t);
+        thudOsc.stop(t + 0.6);
+
+        // Dog surprise pain yelp
+        setTimeout(() => {
+          if (!this.initialized || this.isMuted) return;
+          const yt = this.ctx.currentTime;
+          const yelp = this.ctx.createOscillator();
+          yelp.type = 'sawtooth';
+          yelp.frequency.setValueAtTime(580, yt);
+          yelp.frequency.linearRampToValueAtTime(920, yt + 0.2);
+          yelp.frequency.exponentialRampToValueAtTime(240, yt + 0.7);
+
+          const yGain = this.ctx.createGain();
+          yGain.gain.setValueAtTime(0.65, yt);
+          yGain.gain.exponentialRampToValueAtTime(0.001, yt + 0.75);
+
+          yelp.connect(yGain);
+          yGain.connect(this.masterGain);
+          yelp.start(yt);
+          yelp.stop(yt + 0.8);
+        }, 120);
+      }
+
+      // Dog Bark
+      playDogBark(pitch = 145) {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(pitch * 1.5, t);
+        osc.frequency.exponentialRampToValueAtTime(pitch * 0.6, t + 0.18);
+
+        const formant = this.ctx.createBiquadFilter();
+        formant.type = 'bandpass';
+        formant.frequency.setValueAtTime(450, t);
+        formant.Q.setValueAtTime(3.0, t);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.7, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+
+        osc.connect(formant);
+        formant.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(t);
+        osc.stop(t + 0.23);
+      }
+
+      // Cat Meow
+      playCatMeow(isTriumphant = false) {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        osc.type = 'sine';
+        if (isTriumphant) {
+          osc.frequency.setValueAtTime(560, t);
+          osc.frequency.linearRampToValueAtTime(920, t + 0.28);
+          osc.frequency.exponentialRampToValueAtTime(680, t + 0.75);
+        } else {
+          osc.frequency.setValueAtTime(680, t);
+          osc.frequency.linearRampToValueAtTime(1050, t + 0.15);
+          osc.frequency.exponentialRampToValueAtTime(800, t + 0.35);
+        }
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.01, t);
+        gain.gain.linearRampToValueAtTime(0.5, t + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + (isTriumphant ? 0.8 : 0.4));
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start(t);
+        osc.stop(t + (isTriumphant ? 0.85 : 0.45));
+      }
+
+      // Bat Swing Whoosh & Shout
+      playBatSwing() {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        const bufferSize = this.ctx.sampleRate * 0.38;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const source = this.ctx.createBufferSource();
+        source.buffer = noiseBuffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(260, t);
+        filter.frequency.exponentialRampToValueAtTime(1050, t + 0.15);
+        filter.frequency.exponentialRampToValueAtTime(200, t + 0.35);
+        filter.Q.setValueAtTime(3.8, t);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.01, t);
+        gain.gain.linearRampToValueAtTime(0.85, t + 0.14);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
+
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
+
+        source.start(t);
+        source.stop(t + 0.4);
+      }
+
+      // Footstep Sounds
+      playFootsteps(type = 'cat') {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        osc.type = 'triangle';
+        const baseF = (type === 'human') ? 60 : (type === 'dog') ? 90 : 250;
+        osc.frequency.setValueAtTime(baseF, t);
+        osc.frequency.exponentialRampToValueAtTime(20, t + 0.06);
+
+        const gain = this.ctx.createGain();
+        const amp = (type === 'human') ? 0.4 : (type === 'dog') ? 0.3 : 0.15;
+        gain.gain.setValueAtTime(amp, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start(t);
+        osc.stop(t + 0.07);
+      }
+
+      setVolume(val) {
+        if (!this.masterGain) return;
+        this.masterGain.gain.setValueAtTime(val, this.ctx.currentTime);
+      }
+    }
+
+    const soundEngine = new HighwayAudioEngine();
+
+    function startExperience() {
+      document.getElementById('sound-splash').classList.add('hidden');
+      soundEngine.init();
+      if (soundEngine.ctx && soundEngine.ctx.state === 'suspended') {
+        soundEngine.ctx.resume();
+      }
+    }
+
+    function toggleAudioEngine() {
+      if (!soundEngine.initialized) soundEngine.init();
+      soundEngine.isMuted = !soundEngine.isMuted;
+      const icon = document.getElementById('audio-icon');
+      const label = document.getElementById('audio-label');
+      if (soundEngine.isMuted) {
+        soundEngine.setVolume(0);
+        icon.innerText = '🔇';
+        label.innerText = 'SOUND: OFF';
+      } else {
+        const val = parseFloat(document.getElementById('vol-slider').value);
+        soundEngine.setVolume(val);
+        icon.innerText = '🔊';
+        label.innerText = 'SOUND: ON';
+      }
+    }
+
+    function setMasterVolume(v) {
+      if (!soundEngine.isMuted) soundEngine.setVolume(parseFloat(v));
+    }
+
+    /* =========================================================================
+       3. THREE.JS 3D ENVIRONMENT: 4-LANE METROPOLITAN ROAD
+       ========================================================================= */
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x0a1020, 0.005);
+
+    const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.5, 800);
+    camera.position.set(0, 18, -60);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.25;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // OrbitControls for Free Cam
+    const orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+    orbitControls.enableDamping = true;
+    orbitControls.dampingFactor = 0.06;
+    orbitControls.enabled = false;
+
+    // Environmental Lights
+    const ambientLight = new THREE.AmbientLight(0x1e293b, 2.2);
+    scene.add(ambientLight);
+
+    const cityMoonLight = new THREE.DirectionalLight(0x7dd3fc, 1.8);
+    cityMoonLight.position.set(50, 140, 20);
+    cityMoonLight.castShadow = true;
+    cityMoonLight.shadow.mapSize.width = 2048;
+    cityMoonLight.shadow.mapSize.height = 2048;
+    scene.add(cityMoonLight);
+
+    // 1. 4-Lane Asphalt Road Plane (Road width: z = -40 to z = +40, X = -300 to +300)
+    const roadGeo = new THREE.PlaneGeometry(600, 80);
+    roadGeo.rotateX(-Math.PI / 2);
+    const roadMat = new THREE.MeshStandardMaterial({
+      color: 0x18181b, // deep dark asphalt
+      roughness: 0.35,
+      metalness: 0.4
+    });
+    const roadMesh = new THREE.Mesh(roadGeo, roadMat);
+    roadMesh.position.set(0, 0, 0);
+    roadMesh.receiveShadow = true;
+    scene.add(roadMesh);
+
+    // Road Markings: Yellow Double Center Line (at z = 0)
+    for (let c of [-0.6, 0.6]) {
+      const lineGeo = new THREE.PlaneGeometry(600, 0.4);
+      lineGeo.rotateX(-Math.PI / 2);
+      const yellowMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+      const yLine = new THREE.Mesh(lineGeo, yellowMat);
+      yLine.position.set(0, 0.02, c);
+      scene.add(yLine);
+    }
+
+    // White Dashed Lane Dividers (Lanes 1-2 divider at z = -20; Lanes 3-4 divider at z = +20)
+    const whiteDashMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    for (let lz of [-20, 20]) {
+      for (let dx = -280; dx < 280; dx += 14) {
+        const dash = new THREE.Mesh(new THREE.PlaneGeometry(6, 0.35), whiteDashMat);
+        dash.rotateX(-Math.PI / 2);
+        dash.position.set(dx, 0.02, lz);
+        scene.add(dash);
+      }
+    }
+
+    // Pedestrian Zebra Crosswalk at x = 0
+    for (let cz = -38; cz <= 38; cz += 4) {
+      const zebra = new THREE.Mesh(new THREE.PlaneGeometry(4, 2.2), whiteDashMat);
+      zebra.rotateX(-Math.PI / 2);
+      zebra.position.set(0, 0.02, cz);
+      scene.add(zebra);
+    }
+
+    // 2. Starting Sidewalk (Near curb, z = -40 to -70)
+    const startWalkGeo = new THREE.BoxGeometry(600, 1.2, 30);
+    const walkMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
+    const startWalk = new THREE.Mesh(startWalkGeo, walkMat);
+    startWalk.position.set(0, 0.6, -55);
+    scene.add(startWalk);
+
+    // 3. Destination Safe Sidewalk & Park (Far curb, z = +40 to +80)
+    const safeWalk = new THREE.Mesh(new THREE.BoxGeometry(600, 1.2, 40), walkMat);
+    safeWalk.position.set(0, 0.6, 60);
+    scene.add(safeWalk);
+
+    // Green Grass Park on safe side (The Goal!)
+    const parkGeo = new THREE.BoxGeometry(600, 1.4, 25);
+    const parkMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.9 });
+    const park = new THREE.Mesh(parkGeo, parkMat);
+    park.position.set(0, 0.7, 72);
+    scene.add(park);
+
+    // Safety Railing on Destination Side
+    const railMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.8, roughness: 0.2 });
+    for (let rx = -200; rx <= 200; rx += 15) {
+      if (Math.abs(rx) < 12) continue; // opening where the cat arrives
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 3.2, 8), railMat);
+      post.position.set(rx, 2.2, 42.5);
+      scene.add(post);
+    }
+    const railBar = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 420, 8), railMat);
+    railBar.rotateZ(Math.PI / 2);
+    railBar.position.set(0, 3.6, 42.5);
+    scene.add(railBar);
+
+    // 4. Overhead Highway Streetlamps with Volumetric Beams
+    const lampXList = [-180, -90, 0, 90, 180];
+    lampXList.forEach(lx => {
+      for (let side of [-41, 41]) {
+        const lampGroup = new THREE.Group();
+        lampGroup.position.set(lx, 0, side);
+
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 26, 8), railMat);
+        pole.position.set(0, 13, 0);
+        lampGroup.add(pole);
+
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 8), railMat);
+        arm.position.set(0, 25.5, side < 0 ? 3.5 : -3.5);
+        lampGroup.add(arm);
+
+        const spot = new THREE.SpotLight(0xfef08a, 3.5, 110, Math.PI / 5, 0.4);
+        spot.position.set(0, 25, side < 0 ? 7 : -7);
+        const st = new THREE.Object3D();
+        st.position.set(0, 0, side < 0 ? 12 : -12);
+        lampGroup.add(st);
+        spot.target = st;
+        lampGroup.add(spot);
+
+        scene.add(lampGroup);
+      }
+    });
+
+    // 5. City Skyline Backdrop Buildings
+    const bldgMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.95 });
+    for (let bx = -280; bx <= 280; bx += 28) {
+      const h = 45 + Math.random() * 65;
+      const bldg = new THREE.Mesh(new THREE.BoxGeometry(22, h, 20), bldgMat);
+      bldg.position.set(bx, h / 2, 90 + Math.random() * 15);
+      scene.add(bldg);
+
+      // Distant building on start side
+      const h2 = 40 + Math.random() * 50;
+      const bldg2 = new THREE.Mesh(new THREE.BoxGeometry(22, h2, 20), bldgMat);
+      bldg2.position.set(bx, h2 / 2, -90 - Math.random() * 15);
+      scene.add(bldg2);
+    }
+
+    /* =========================================================================
+       4. PROCEDURAL MULTI-COLORED CARS AND TRUCKS FLEET
+       ========================================================================= */
+    const vehicles = [];
+
+    // Distinct vehicle color palettes with glossy finish
+    const vehicleColors = [
+      0xef4444, // Crimson Red Sports Car
+      0x06b6d4, // Electric Cyberpunk Cyan Sedan
+      0xfacc15, // High-Gloss Racing Yellow Coupe (The collision car!)
+      0x8b5cf6, // Matte Midnight Purple Muscle Car
+      0x10b981, // Emerald Green Delivery Truck
+      0xf97316  // Sunset Orange Flatbed Hauler
+    ];
+
+    function createCar(color, isTruck = false) {
+      const vGroup = new THREE.Group();
+
+      const carMat = new THREE.MeshStandardMaterial({
+        color: color,
+        roughness: 0.25,
+        metalness: 0.8
+      });
+      const glassMat = new THREE.MeshStandardMaterial({
+        color: 0x0f172a,
+        roughness: 0.1,
+        metalness: 0.9,
+        transparent: true,
+        opacity: 0.85
+      });
+      const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.7 });
+      const rimMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.2 });
+
+      if (isTruck) {
+        // Heavy Truck Cab & Box
+        const cab = new THREE.Mesh(new THREE.BoxGeometry(6.5, 6.0, 7.0), carMat);
+        cab.position.set(0, 3.8, 4.5);
+        cab.castShadow = true;
+        vGroup.add(cab);
+
+        const cargo = new THREE.Mesh(new THREE.BoxGeometry(7.0, 8.5, 14.0), new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4 }));
+        cargo.position.set(0, 5.0, -6.0);
+        cargo.castShadow = true;
+        vGroup.add(cargo);
+
+        // Windshield
+        const ws = new THREE.Mesh(new THREE.BoxGeometry(5.8, 2.6, 0.4), glassMat);
+        ws.position.set(0, 5.2, 7.8);
+        vGroup.add(ws);
+      } else {
+        // Sleek Sports Car
+        const lowerBody = new THREE.Mesh(new THREE.BoxGeometry(5.8, 2.2, 12.0), carMat);
+        lowerBody.position.set(0, 1.8, 0);
+        lowerBody.castShadow = true;
+        vGroup.add(lowerBody);
+
+        const cabin = new THREE.Mesh(new THREE.BoxGeometry(5.0, 1.8, 6.0), glassMat);
+        cabin.position.set(0, 3.5, -0.6);
+        vGroup.add(cabin);
+
+        // Rear Spoiler
+        const spoiler = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.3, 1.4), carMat);
+        spoiler.position.set(0, 3.4, -5.2);
+        vGroup.add(spoiler);
+      }
+
+      // Wheels
+      const wOffsets = [
+        { x: -3.0, z: isTruck ? 5.0 : 3.6 },
+        { x: 3.0, z: isTruck ? 5.0 : 3.6 },
+        { x: -3.0, z: isTruck ? -7.0 : -3.6 },
+        { x: 3.0, z: isTruck ? -7.0 : -3.6 }
+      ];
+      wOffsets.forEach(w => {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.9, 16), wheelMat);
+        wheel.rotateZ(Math.PI / 2);
+        wheel.position.set(w.x, 1.2, w.z);
+        const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 0.95, 8), rimMat);
+        rim.rotateZ(Math.PI / 2);
+        rim.position.set(w.x, 1.2, w.z);
+        vGroup.add(wheel);
+        vGroup.add(rim);
+      });
+
+      // Front Headlights with Glowing Beams
+      for (let s of [-2.0, 2.0]) {
+        const hl = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.3), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+        hl.position.set(s, 2.2, isTruck ? 8.1 : 6.1);
+        vGroup.add(hl);
+      }
+
+      // Forward Light Cone
+      const headSpot = new THREE.SpotLight(0xfffbeb, 4.0, 75, Math.PI / 6, 0.45);
+      headSpot.position.set(0, 2.2, isTruck ? 8.0 : 6.0);
+      const hTarget = new THREE.Object3D();
+      hTarget.position.set(0, 0, 45);
+      vGroup.add(hTarget);
+      headSpot.target = hTarget;
+      vGroup.add(headSpot);
+
+      // Red Taillights
+      for (let s of [-2.0, 2.0]) {
+        const tl = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.4, 0.3), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+        tl.position.set(s, 2.2, isTruck ? -13.1 : -6.1);
+        vGroup.add(tl);
+      }
+
+      scene.add(vGroup);
+      return vGroup;
+    }
+
+    // Create 8 dynamic traffic vehicles across the 4 lanes
+    // Lane 1: z = -30 (Direction: -X)
+    // Lane 2: z = -10 (Direction: -X)
+    // Lane 3: z = +10 (Direction: +X)
+    // Lane 4: z = +30 (Direction: +X)
+    const trafficDefs = [
+      { laneZ: -30, dir: -1, speed: 45, startX: 120, color: 0xef4444, isTruck: false },
+      { laneZ: -30, dir: -1, speed: 42, startX: -60, color: 0x10b981, isTruck: true },
+      { laneZ: -10, dir: -1, speed: 50, startX: 180, color: 0x06b6d4, isTruck: false },
+      { laneZ: -10, dir: -1, speed: 46, startX: 40, color: 0x8b5cf6, isTruck: false },
+      { laneZ: 10, dir: 1, speed: 48, startX: -160, color: 0xfacc15, isTruck: false, isCollisionCar: true }, // The collision car!
+      { laneZ: 10, dir: 1, speed: 44, startX: 60, color: 0xf97316, isTruck: true },
+      { laneZ: 30, dir: 1, speed: 52, startX: -100, color: 0xef4444, isTruck: false },
+      { laneZ: 30, dir: 1, speed: 46, startX: 80, color: 0x06b6d4, isTruck: false }
+    ];
+
+    trafficDefs.forEach(td => {
+      const vMesh = createCar(td.color, td.isTruck);
+      if (td.dir === -1) {
+        vMesh.rotation.y = -Math.PI / 2; // points West (-X)
+      } else {
+        vMesh.rotation.y = Math.PI / 2;  // points East (+X)
+      }
+      vehicles.push({
+        mesh: vMesh,
+        laneZ: td.laneZ,
+        dir: td.dir,
+        speed: td.speed,
+        baseSpeed: td.speed,
+        startX: td.startX,
+        isCollisionCar: !!td.isCollisionCar
+      });
+    });
+
+    /* =========================================================================
+       5. THE VALUABLE GOLDEN CAT
+       ========================================================================= */
+    const catGroup = new THREE.Group();
+    scene.add(catGroup);
+
+    const catFurMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b, // glowing golden amber
+      roughness: 0.35,
+      metalness: 0.3,
+      emissive: 0x78350f,
+      emissiveIntensity: 0.3
+    });
+
+    const catTorso = new THREE.Group();
+    catTorso.position.set(0, 1.8, 0);
+    catGroup.add(catTorso);
+
+    const cBody = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.8, 4.2), catFurMat);
+    catTorso.add(cBody);
+
+    const cBib = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, 1.6), new THREE.MeshStandardMaterial({ color: 0xfffbeb, roughness: 0.3 }));
+    cBib.position.set(0, -0.3, 1.2);
+    catTorso.add(cBib);
+
+    const catHead = new THREE.Group();
+    catHead.position.set(0, 1.4, 2.6);
+    catTorso.add(catHead);
+
+    const cHead = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.6, 1.8), catFurMat);
+    catHead.add(cHead);
+
+    for (let s of [-0.65, 0.65]) {
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.0, 4), catFurMat);
+      ear.position.set(s, 1.1, -0.2);
+      ear.rotateZ(s * -0.25);
+      catHead.add(ear);
+
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), new THREE.MeshBasicMaterial({ color: 0x10b981 }));
+      eye.position.set(s * 0.75, 0.2, 0.95);
+      catHead.add(eye);
+    }
+
+    const catLegs = [];
+    const cLegGeo = new THREE.BoxGeometry(0.5, 1.8, 0.6);
+    const legOffsets = [
+      { x: -0.65, y: -0.8, z: 1.4 },
+      { x: 0.65, y: -0.8, z: 1.4 },
+      { x: -0.65, y: -0.8, z: -1.4 },
+      { x: 0.65, y: -0.8, z: -1.4 }
+    ];
+    legOffsets.forEach(lo => {
+      const lp = new THREE.Group();
+      lp.position.set(lo.x, lo.y, lo.z);
+      const lMesh = new THREE.Mesh(cLegGeo, catFurMat);
+      lMesh.position.set(0, -0.6, 0);
+      lp.add(lMesh);
+      catTorso.add(lp);
+      catLegs.push(lp);
+    });
+
+    const catTail = new THREE.Group();
+    catTail.position.set(0, 0.6, -2.1);
+    const tailMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 4.0, 6), catFurMat);
+    tailMesh.rotateX(Math.PI / 3);
+    tailMesh.position.set(0, 1.5, -1.4);
+    catTail.add(tailMesh);
+    catTorso.add(catTail);
+
+    const catGlowLight = new THREE.PointLight(0xfbbf24, 2.2, 15);
+    catGlowLight.position.set(0, 2.5, 0);
+    catGroup.add(catGlowLight);
+
+    /* =========================================================================
+       6. THE 3 BAD DOGS (ONE GETS HIT BY A CAR IN ACT 3)
+       ========================================================================= */
+    const dogs = [];
+    const DOG_COUNT = 3;
+
+    const dogCoatMat = new THREE.MeshStandardMaterial({ color: 0x221c19, roughness: 0.65 });
+    const teethMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const dogEyeMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+    const collarMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.8 });
+
+    function buildDog(idx) {
+      const dog = new THREE.Group();
+
+      const dTorso = new THREE.Group();
+      dTorso.position.set(0, 2.8, 0);
+      dog.add(dTorso);
+
+      const dChest = new THREE.Mesh(new THREE.BoxGeometry(3.0, 3.4, 6.5), dogCoatMat);
+      dTorso.add(dChest);
+
+      const collar = new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.6, 0.8), collarMat);
+      collar.position.set(0, 0.2, 3.0);
+      dTorso.add(collar);
+
+      const dHead = new THREE.Group();
+      dHead.position.set(0, 1.8, 4.0);
+      dTorso.add(dHead);
+
+      const dSkull = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.4, 3.2), dogCoatMat);
+      dHead.add(dSkull);
+
+      const snout = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.4, 2.8), dogCoatMat);
+      snout.position.set(0, -0.4, 2.4);
+      dHead.add(snout);
+
+      const dJaw = new THREE.Group();
+      dJaw.position.set(0, -1.0, 1.2);
+      const jaw = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.8, 2.6), dogCoatMat);
+      jaw.position.set(0, 0, 1.2);
+      dJaw.add(jaw);
+
+      for (let t = -1; t <= 1; t++) {
+        const uFang = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.6, 4), teethMat);
+        uFang.rotateX(Math.PI);
+        uFang.position.set(t * 0.65, -0.65, 3.2);
+        dHead.add(uFang);
+
+        const lFang = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.6, 4), teethMat);
+        lFang.position.set(t * 0.55, 0.35, 2.2);
+        dJaw.add(lFang);
+      }
+      dHead.add(dJaw);
+
+      for (let s of [-0.8, 0.8]) {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), dogEyeMat);
+        eye.position.set(s, 0.5, 1.6);
+        dHead.add(eye);
+
+        const ear = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.5, 4), dogCoatMat);
+        ear.position.set(s, 1.5, -0.4);
+        ear.rotateZ(s * -0.2);
+        dHead.add(ear);
+      }
+
+      const dLegs = [];
+      const dLegOffsets = [
+        { x: -1.2, z: 2.2 },
+        { x: 1.2, z: 2.2 },
+        { x: -1.2, z: -2.2 },
+        { x: 1.2, z: -2.2 }
+      ];
+      dLegOffsets.forEach(o => {
+        const lp = new THREE.Group();
+        lp.position.set(o.x, -1.2, o.z);
+        const lMesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.8, 0.9), dogCoatMat);
+        lMesh.position.set(0, -1.1, 0);
+        lp.add(lMesh);
+        dTorso.add(lp);
+        dLegs.push(lp);
+      });
+
+      scene.add(dog);
+
+      return {
+        group: dog,
+        torso: dTorso,
+        head: dHead,
+        jaw: dJaw,
+        legs: dLegs,
+        laneOffset: (idx - 1) * 3.5,
+        staggerZ: idx * -4.5,
+        isHitDog: (idx === 0) // Dog #1 gets bumped by the car
+      };
+    }
+
+    for (let i = 0; i < DOG_COUNT; i++) {
+      dogs.push(buildDog(i));
+    }
+
+    /* =========================================================================
+       7. THE HUMAN DEFENDER WITH BASEBALL BAT
+       ========================================================================= */
+    const humanGroup = new THREE.Group();
+    scene.add(humanGroup);
+
+    const clothesMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.7 });
+    const pantsMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xfbcfe8, roughness: 0.6 });
+
+    const hTorso = new THREE.Group();
+    hTorso.position.set(0, 8.5, 0);
+    humanGroup.add(hTorso);
+
+    const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(4.2, 6.5, 2.5), clothesMat);
+    hTorso.add(bodyMesh);
+
+    const hHead = new THREE.Mesh(new THREE.SphereGeometry(1.6, 12, 12), skinMat);
+    hHead.position.set(0, 4.6, 0);
+    hTorso.add(hHead);
+
+    const humanLegs = [];
+    for (let s of [-1.2, 1.2]) {
+      const legGroup = new THREE.Group();
+      legGroup.position.set(s, -3.2, 0);
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(1.5, 7.5, 1.6), pantsMat);
+      leg.position.set(0, -3.7, 0);
+      legGroup.add(leg);
+      hTorso.add(legGroup);
+      humanLegs.push(legGroup);
+    }
+
+    const rightArmPivot = new THREE.Group();
+    rightArmPivot.position.set(2.4, 2.2, 0);
+    hTorso.add(rightArmPivot);
+
+    const armMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 5.0, 1.2), clothesMat);
+    armMesh.position.set(0, -2.2, 0);
+    rightArmPivot.add(armMesh);
+
+    const batGroup = new THREE.Group();
+    batGroup.position.set(0, -4.5, 0);
+
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 3.2, 8), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+    batGroup.add(handle);
+
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.35, 7.5, 12), new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.3 }));
+    barrel.position.set(0, 4.8, 0);
+    batGroup.add(barrel);
+
+    batGroup.rotateX(Math.PI / 2);
+    rightArmPivot.add(batGroup);
+
+    /* =========================================================================
+       8. MULTI-CAMERA SYSTEM
+       ========================================================================= */
+    let cameraMode = 'cinematic';
+    const targetCamPos = new THREE.Vector3();
+    const targetCamLook = new THREE.Vector3();
+    const currentCamLook = new THREE.Vector3(0, 5, 0);
+
+    function setCameraMode(mode) {
+      cameraMode = mode;
+      orbitControls.enabled = (mode === 'orbit');
+      document.querySelectorAll('.cam-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`cam-${mode}`);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    /* =========================================================================
+       9. TIMELINE & AUDIO SYNCHRONIZATION
+       ========================================================================= */
+    let lastBarkTime = -2.0;
+    let lastMeowTime = -5.0;
+    let lastSwingTime = -2.0;
+    let lastHornTime = -4.0;
+    let dogHitProcessed = false;
+
+    function syncAudioOnSeek(targetTime) {
+      if (!soundEngine.initialized) soundEngine.init();
+      if (soundEngine.ctx && soundEngine.ctx.state === 'suspended') soundEngine.ctx.resume();
+
+      lastBarkTime = targetTime - 1.25;
+      lastMeowTime = targetTime - 4.6;
+      lastSwingTime = targetTime - 0.85;
+      lastHornTime = targetTime - 3.0;
+      soundEngine.footstepsCatTimer = targetTime - 0.2;
+      soundEngine.footstepsDogTimer = targetTime - 0.2;
+      soundEngine.footstepsHumanTimer = targetTime - 0.3;
+
+      if (targetTime < 24.0) {
+        dogHitProcessed = false;
+      }
+
+      // Contextual sound trigger on jump
+      if (targetTime >= 10 && targetTime < 22) {
+        soundEngine.playCarHorn();
+        soundEngine.playEngineWhoosh();
+      } else if (targetTime >= 22 && targetTime < 32) {
+        soundEngine.playTireSkid();
+        soundEngine.playCarDogCollision();
+        dogHitProcessed = true;
+      } else if (targetTime >= 32 && targetTime < 38) {
+        soundEngine.playBatSwing();
+      } else if (targetTime >= 38) {
+        soundEngine.playCatMeow(true);
+      } else {
+        soundEngine.playDogBark(150);
+      }
+    }
+
+    function updateTimelineUI() {
+      const progress = Math.min(1.0, Math.max(0.0, currentTime / TOTAL_DURATION));
+      document.getElementById('scrubber-fill').style.width = `${progress * 100}%`;
+      document.getElementById('scrubber-thumb').style.left = `${progress * 100}%`;
+
+      const mins = Math.floor(currentTime / 60);
+      const secs = (currentTime % 60).toFixed(2);
+      document.getElementById('time-display').innerText =
+        `${String(mins).padStart(2, '0')}:${String(secs).padStart(5, '0')} / 00:45.00`;
+
+      let activeChap = CHAPTERS[0];
+      for (let ch of CHAPTERS) {
+        if (currentTime >= ch.startTime && currentTime <= ch.endTime) {
+          activeChap = ch;
+          break;
+        }
+      }
+      document.getElementById('chapter-title').innerText = activeChap.title;
+      document.getElementById('narrative-cue').innerText = activeChap.cue;
+
+      const chapBtns = document.querySelectorAll('.chap-btn');
+      CHAPTERS.forEach((ch, idx) => {
+        if (chapBtns[idx]) {
+          if (currentTime >= ch.startTime && currentTime < ch.endTime) {
+            chapBtns[idx].classList.add('active');
+          } else {
+            chapBtns[idx].classList.remove('active');
+          }
+        }
+      });
+
+      // Telemetry
+      const catZ = catGroup.position.z;
+      if (catZ < -35) {
+        document.getElementById('telemetry-prog').innerText = "STARTING CURB";
+      } else if (catZ < -15) {
+        document.getElementById('telemetry-prog').innerText = "LANE 1 (WESTBOUND)";
+      } else if (catZ < 0) {
+        document.getElementById('telemetry-prog').innerText = "LANE 2 (WESTBOUND)";
+      } else if (catZ < 20) {
+        document.getElementById('telemetry-prog').innerText = "LANE 3 (EASTBOUND)";
+      } else if (catZ < 40) {
+        document.getElementById('telemetry-prog').innerText = "LANE 4 (EASTBOUND)";
+      } else {
+        document.getElementById('telemetry-prog').innerText = "DESTINATION SIDEWALK";
+      }
+
+      if (currentTime >= 38) {
+        document.getElementById('telemetry-cat').innerText = "SAFE & UNINJURED!";
+        document.getElementById('telemetry-cat').style.color = "#34d399";
+      } else {
+        document.getElementById('telemetry-cat').innerText = "DODGING TRAFFIC";
+        document.getElementById('telemetry-cat').style.color = "#fcd34d";
+      }
+    }
+
+    const scrubberTrack = document.getElementById('scrubber-track');
+    let isScrubbing = false;
+
+    function handleScrub(e) {
+      const rect = scrubberTrack.getBoundingClientRect();
+      const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      currentTime = ratio * TOTAL_DURATION;
+      syncAudioOnSeek(currentTime);
+      updateTimelineUI();
+    }
+
+    scrubberTrack.addEventListener('mousedown', (e) => {
+      isScrubbing = true;
+      handleScrub(e);
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (isScrubbing) handleScrub(e);
+    });
+    window.addEventListener('mouseup', () => { isScrubbing = false; });
+    scrubberTrack.addEventListener('touchstart', (e) => {
+      isScrubbing = true;
+      handleScrub(e);
+    }, { passive: true });
+    window.addEventListener('touchmove', (e) => {
+      if (isScrubbing) handleScrub(e);
+    }, { passive: true });
+    window.addEventListener('touchend', () => { isScrubbing = false; });
+
+    function seekToTime(t) {
+      currentTime = t;
+      syncAudioOnSeek(t);
+      updateTimelineUI();
+    }
+
+    function togglePlayPause() {
+      if (!soundEngine.initialized) soundEngine.init();
+      if (soundEngine.ctx && soundEngine.ctx.state === 'suspended') soundEngine.ctx.resume();
+      isPlaying = !isPlaying;
+      document.getElementById('play-pause-btn').innerText = isPlaying ? '⏸️ PAUSE' : '▶️ PLAY';
+    }
+
+    function restartTimeline() {
+      currentTime = 0;
+      isPlaying = true;
+      syncAudioOnSeek(0);
+      updateTimelineUI();
+    }
+
+    function setSpeed(sp, btn) {
+      playbackSpeed = sp;
+      document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('speed-label').innerText = `SPEED: ${sp}X`;
+    }
+
+    function toggleLetterbox() {
+      document.body.classList.toggle('hide-bars');
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlayPause();
+      } else if (e.key >= '1' && e.key <= '7') {
+        const modes = ['cinematic', 'cat', 'dogs', 'human', 'traffic', 'safe', 'orbit'];
+        setCameraMode(modes[parseInt(e.key) - 1]);
+      }
+    });
+
+    /* =========================================================================
+       10. ANIMATION & VEHICLE SIMULATION LOOP
+       ========================================================================= */
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const dt = clock.getDelta();
+      if (isPlaying) {
+        currentTime += dt * playbackSpeed;
+        if (currentTime > TOTAL_DURATION) {
+          currentTime = 0;
+          syncAudioOnSeek(0);
+        }
+      }
+      updateTimelineUI();
+
+      const time = currentTime;
+
+      // Rewind guards
+      if (time < lastBarkTime) lastBarkTime = time - 1.25;
+      if (time < lastMeowTime) lastMeowTime = time - 4.6;
+      if (time < lastSwingTime) lastSwingTime = time - 0.85;
+      if (time < lastHornTime) lastHornTime = time - 3.0;
+      if (time < 24.0) dogHitProcessed = false;
+
+      // -------------------------------------------------------------
+      // 1. VEHICLE FLEET DYNAMICS & CAR COLLISION AT ACT 3
+      // -------------------------------------------------------------
+      vehicles.forEach(v => {
+        // Calculate vehicle X position across road
+        let currentSpeed = v.baseSpeed;
+
+        // If this is the collision car (Yellow Coupe on Lane 3 at z = 10 heading +X)
+        if (v.isCollisionCar && time >= 23.5 && time <= 29.5) {
+          // Brakes hard to avoid killing the dog, skidding to a stop!
+          currentSpeed = Math.max(4.0, v.baseSpeed * (1.0 - (time - 23.5) / 2.0));
+        }
+
+        const distanceTraveled = time * currentSpeed * v.dir;
+        let posX = ((v.startX + distanceTraveled + 300) % 600) - 300;
+
+        v.mesh.position.set(posX, 0, v.laneZ);
+      });
+
+      // Random car horns during traffic weave (Acts 1-3)
+      if (time >= 6 && time <= 32 && time - lastHornTime > 3.8) {
+        soundEngine.playCarHorn();
+        soundEngine.playEngineWhoosh();
+        lastHornTime = time;
+      }
+
+      // -------------------------------------------------------------
+      // 2. CHARACTER TRAJECTORIES ACROSS THE 4 LANES (Z: -50 to +50)
+      // -------------------------------------------------------------
+      let catZ = -48;
+      let catX = 0;
+      let catY = 0.6;
+      let catPitch = 0;
+
+      let dogBaseZ = -62;
+      let dogBaseX = 0;
+
+      let humanZ = -74;
+      let humanX = 0;
+      let batAngle = 0.4;
+
+      // ACT 1: Approaching the Road (0s - 10s)
+      if (time < 10) {
+        const p = time / 10;
+        catZ = -48 + p * 12; // -48 -> -36 (stepping into Lane 1)
+        dogBaseZ = -62 + p * 14; // -62 -> -48
+        humanZ = -74 + p * 14; // -74 -> -60
+      }
+      // ACT 2: Weaving Through Lanes 1 & 2 (10s - 22s)
+      else if (time < 22) {
+        const p = (time - 10) / 12;
+        catZ = -36 + p * 34; // -36 -> -2 (reaching median, dodging cars)
+        catX = Math.sin(time * 3.5) * 5.5; // agile weaving side-to-side!
+
+        dogBaseZ = -48 + p * 32; // -48 -> -16
+        humanZ = -60 + p * 28; // -60 -> -32
+
+        batAngle = Math.sin(time * 7.0) * 1.5;
+        if (time - lastSwingTime > 0.82) {
+          soundEngine.playBatSwing();
+          lastSwingTime = time;
+        }
+      }
+      // ACT 3: Collision — One Dog Hit by Car! (22s - 32s)
+      else if (time < 32) {
+        const p = (time - 22) / 10;
+        catZ = -2 + p * 32; // -2 -> +30 (cat clears Lane 3 and 4!)
+        catX = Math.sin(time * 2.0) * 2.0;
+
+        dogBaseZ = -16 + p * 18; // dogs enter Lane 3 (-16 -> +2)
+        humanZ = -32 + p * 20; // human rushes forward (-32 -> -12)
+
+        // Collision Trigger at ~24.5s
+        if (time >= 24.2 && !dogHitProcessed) {
+          soundEngine.playTireSkid();
+          soundEngine.playCarDogCollision();
+          dogHitProcessed = true;
+
+          const flash = document.getElementById('impact-flash');
+          flash.style.opacity = '0.9';
+          setTimeout(() => { flash.style.opacity = '0'; }, 110);
+
+          const banner = document.getElementById('action-banner');
+          document.getElementById('banner-title').innerText = "DOG BUMPED BY CAR!";
+          document.getElementById('banner-desc').innerText = "YELLOW COUPE TIRES SCREECH // ONE DOG SENT SKIDDING!";
+          banner.classList.add('active');
+        }
+
+        batAngle = Math.sin(time * 8.0) * 1.6;
+        if (time - lastSwingTime > 0.85) {
+          soundEngine.playBatSwing();
+          lastSwingTime = time;
+        }
+      }
+      // ACT 4: Bat Hero Shields the Road (32s - 38s)
+      else if (time < 38) {
+        const p = (time - 32) / 6;
+        catZ = 30 + p * 15; // 30 -> 45 (crossing onto safe curb!)
+        dogBaseZ = 2; // remaining dogs halted at the median
+        humanZ = -12 + p * 10; // human reaches median with bat (-12 -> -2)
+
+        batAngle = Math.sin(time * 6.0) * 1.8;
+        if (time - lastSwingTime > 0.8) {
+          soundEngine.playBatSwing();
+          lastSwingTime = time;
+        }
+      }
+      // ACT 5: Safe on the Destination Sidewalk (38s - 45s)
+      else {
+        catZ = 50; // perched on the green grass of the park!
+        catY = 1.4;
+        catTorso.rotation.y = Math.PI; // cat turns around, sits proudly looking back
+
+        dogBaseZ = 4; // dogs trapped at median, unable to cross
+        humanZ = 0; // human standing guard at median
+
+        const banner = document.getElementById('action-banner');
+        document.getElementById('banner-title').innerText = "CAT SAFELY ACROSS!";
+        document.getElementById('banner-desc').innerText = "GOLDEN CAT UNHARMED ON PARK LAWN // DOGS BLOCKED BY HUMAN";
+        banner.classList.add('active');
+
+        if (time - lastMeowTime > 3.5) {
+          soundEngine.playCatMeow(true); // victorious meow!
+          lastMeowTime = time;
+        }
+      }
+
+      if (time < 22 || (time >= 32 && time < 38)) {
+        document.getElementById('action-banner').classList.remove('active');
+      }
+
+      // -------------------------------------------------------------
+      // 3. CAT ANIMATION
+      // -------------------------------------------------------------
+      catGroup.position.set(catX, catY, catZ);
+      const catStride = time * 24.0;
+
+      if (time < 38) {
+        catTorso.rotation.y = 0;
+        catTorso.position.y = 1.8 + Math.abs(Math.sin(catStride * 2.0)) * 0.4;
+        catLegs[0].rotation.x = Math.sin(catStride) * 0.75;
+        catLegs[1].rotation.x = -Math.sin(catStride) * 0.75;
+        catLegs[2].rotation.x = -Math.sin(catStride + 0.3) * 0.8;
+        catLegs[3].rotation.x = Math.sin(catStride + 0.3) * 0.8;
+        catTail.rotation.y = Math.sin(catStride) * 0.45;
+
+        if (time - soundEngine.footstepsCatTimer > 0.16) {
+          soundEngine.playFootsteps('cat');
+          soundEngine.footstepsCatTimer = time;
+        }
+      } else {
+        catLegs.forEach(l => l.rotation.x = 0);
+        catTail.rotation.y = Math.sin(time * 3.0) * 0.5; // calm tail wagging
+      }
+
+      // -------------------------------------------------------------
+      // 4. DOGS ANIMATION & DOG HIT TUMBLE
+      // -------------------------------------------------------------
+      const dogStride = time * 20.0;
+      dogs.forEach((d, idx) => {
+        let curZ = dogBaseZ + d.staggerZ;
+        let curX = d.laneOffset;
+        let curY = 0;
+        let pitch = 0;
+        let roll = 0;
+
+        if (d.isHitDog && time >= 24.5) {
+          // Dog #1 was hit by the yellow car! It tumbles onto the median and sits dazed
+          const hitTime = time - 24.5;
+          if (hitTime < 2.0) {
+            // Tumble and roll
+            roll = hitTime * Math.PI * 2.0;
+            curY = Math.sin(hitTime * Math.PI) * 2.5;
+            curX += (hitTime / 2.0) * 4.5;
+          } else {
+            // Sitting on median, whimpering and shaking head
+            curY = 0;
+            roll = 0.4; // leaning to side
+            pitch = -0.3;
+          }
+        } else if (time >= 32) {
+          // Other dogs halted, barking in frustration at the human
+          pitch = Math.sin(time * 10.0 + idx) * 0.15;
+          d.jaw.rotation.x = 0.35 + Math.sin(time * 8.0) * 0.2;
+        } else {
+          // Running gallop
+          d.legs[0].rotation.x = Math.sin(dogStride + idx) * 0.8;
+          d.legs[1].rotation.x = -Math.sin(dogStride + idx) * 0.8;
+          d.legs[2].rotation.x = -Math.sin(dogStride + idx + 0.3) * 0.85;
+          d.legs[3].rotation.x = Math.sin(dogStride + idx + 0.3) * 0.85;
+          d.jaw.rotation.x = 0.25 + Math.sin(time * 8.0) * 0.15;
+        }
+
+        d.group.position.set(curX, curY, curZ);
+        d.torso.rotation.x = pitch;
+        d.torso.rotation.z = roll;
+      });
+
+      // Barking frequency
+      if (time - lastBarkTime > 1.3 && time < 42) {
+        soundEngine.playDogBark(135 + Math.random() * 35);
+        lastBarkTime = time;
+      }
+      if (time - soundEngine.footstepsDogTimer > 0.18 && time < 32) {
+        soundEngine.playFootsteps('dog');
+        soundEngine.footstepsDogTimer = time;
+      }
+
+      // -------------------------------------------------------------
+      // 5. HUMAN DEFENDER ANIMATION
+      // -------------------------------------------------------------
+      humanGroup.position.set(humanX, 0, humanZ);
+      rightArmPivot.rotation.x = batAngle;
+      hTorso.rotation.y = Math.sin(time * 6.0) * 0.25;
+
+      const humanStride = time * 12.0;
+      if (time < 38) {
+        humanLegs[0].rotation.x = Math.sin(humanStride) * 0.6;
+        humanLegs[1].rotation.x = -Math.sin(humanStride) * 0.6;
+        if (time - soundEngine.footstepsHumanTimer > 0.32) {
+          soundEngine.playFootsteps('human');
+          soundEngine.footstepsHumanTimer = time;
+        }
+      } else {
+        humanLegs[0].rotation.x = 0;
+        humanLegs[1].rotation.x = 0;
+      }
+
+      // -------------------------------------------------------------
+      // 6. CAMERA POSITIONING
+      // -------------------------------------------------------------
+      if (cameraMode === 'cinematic') {
+        if (time < 10) {
+          // Approach: over-the-shoulder of the cat heading into road
+          targetCamPos.set(catX + 8, 8.5, catZ - 20);
+          targetCamLook.set(catX, 2.5, catZ + 15);
+        } else if (time < 22) {
+          // Wide dynamic highway angle watching cars speed past
+          targetCamPos.set(-28, 14, catZ - 10);
+          targetCamLook.set(0, 3.0, catZ + 8);
+        } else if (time < 32) {
+          // Dramatic collision shot: close up on Lane 3 as car hits dog!
+          targetCamPos.set(16, 8.0, 4);
+          targetCamLook.set(0, 2.0, 10);
+        } else {
+          // Destination shot: low angle on green park sidewalk as cat lands safe
+          targetCamPos.set(-14, 6.0, 42);
+          targetCamLook.set(0, 3.5, 52);
+        }
+      } else if (cameraMode === 'cat') {
+        targetCamPos.set(catX, 5.5, catZ - 16);
+        targetCamLook.set(catX, 3.0, catZ + 12);
+      } else if (cameraMode === 'dogs') {
+        targetCamPos.set(0, 6.0, dogBaseZ - 15);
+        targetCamLook.set(catX, 3.0, catZ);
+      } else if (cameraMode === 'human') {
+        targetCamPos.set(12, 11, humanZ - 16);
+        targetCamLook.set(0, 6, humanZ + 12);
+      } else if (cameraMode === 'traffic') {
+        // High traffic overview
+        targetCamPos.set(45, 32, 0);
+        targetCamLook.set(0, 2.0, 0);
+      } else if (cameraMode === 'safe') {
+        // Safe park sidewalk view
+        targetCamPos.set(10, 5.5, 58);
+        targetCamLook.set(0, 2.5, 48);
+      }
+
+      if (cameraMode !== 'orbit') {
+        camera.position.lerp(targetCamPos, 0.06);
+        currentCamLook.lerp(targetCamLook, 0.08);
+        camera.lookAt(currentCamLook);
+      } else {
+        orbitControls.update();
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    /* =========================================================================
+       11. RESIZE HANDLING
+       ========================================================================= */
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    });
+
+    // Start simulation
+    animate();
+  </script>
+</body>
+</html>

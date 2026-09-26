@@ -241,6 +241,29 @@
       cursor: pointer;
     }
 
+    .scene-nav-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #e2e8f0;
+      padding: 5px 12px;
+      border-radius: 14px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .scene-nav-btn:hover {
+      background: rgba(245, 158, 11, 0.25);
+      border-color: var(--gold-accent);
+      color: #fff;
+    }
+
     /* Narrative Alert Banner */
     #action-banner {
       position: absolute;
@@ -628,18 +651,21 @@
       </div>
 
       <div class="top-right">
+        <div style="display:flex; gap:8px; align-items:center;">
+          <a href="crossroad_rush_cat_dogs.html" class="scene-nav-btn">Scene 2: 4-Lane Crossing ❯</a>
+          <div class="audio-controls">
+            <button class="audio-btn" id="audio-btn" onclick="toggleAudioEngine()">
+              <span id="audio-icon">🔊</span>
+              <span id="audio-label">SOUND: ON</span>
+            </button>
+            <input type="range" class="volume-slider" id="vol-slider" min="0" max="1" step="0.05" value="0.8" oninput="setMasterVolume(this.value)" />
+          </div>
+        </div>
+
         <div class="telemetry-card">
           <div class="timer-display" id="time-display">00:00.00 / 00:45.00</div>
           <div class="status-text">PURSUIT DISTANCE: <span id="telemetry-dist" style="color:#fff;">18 METERS</span></div>
           <div class="status-text">CAT STATUS: <span id="telemetry-cat" style="color:#fcd34d;">SPRINTING</span></div>
-        </div>
-
-        <div class="audio-controls">
-          <button class="audio-btn" id="audio-btn" onclick="toggleAudioEngine()">
-            <span id="audio-icon">🔊</span>
-            <span id="audio-label">SOUND: ON</span>
-          </button>
-          <input type="range" class="volume-slider" id="vol-slider" min="0" max="1" step="0.05" value="0.8" oninput="setMasterVolume(this.value)" />
         </div>
       </div>
     </div>
