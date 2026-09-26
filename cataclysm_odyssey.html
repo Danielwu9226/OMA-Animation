@@ -1,0 +1,2772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TITAN CATACLYSM // Rise of the Caldera & Godzilla's Roar</title>
+  <style>
+    :root {
+      --primary-cyan: #00f0ff;
+      --radioactive-blue: #00a8ff;
+      --magma-orange: #ff5500;
+      --acid-green: #39ff14;
+      --meteor-gold: #ffaa00;
+      --bg-dark: #06080e;
+      --glass-panel: rgba(10, 14, 24, 0.78);
+      --glass-border: rgba(0, 240, 255, 0.25);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: #e0f2fe;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Cinematic Bars */
+    .cinema-bars {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 48px;
+      background: #000000;
+      z-index: 9;
+      pointer-events: none;
+      transition: transform 0.5s ease;
+    }
+    .cinema-top { top: 0; }
+    .cinema-bottom { bottom: 0; }
+    body.hide-bars .cinema-top { transform: translateY(-100%); }
+    body.hide-bars .cinema-bottom { transform: translateY(100%); }
+
+    /* Screen Overlays */
+    #lightning-flash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(220, 245, 255, 0.95);
+      z-index: 8;
+      pointer-events: none;
+      opacity: 0;
+      mix-blend-mode: screen;
+      transition: opacity 0.05s ease-out;
+    }
+
+    #vignette {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+      box-shadow: inset 0 0 160px rgba(0, 0, 0, 0.85), inset 0 0 60px rgba(10, 2, 0, 0.6);
+    }
+
+    #acid-rain-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 3;
+      pointer-events: none;
+      opacity: 0.15;
+      background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(57, 255, 20, 0.08) 100%);
+    }
+
+    /* Main UI Overlay */
+    #ui-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 56px 40px 56px 40px;
+    }
+
+    /* Top Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .brand-title {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #ffffff 0%, var(--primary-cyan) 45%, var(--magma-orange) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 2px 14px rgba(0, 240, 255, 0.4));
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-title .live-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ff2200;
+      box-shadow: 0 0 12px #ff2200;
+      animation: blink 1.2s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.8); }
+    }
+
+    .scene-desc {
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: #7dd3fc;
+      margin-top: 6px;
+      text-transform: uppercase;
+      font-weight: 700;
+      opacity: 0.85;
+    }
+
+    .status-badges {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      background: var(--glass-panel);
+      border: 1px solid var(--glass-border);
+      border-radius: 4px;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: #38bdf8;
+      font-weight: 800;
+      backdrop-filter: blur(8px);
+    }
+    .badge.warning {
+      border-color: rgba(255, 85, 0, 0.5);
+      color: #ff944d;
+    }
+    .badge.radiation {
+      border-color: rgba(57, 255, 20, 0.5);
+      color: #a3ff70;
+    }
+
+    /* Top Right Telemetry & Audio */
+    .top-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .telemetry-card {
+      background: var(--glass-panel);
+      border: 1px solid var(--glass-border);
+      border-radius: 6px;
+      padding: 10px 18px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .timer-display {
+      font-family: 'Courier New', monospace;
+      font-size: 22px;
+      font-weight: 900;
+      color: #38bdf8;
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+      letter-spacing: 2px;
+    }
+
+    .telemetry-row {
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .telemetry-val {
+      color: #ffffff;
+      font-weight: 800;
+    }
+
+    /* Audio Bar */
+    .audio-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--glass-panel);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 6px 14px;
+      backdrop-filter: blur(12px);
+    }
+
+    .audio-btn {
+      background: none;
+      border: none;
+      color: #00f0ff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      outline: none;
+      transition: color 0.2s;
+    }
+    .audio-btn:hover {
+      color: #ffffff;
+      text-shadow: 0 0 8px #00f0ff;
+    }
+
+    .volume-slider {
+      -webkit-appearance: none;
+      width: 70px;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.2);
+      outline: none;
+    }
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #00f0ff;
+      cursor: pointer;
+      box-shadow: 0 0 8px #00f0ff;
+    }
+
+    /* Floating Godzilla Roar Banner */
+    #kaiju-alert {
+      position: absolute;
+      top: 140px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      padding: 14px 34px;
+      background: rgba(15, 2, 2, 0.88);
+      border: 2px solid #ff3b00;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      color: #ffaa55;
+      text-transform: uppercase;
+      box-shadow: 0 0 35px rgba(255, 59, 0, 0.6), inset 0 0 20px rgba(255, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      z-index: 20;
+    }
+    #kaiju-alert.active {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    #kaiju-alert .glow-icon {
+      font-size: 24px;
+      animation: pulseAlert 1s infinite alternate;
+    }
+    @keyframes pulseAlert {
+      from { transform: scale(1); filter: drop-shadow(0 0 5px #00ffff); }
+      to { transform: scale(1.2); filter: drop-shadow(0 0 15px #ff2200); }
+    }
+
+    /* Camera Switcher Bar */
+    .camera-bar {
+      pointer-events: auto;
+      display: flex;
+      align-self: center;
+      gap: 8px;
+      background: var(--glass-panel);
+      padding: 6px 10px;
+      border-radius: 30px;
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+      margin-bottom: 12px;
+    }
+
+    .cam-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #94a3b8;
+      padding: 7px 16px;
+      font-size: 11px;
+      letter-spacing: 2px;
+      font-weight: 800;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 20px;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .cam-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .cam-btn.active {
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(0, 110, 255, 0.4));
+      border-color: var(--primary-cyan);
+      color: #ffffff;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.4);
+    }
+
+    /* Bottom Timeline Controller */
+    .timeline-container {
+      width: 100%;
+      max-width: 1100px;
+      align-self: center;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: auto;
+      background: var(--glass-panel);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 14px 24px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      font-weight: 800;
+      color: #e2e8f0;
+      text-transform: uppercase;
+    }
+
+    .current-chapter-title {
+      color: #00f0ff;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
+
+    /* Custom Scrubbing Bar */
+    .scrubber-track {
+      position: relative;
+      width: 100%;
+      height: 10px;
+      background: rgba(15, 23, 42, 0.8);
+      border-radius: 5px;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: visible;
+    }
+
+    .scrubber-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      border-radius: 5px;
+      background: linear-gradient(90deg, #00f0ff 0%, #0077ff 50%, #ff5500 100%);
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.6);
+      pointer-events: none;
+    }
+
+    .scrubber-thumb {
+      position: absolute;
+      top: 50%;
+      left: 0%;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2px solid #00f0ff;
+      box-shadow: 0 0 12px #00f0ff, 0 0 20px rgba(255, 85, 0, 0.8);
+      transform: translate(-50%, -50%);
+      cursor: grab;
+      transition: transform 0.1s ease;
+      pointer-events: none;
+    }
+    .scrubber-track:active .scrubber-thumb {
+      cursor: grabbing;
+      transform: translate(-50%, -50%) scale(1.25);
+    }
+
+    /* Chapter Bookmarks */
+    .chapter-ticks {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .chapter-tick {
+      position: absolute;
+      top: -3px;
+      width: 2px;
+      height: 16px;
+      background: rgba(255, 255, 255, 0.4);
+      transform: translateX(-50%);
+      transition: background 0.2s;
+    }
+    .chapter-tick.reached {
+      background: #00f0ff;
+      box-shadow: 0 0 6px #00f0ff;
+    }
+
+    /* Chapter Quick Jump Buttons */
+    .chapter-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      overflow-x: auto;
+      padding-top: 4px;
+    }
+
+    .chap-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      flex: 1;
+      text-align: center;
+    }
+    .chap-btn:hover {
+      background: rgba(0, 240, 255, 0.15);
+      border-color: rgba(0, 240, 255, 0.4);
+      color: #ffffff;
+    }
+    .chap-btn.active {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: #00f0ff;
+      color: #00f0ff;
+      font-weight: 800;
+    }
+
+    /* Playback Control Actions */
+    .timeline-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    .playback-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ctrl-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #f8fafc;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .ctrl-btn:hover {
+      background: rgba(0, 240, 255, 0.25);
+      border-color: #00f0ff;
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+    }
+    .ctrl-btn.active {
+      background: #00f0ff;
+      color: #000000;
+      border-color: #00f0ff;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.6);
+    }
+
+    .speed-btn-group {
+      display: flex;
+      gap: 4px;
+    }
+    .speed-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .speed-btn.active {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: #00f0ff;
+      color: #00f0ff;
+    }
+
+    /* Sound Start Prompt */
+    #sound-splash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 50;
+      background: radial-gradient(circle at center, rgba(6, 12, 24, 0.92) 0%, rgba(2, 4, 8, 0.98) 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 24px;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    #sound-splash.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .splash-box {
+      max-width: 600px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      border-radius: 16px;
+      padding: 36px 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 240, 255, 0.2);
+      backdrop-filter: blur(20px);
+    }
+    .splash-title {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #ffffff 0%, #00f0ff 45%, #ff5500 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+    .splash-sub {
+      font-size: 13px;
+      letter-spacing: 3px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    .splash-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      text-align: left;
+      margin-bottom: 28px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: #cbd5e1;
+    }
+    .splash-feat-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .splash-feat-item span {
+      color: #00f0ff;
+    }
+    .start-btn {
+      background: linear-gradient(135deg, #00f0ff 0%, #0066ff 50%, #ff4500 100%);
+      border: none;
+      color: #ffffff;
+      padding: 14px 44px;
+      font-size: 14px;
+      letter-spacing: 4px;
+      font-weight: 900;
+      text-transform: uppercase;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 25px rgba(0, 240, 255, 0.5);
+      transition: all 0.3s;
+      animation: pulseBtn 2s infinite alternate;
+    }
+    @keyframes pulseBtn {
+      from { transform: scale(1); box-shadow: 0 4px 20px rgba(0, 240, 255, 0.4); }
+      to { transform: scale(1.05); box-shadow: 0 6px 30px rgba(255, 69, 0, 0.7); }
+    }
+    .start-btn:hover {
+      transform: scale(1.08) translateY(-2px);
+    }
+
+    /* Subtitles / Narrative Cue */
+    #narrative-cue {
+      position: absolute;
+      bottom: 215px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #f1f5f9;
+      text-transform: uppercase;
+      background: rgba(0, 0, 0, 0.65);
+      padding: 8px 24px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      opacity: 0.9;
+      text-align: center;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 900px) {
+      #ui-overlay { padding: 40px 16px 40px 16px; }
+      .brand-title { font-size: 18px; letter-spacing: 3px; }
+      .camera-bar { flex-wrap: wrap; justify-content: center; }
+      .cam-btn { font-size: 9px; padding: 5px 10px; }
+      .chapter-buttons { display: none; }
+      .timeline-container { padding: 10px 14px; }
+    }
+  </style>
+
+  <!-- Three.js & Controls via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <!-- Letterbox Borders -->
+  <div class="cinema-bars cinema-top"></div>
+  <div class="cinema-bars cinema-bottom"></div>
+
+  <!-- Screen FX -->
+  <div id="lightning-flash"></div>
+  <div id="acid-rain-overlay"></div>
+  <div id="vignette"></div>
+
+  <!-- 3D WebGL Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Godzilla Roar / Laugh Event Banner -->
+  <div id="kaiju-alert">
+    <span class="glow-icon">☢️</span>
+    <div>
+      <div style="font-size: 14px; color: #00f0ff;">TITAN DETECTED: GODZILLA</div>
+      <div style="font-size: 11px; color: #ffaa55;" id="kaiju-status-text">DEFIANT ROAR & TITAN LAUGH IN THE MAELSTROM</div>
+    </div>
+  </div>
+
+  <!-- Narrative Subtitle Cue -->
+  <div id="narrative-cue">TECTONIC DISTURBANCE DETECTED // OCEAN CRUST IS FRACTURING</div>
+
+  <!-- UI Overlay -->
+  <div id="ui-overlay">
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <div class="brand-title">
+          <span class="live-dot"></span>
+          TITAN CATACLYSM
+        </div>
+        <div class="scene-desc">Geological Rupture • Meteor Incursion • Kaiju Awakening</div>
+        <div class="status-badges">
+          <div class="badge" id="seismic-badge">🌋 SEISMIC: MAGNITUDE 9.4</div>
+          <div class="badge warning" id="tsunami-badge">🌊 TSUNAMI: DISPLACING 120M SURGE</div>
+          <div class="badge radiation" id="radiation-badge">☢️ ATOMIC FLUX: ACTIVE</div>
+        </div>
+      </div>
+
+      <div class="top-right">
+        <div class="telemetry-card">
+          <div class="timer-display" id="time-display">00:00.00 / 01:30.00</div>
+          <div class="telemetry-row">SEAMOUNT ELEVATION: <span class="telemetry-val" id="telemetry-height">-110 M</span></div>
+          <div class="telemetry-row">ATMOSPHERE: <span class="telemetry-val" style="color:#39ff14;">ACID PH 1.8</span></div>
+        </div>
+
+        <div class="audio-controls">
+          <button class="audio-btn" id="audio-toggle-btn" onclick="toggleAudioEngine()">
+            <span id="audio-icon">🔊</span>
+            <span id="audio-label">SOUND FX: ON</span>
+          </button>
+          <input type="range" class="volume-slider" id="master-vol" min="0" max="1" step="0.05" value="0.75" oninput="setMasterVolume(this.value)" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Camera Viewpoint Selector Bar -->
+    <div class="camera-bar" id="camera-bar">
+      <button class="cam-btn active" id="cam-btn-cinematic" onclick="setCameraMode('cinematic')">🎬 Director Cut</button>
+      <button class="cam-btn" id="cam-btn-helicopter" onclick="setCameraMode('helicopter')">🚁 Chopper Cam</button>
+      <button class="cam-btn" id="cam-btn-boat" onclick="setCameraMode('boat')">🚢 Sea-Level Boat</button>
+      <button class="cam-btn" id="cam-btn-underwater" onclick="setCameraMode('underwater')">🌊 Abyss / Under Ocean</button>
+      <button class="cam-btn" id="cam-btn-volcano" onclick="setCameraMode('volcano')">🌋 Inside Volcano</button>
+      <button class="cam-btn" id="cam-btn-godzilla" onclick="setCameraMode('godzilla')">🦖 Godzilla Titan</button>
+      <button class="cam-btn" id="cam-btn-above" onclick="setCameraMode('above')">🛰️ Satellite / Above</button>
+      <button class="cam-btn" id="cam-btn-orbit" onclick="setCameraMode('orbit')">🎮 Free Orbit</button>
+    </div>
+
+    <!-- Bottom Timeline Bar & Director Scrubber -->
+    <div class="timeline-container">
+      <div class="timeline-header">
+        <span class="current-chapter-title" id="chapter-title">PHASE 1: SUB-OCEANIC AWAKENING & CRUST SHEAR</span>
+        <span id="speed-label" style="color:#94a3b8;">TIMELINE: REALTIME (1.0X)</span>
+      </div>
+
+      <!-- Scrubber Track -->
+      <div class="scrubber-track" id="scrubber-track">
+        <div class="scrubber-fill" id="scrubber-fill"></div>
+        <div class="chapter-ticks">
+          <div class="chapter-tick" style="left: 0%;"></div>
+          <div class="chapter-tick" style="left: 18%;"></div>
+          <div class="chapter-tick" style="left: 36%;"></div>
+          <div class="chapter-tick" style="left: 55%;"></div>
+          <div class="chapter-tick" style="left: 74%;"></div>
+          <div class="chapter-tick" style="left: 100%;"></div>
+        </div>
+        <div class="scrubber-thumb" id="scrubber-thumb"></div>
+      </div>
+
+      <!-- Chapter Quick Jump Buttons -->
+      <div class="chapter-buttons">
+        <button class="chap-btn active" onclick="seekToTime(0)">1. Submerged Tremor</button>
+        <button class="chap-btn" onclick="seekToTime(16)">2. Caldera Breaches</button>
+        <button class="chap-btn" onclick="seekToTime(32)">3. Acid Tempest & Choppers</button>
+        <button class="chap-btn" onclick="seekToTime(50)">4. Meteor Impact</button>
+        <button class="chap-btn" onclick="seekToTime(67)">5. Godzilla Laughs</button>
+        <button class="chap-btn" onclick="seekToTime(82)">6. Full Cataclysm</button>
+      </div>
+
+      <!-- Playback Controls -->
+      <div class="timeline-actions">
+        <div class="playback-group">
+          <button class="ctrl-btn" id="play-pause-btn" onclick="togglePlayPause()">
+            <span id="play-icon">⏸️</span>
+            <span id="play-text">PAUSE</span>
+          </button>
+          <button class="ctrl-btn" onclick="restartTimeline()">🔄 REPLAY</button>
+          <button class="ctrl-btn" onclick="toggleLetterbox()">📺 BARS</button>
+        </div>
+
+        <div class="playback-group">
+          <span style="font-size: 10px; letter-spacing: 1px; color:#64748b; font-weight:700;">SPEED:</span>
+          <div class="speed-btn-group">
+            <button class="speed-btn" onclick="setSpeed(0.5, this)">0.5x</button>
+            <button class="speed-btn active" onclick="setSpeed(1.0, this)">1.0x</button>
+            <button class="speed-btn" onclick="setSpeed(2.0, this)">2.0x</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Start Modal -->
+  <div id="sound-splash">
+    <div class="splash-box">
+      <div class="splash-title">TITAN CATACLYSM</div>
+      <div class="splash-sub">A Real-Time WebGL Geological & Kaiju Apocalypse Simulation</div>
+      
+      <div class="splash-features">
+        <div class="splash-feat-item"><span>🌋</span> Rising Volcanic Seamount & Tsunami</div>
+        <div class="splash-feat-item"><span>🌧️</span> 12,000+ Acid Rain Drops & Lightning</div>
+        <div class="splash-feat-item"><span>☄️</span> Descending Meteors & Explosions</div>
+        <div class="splash-feat-item"><span>🚁</span> Circling Helicopters with Spotlights</div>
+        <div class="splash-feat-item"><span>🦖</span> Godzilla Titan with Animated Laugh</div>
+        <div class="splash-feat-item"><span>🔊</span> Real-Time Web Audio Synthesizers</div>
+      </div>
+
+      <button class="start-btn" onclick="startExperience()">ENTER THE MAELSTROM ❯</button>
+      <div style="font-size: 10px; color:#64748b; margin-top: 14px; letter-spacing: 1.5px;">RECOMMENDED: FULL SCREEN & HEADPHONES</div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       1. TIMELINE & NARRATIVE DEFINITIONS
+       ========================================================================= */
+    const TOTAL_DURATION = 90.0; // 90 seconds timeline sequence
+    let currentTime = 0.0;
+    let isPlaying = true;
+    let playbackSpeed = 1.0;
+
+    const CHAPTERS = [
+      {
+        startTime: 0,
+        endTime: 16,
+        title: "PHASE 1: SUB-OCEANIC AWAKENING & CRUST SHEAR",
+        cue: "SEISMIC RUMBLE // OCEAN FLOOR PUSHING UPWARDS",
+        volcanoTargetY: -45,
+        defaultCam: "underwater"
+      },
+      {
+        startTime: 16,
+        endTime: 32,
+        title: "PHASE 2: THE CALDERA BREACHES & TSUNAMI PROPAGATION",
+        cue: "TSUNAMI SHOCKWAVE DISPLACING THE PACIFIC TRENCH",
+        volcanoTargetY: 28,
+        defaultCam: "boat"
+      },
+      {
+        startTime: 32,
+        endTime: 50,
+        title: "PHASE 3: ACID TEMPEST & RECON HELICOPTER SCRAMBLE",
+        cue: "SULFURIC ACID DOWNPOUR // MILITARY CHOPPERS CIRCLING",
+        volcanoTargetY: 60,
+        defaultCam: "helicopter"
+      },
+      {
+        startTime: 50,
+        endTime: 67,
+        title: "PHASE 4: METEOR BOMBARDMENT & CALDERA DETONATION",
+        cue: "COSMIC IMPACTS DETONATING VOLCANIC MAGMA CHAMBER",
+        volcanoTargetY: 75,
+        defaultCam: "volcano"
+      },
+      {
+        startTime: 67,
+        endTime: 82,
+        title: "PHASE 5: THE TITAN RISES // GODZILLA LAUGHS AT DESTRUCTION",
+        cue: "GODZILLA EMERGES INTO THE FIRE & LAUGHS AT THE APOCALYPSE",
+        volcanoTargetY: 82,
+        defaultCam: "cinematic"
+      },
+      {
+        startTime: 82,
+        endTime: 90,
+        title: "PHASE 6: TOTAL CATACLYSMIC EQUILIBRIUM",
+        cue: "THE WORLD BURNS AS THE TITAN STRIDES THROUGH BOILING SURF",
+        volcanoTargetY: 85,
+        defaultCam: "above"
+      }
+    ];
+
+    /* =========================================================================
+       2. PROCEDURAL WEB AUDIO SYNTHESIZER ENGINE (ZERO ASSETS DEPENDENCY)
+       ========================================================================= */
+    class CataclysmAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.masterGain = null;
+        this.isMuted = false;
+        this.initialized = false;
+
+        // Continuous nodes
+        this.heliGain = null;
+        this.heliOsc = null;
+        this.heliNoiseGain = null;
+        this.volcanoRumbleGain = null;
+        this.acidRainGain = null;
+        this.oceanSurfGain = null;
+      }
+
+      init() {
+        if (this.initialized) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContext();
+
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.setValueAtTime(0.75, this.ctx.currentTime);
+        this.masterGain.connect(this.ctx.destination);
+
+        // Build continuous ambient layers
+        this.setupHelicopterAudio();
+        this.setupVolcanoRumbleAudio();
+        this.setupAcidRainAudio();
+        this.setupOceanSurfAudio();
+
+        this.initialized = true;
+      }
+
+      // Helicopter Rotor Blade Chop
+      setupHelicopterAudio() {
+        const t = this.ctx.currentTime;
+        this.heliGain = this.ctx.createGain();
+        this.heliGain.gain.setValueAtTime(0.001, t);
+
+        // Low saw tone for twin turbine engine
+        this.heliOsc = this.ctx.createOscillator();
+        this.heliOsc.type = 'sawtooth';
+        this.heliOsc.frequency.setValueAtTime(84, t);
+
+        const oscFilter = this.ctx.createBiquadFilter();
+        oscFilter.type = 'lowpass';
+        oscFilter.frequency.setValueAtTime(260, t);
+        this.heliOsc.connect(oscFilter);
+
+        // Chopper blade rhythmic chopping noise generator
+        const bufferSize = this.ctx.sampleRate * 2;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 2 - 1;
+        }
+
+        const whiteNoise = this.ctx.createBufferSource();
+        whiteNoise.buffer = noiseBuffer;
+        whiteNoise.loop = true;
+
+        const noiseFilter = this.ctx.createBiquadFilter();
+        noiseFilter.type = 'bandpass';
+        noiseFilter.frequency.setValueAtTime(450, t);
+        noiseFilter.Q.setValueAtTime(2.5, t);
+
+        // LFO amplitude modulator at ~18 Hz (rotor RPM)
+        const chopLFO = this.ctx.createOscillator();
+        chopLFO.frequency.setValueAtTime(17.5, t);
+        const chopLFOGain = this.ctx.createGain();
+        chopLFOGain.gain.setValueAtTime(0.85, t);
+
+        this.heliNoiseGain = this.ctx.createGain();
+        this.heliNoiseGain.gain.setValueAtTime(0.2, t);
+
+        chopLFO.connect(chopLFOGain);
+        chopLFOGain.connect(this.heliNoiseGain.gain);
+
+        whiteNoise.connect(noiseFilter);
+        noiseFilter.connect(this.heliNoiseGain);
+
+        oscFilter.connect(this.heliGain);
+        this.heliNoiseGain.connect(this.heliGain);
+
+        this.heliGain.connect(this.masterGain);
+
+        this.heliOsc.start();
+        whiteNoise.start();
+        chopLFO.start();
+      }
+
+      // Deep Sub-Bass Volcano Rumble (Tectonic Shaking)
+      setupVolcanoRumbleAudio() {
+        const t = this.ctx.currentTime;
+        this.volcanoRumbleGain = this.ctx.createGain();
+        this.volcanoRumbleGain.gain.setValueAtTime(0.12, t);
+
+        // Seismic sub oscillator (38 Hz)
+        const subOsc = this.ctx.createOscillator();
+        subOsc.type = 'triangle';
+        subOsc.frequency.setValueAtTime(36, t);
+
+        // Slow tectonic modulation
+        const subLFO = this.ctx.createOscillator();
+        subLFO.frequency.setValueAtTime(0.6, t);
+        const subLFOGain = this.ctx.createGain();
+        subLFOGain.gain.setValueAtTime(6, t);
+        subLFO.connect(subLFOGain);
+        subLFOGain.connect(subOsc.frequency);
+
+        // Lowpass filtered pink/brown noise
+        const bufferSize = this.ctx.sampleRate * 2;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const out = noiseBuffer.getChannelData(0);
+        let b0 = 0, b1 = 0, b2 = 0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          b0 = 0.99 * b0 + white * 0.05;
+          b1 = 0.96 * b1 + white * 0.11;
+          b2 = 0.86 * b2 + white * 0.25;
+          out[i] = (b0 + b1 + b2) * 0.5;
+        }
+
+        const brownNoise = this.ctx.createBufferSource();
+        brownNoise.buffer = noiseBuffer;
+        brownNoise.loop = true;
+
+        const rumbleFilter = this.ctx.createBiquadFilter();
+        rumbleFilter.type = 'lowpass';
+        rumbleFilter.frequency.setValueAtTime(75, t);
+        rumbleFilter.Q.setValueAtTime(4.0, t);
+
+        subOsc.connect(this.volcanoRumbleGain);
+        brownNoise.connect(rumbleFilter);
+        rumbleFilter.connect(this.volcanoRumbleGain);
+
+        this.volcanoRumbleGain.connect(this.masterGain);
+
+        subOsc.start();
+        subLFO.start();
+        brownNoise.start();
+      }
+
+      // Heavy Sizzling Acid Rain
+      setupAcidRainAudio() {
+        const t = this.ctx.currentTime;
+        this.acidRainGain = this.ctx.createGain();
+        this.acidRainGain.gain.setValueAtTime(0.08, t);
+
+        const bufferSize = this.ctx.sampleRate * 2;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const out = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          out[i] = Math.random() * 2 - 1;
+        }
+        const rainNoise = this.ctx.createBufferSource();
+        rainNoise.buffer = noiseBuffer;
+        rainNoise.loop = true;
+
+        const rainFilter = this.ctx.createBiquadFilter();
+        rainFilter.type = 'highpass';
+        rainFilter.frequency.setValueAtTime(1400, t);
+
+        const hissFilter = this.ctx.createBiquadFilter();
+        hissFilter.type = 'peaking';
+        hissFilter.frequency.setValueAtTime(4500, t);
+        hissFilter.gain.setValueAtTime(6, t);
+
+        rainNoise.connect(rainFilter);
+        rainFilter.connect(hissFilter);
+        hissFilter.connect(this.acidRainGain);
+
+        this.acidRainGain.connect(this.masterGain);
+        rainNoise.start();
+      }
+
+      // Ocean Surf / Tsunami Roar
+      setupOceanSurfAudio() {
+        const t = this.ctx.currentTime;
+        this.oceanSurfGain = this.ctx.createGain();
+        this.oceanSurfGain.gain.setValueAtTime(0.14, t);
+
+        const bufferSize = this.ctx.sampleRate * 3;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const out = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          out[i] = (Math.random() * 2 - 1) * 0.8;
+        }
+        const oceanNoise = this.ctx.createBufferSource();
+        oceanNoise.buffer = noiseBuffer;
+        oceanNoise.loop = true;
+
+        const oceanFilter = this.ctx.createBiquadFilter();
+        oceanFilter.type = 'lowpass';
+        oceanFilter.frequency.setValueAtTime(220, t);
+
+        // Cyclic surf sweep
+        const surfLFO = this.ctx.createOscillator();
+        surfLFO.frequency.setValueAtTime(0.12, t);
+        const surfGainMod = this.ctx.createGain();
+        surfGainMod.gain.setValueAtTime(120, t);
+        surfLFO.connect(surfGainMod);
+        surfGainMod.connect(oceanFilter.frequency);
+
+        oceanNoise.connect(oceanFilter);
+        oceanFilter.connect(this.oceanSurfGain);
+        this.oceanSurfGain.connect(this.masterGain);
+
+        oceanNoise.start();
+        surfLFO.start();
+      }
+
+      // One-Shot: Volcano Massive Explosion Sound
+      playVolcanoExplosion() {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        // Massive noise burst
+        const bufferSize = this.ctx.sampleRate * 4;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const noiseSource = this.ctx.createBufferSource();
+        noiseSource.buffer = noiseBuffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1800, t);
+        filter.frequency.exponentialRampToValueAtTime(50, t + 3.5);
+
+        const expGain = this.ctx.createGain();
+        expGain.gain.setValueAtTime(1.0, t);
+        expGain.gain.exponentialRampToValueAtTime(0.001, t + 3.8);
+
+        // Sub-bass detonation thump
+        const subOsc = this.ctx.createOscillator();
+        subOsc.type = 'sine';
+        subOsc.frequency.setValueAtTime(120, t);
+        subOsc.frequency.exponentialRampToValueAtTime(28, t + 1.8);
+
+        const subGain = this.ctx.createGain();
+        subGain.gain.setValueAtTime(0.9, t);
+        subGain.gain.exponentialRampToValueAtTime(0.001, t + 2.5);
+
+        subOsc.connect(subGain);
+        subGain.connect(this.masterGain);
+
+        noiseSource.connect(filter);
+        filter.connect(expGain);
+        expGain.connect(this.masterGain);
+
+        subOsc.start(t);
+        subOsc.stop(t + 2.6);
+        noiseSource.start(t);
+        noiseSource.stop(t + 4.0);
+      }
+
+      // One-Shot: Meteor Scream & Impact Explosion
+      playMeteorExplosion() {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        // Concussive supersonic shock crack
+        const osc = this.ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(380, t);
+        osc.frequency.exponentialRampToValueAtTime(42, t + 1.2);
+
+        const oscGain = this.ctx.createGain();
+        oscGain.gain.setValueAtTime(0.7, t);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(800, t);
+        filter.frequency.exponentialRampToValueAtTime(80, t + 1.2);
+
+        osc.connect(filter);
+        filter.connect(oscGain);
+        oscGain.connect(this.masterGain);
+
+        osc.start(t);
+        osc.stop(t + 1.5);
+
+        // Distant explosive reverberation
+        const bufferSize = this.ctx.sampleRate * 2.5;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const boomSource = this.ctx.createBufferSource();
+        boomSource.buffer = noiseBuffer;
+
+        const boomFilter = this.ctx.createBiquadFilter();
+        boomFilter.type = 'bandpass';
+        boomFilter.frequency.setValueAtTime(140, t);
+        boomFilter.Q.setValueAtTime(2.0, t);
+
+        const boomGain = this.ctx.createGain();
+        boomGain.gain.setValueAtTime(0.8, t);
+        boomGain.gain.exponentialRampToValueAtTime(0.001, t + 2.2);
+
+        boomSource.connect(boomFilter);
+        boomFilter.connect(boomGain);
+        boomGain.connect(this.masterGain);
+
+        boomSource.start(t);
+        boomSource.stop(t + 2.5);
+      }
+
+      // One-Shot: Lightning Strike & Thunderclap
+      playLightningThunder() {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        // Sharp electrostatic snap
+        const snapOsc = this.ctx.createOscillator();
+        snapOsc.type = 'triangle';
+        snapOsc.frequency.setValueAtTime(2200, t);
+        snapOsc.frequency.exponentialRampToValueAtTime(100, t + 0.15);
+
+        const snapGain = this.ctx.createGain();
+        snapGain.gain.setValueAtTime(0.8, t);
+        snapGain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+
+        snapOsc.connect(snapGain);
+        snapGain.connect(this.masterGain);
+        snapOsc.start(t);
+        snapOsc.stop(t + 0.2);
+
+        // Rolling thunder delayed by ~0.35s
+        setTimeout(() => {
+          if (!this.initialized || this.isMuted) return;
+          const thTime = this.ctx.currentTime;
+          const bufferSize = this.ctx.sampleRate * 3.2;
+          const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const data = noiseBuffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+          }
+          const thSource = this.ctx.createBufferSource();
+          thSource.buffer = noiseBuffer;
+
+          const thFilter = this.ctx.createBiquadFilter();
+          thFilter.type = 'lowpass';
+          thFilter.frequency.setValueAtTime(280, thTime);
+          thFilter.frequency.exponentialRampToValueAtTime(45, thTime + 2.8);
+
+          const thGain = this.ctx.createGain();
+          thGain.gain.setValueAtTime(0.95, thTime);
+          thGain.gain.exponentialRampToValueAtTime(0.001, thTime + 3.0);
+
+          thSource.connect(thFilter);
+          thFilter.connect(thGain);
+          thGain.connect(this.masterGain);
+
+          thSource.start(thTime);
+          thSource.stop(thTime + 3.2);
+        }, 320);
+      }
+
+      // One-Shot: Godzilla Mocking Laugh & Titan Roar!
+      playGodzillaLaughRoar() {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        // Dual FM synthesis with guttural pitch shudder for kaiju laugh ("HA - HA - HAAA - ROAAAR")
+        const carrier = this.ctx.createOscillator();
+        carrier.type = 'sawtooth';
+        carrier.frequency.setValueAtTime(140, t);
+        carrier.frequency.exponentialRampToValueAtTime(210, t + 0.8);
+        carrier.frequency.exponentialRampToValueAtTime(65, t + 3.6);
+
+        // Guttural laughter tremolo LFO (chuckles / pulses)
+        const laughLFO = this.ctx.createOscillator();
+        laughLFO.frequency.setValueAtTime(5.5, t); // laughing cadence
+        const laughLFOGain = this.ctx.createGain();
+        laughLFOGain.gain.setValueAtTime(35, t);
+        laughLFO.connect(laughLFOGain);
+        laughLFOGain.connect(carrier.frequency);
+
+        // Formant filters to give resonant monster throat acoustics
+        const formant1 = this.ctx.createBiquadFilter();
+        formant1.type = 'bandpass';
+        formant1.frequency.setValueAtTime(450, t);
+        formant1.Q.setValueAtTime(3.5, t);
+
+        const formant2 = this.ctx.createBiquadFilter();
+        formant2.type = 'peaking';
+        formant2.frequency.setValueAtTime(1150, t);
+        formant2.gain.setValueAtTime(12, t);
+
+        // Gain envelope for laugh pulses
+        const roarGain = this.ctx.createGain();
+        roarGain.gain.setValueAtTime(0.01, t);
+        roarGain.gain.linearRampToValueAtTime(0.9, t + 0.3);
+        roarGain.gain.setValueAtTime(0.7, t + 1.2);
+        roarGain.gain.linearRampToValueAtTime(1.0, t + 2.0); // final roaring climax
+        roarGain.gain.exponentialRampToValueAtTime(0.001, t + 4.2);
+
+        // Metallic radioactive overtone
+        const radioOsc = this.ctx.createOscillator();
+        radioOsc.type = 'sine';
+        radioOsc.frequency.setValueAtTime(880, t);
+        radioOsc.frequency.exponentialRampToValueAtTime(320, t + 3.5);
+        const radioGain = this.ctx.createGain();
+        radioGain.gain.setValueAtTime(0.22, t);
+        radioGain.gain.exponentialRampToValueAtTime(0.001, t + 3.8);
+
+        carrier.connect(formant1);
+        formant1.connect(formant2);
+        formant2.connect(roarGain);
+        roarGain.connect(this.masterGain);
+
+        radioOsc.connect(radioGain);
+        radioGain.connect(this.masterGain);
+
+        carrier.start(t);
+        laughLFO.start(t);
+        radioOsc.start(t);
+
+        carrier.stop(t + 4.3);
+        laughLFO.stop(t + 4.3);
+        radioOsc.stop(t + 4.0);
+      }
+
+      updateContinuousLayers(camMode, volcanoElevation, time) {
+        if (!this.initialized || this.isMuted) return;
+        const now = this.ctx.currentTime;
+
+        // Helicopter sound louder in chopper cam or when choppers appear
+        if (camMode === 'helicopter') {
+          this.heliGain.gain.setTargetAtTime(0.42, now, 0.2);
+        } else if (time > 25) {
+          this.heliGain.gain.setTargetAtTime(0.18, now, 0.3);
+        } else {
+          this.heliGain.gain.setTargetAtTime(0.02, now, 0.4);
+        }
+
+        // Volcano shaking rumble proportional to elevation & eruption
+        const rumbleAmp = Math.min(0.45, Math.max(0.08, (volcanoElevation + 80) / 180));
+        this.volcanoRumbleGain.gain.setTargetAtTime(rumbleAmp, now, 0.2);
+
+        // Acid rain intensity increases with storm
+        if (time > 20) {
+          this.acidRainGain.gain.setTargetAtTime(0.12, now, 0.3);
+        } else {
+          this.acidRainGain.gain.setTargetAtTime(0.04, now, 0.3);
+        }
+
+        // Underwater muffles high frequencies
+        if (camMode === 'underwater') {
+          this.masterGain.gain.setTargetAtTime(0.5, now, 0.2);
+        } else {
+          this.masterGain.gain.setTargetAtTime(0.75, now, 0.2);
+        }
+      }
+
+      setVolume(val) {
+        if (!this.masterGain) return;
+        this.masterGain.gain.setValueAtTime(val, this.ctx.currentTime);
+      }
+    }
+
+    const soundEngine = new CataclysmAudioEngine();
+
+    function startExperience() {
+      document.getElementById('sound-splash').classList.add('hidden');
+      soundEngine.init();
+      if (soundEngine.ctx && soundEngine.ctx.state === 'suspended') {
+        soundEngine.ctx.resume();
+      }
+    }
+
+    function toggleAudioEngine() {
+      if (!soundEngine.initialized) {
+        soundEngine.init();
+      }
+      soundEngine.isMuted = !soundEngine.isMuted;
+      const btn = document.getElementById('audio-toggle-btn');
+      const icon = document.getElementById('audio-icon');
+      const label = document.getElementById('audio-label');
+      if (soundEngine.isMuted) {
+        soundEngine.setVolume(0);
+        icon.innerText = '🔇';
+        label.innerText = 'SOUND FX: OFF';
+      } else {
+        const val = parseFloat(document.getElementById('master-vol').value);
+        soundEngine.setVolume(val);
+        icon.innerText = '🔊';
+        label.innerText = 'SOUND FX: ON';
+      }
+    }
+
+    function setMasterVolume(v) {
+      if (!soundEngine.isMuted) {
+        soundEngine.setVolume(parseFloat(v));
+      }
+    }
+
+    /* =========================================================================
+       3. THREE.JS 3D SCENE SETUP & PERFORMANCE OPTIMIZATIONS
+       ========================================================================= */
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x060c18, 0.0028);
+
+    const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 1, 3500);
+    camera.position.set(0, 80, 260);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // OrbitControls for Free Cam
+    const orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+    orbitControls.enableDamping = true;
+    orbitControls.dampingFactor = 0.05;
+    orbitControls.maxDistance = 1200;
+    orbitControls.minDistance = 10;
+    orbitControls.enabled = false;
+
+    // Lighting Rig
+    const ambientLight = new THREE.AmbientLight(0x0a1628, 1.2);
+    scene.add(ambientLight);
+
+    const stormLight = new THREE.DirectionalLight(0x38bdf8, 1.4);
+    stormLight.position.set(120, 300, -100);
+    stormLight.castShadow = true;
+    stormLight.shadow.mapSize.width = 2048;
+    stormLight.shadow.mapSize.height = 2048;
+    scene.add(stormLight);
+
+    // Dynamic Lightning Strobe Light
+    const lightningLight = new THREE.PointLight(0xdff4ff, 0, 1500, 1.2);
+    lightningLight.position.set(0, 350, 0);
+    scene.add(lightningLight);
+
+    // Magma Caldera Glowing Light
+    const calderaLight = new THREE.PointLight(0xff4500, 3.5, 300, 1.6);
+    scene.add(calderaLight);
+
+    /* =========================================================================
+       4. PROCEDURAL SKY DOME & APOCALYPTIC CLOUD LAYER
+       ========================================================================= */
+    const skyGeo = new THREE.SphereGeometry(1800, 32, 24);
+    const skyMat = new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      uniforms: {
+        time: { value: 0 },
+        lightningFlash: { value: 0 },
+        acidGlow: { value: 0 }
+      },
+      vertexShader: `
+        varying vec3 vWorldPosition;
+        void main() {
+          vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+          gl_Position = projectionMatrix * viewMatrix * vec4(vWorldPosition, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float time;
+        uniform float lightningFlash;
+        uniform float acidGlow;
+        varying vec3 vWorldPosition;
+
+        void main() {
+          vec3 dir = normalize(vWorldPosition);
+          float y = dir.y;
+
+          // Stormy twilight horizon transition
+          vec3 deepSky = vec3(0.015, 0.03, 0.07);
+          vec3 cloudColor = vec3(0.04, 0.06, 0.12);
+          vec3 horizonLava = vec3(0.25, 0.06, 0.01);
+          vec3 acidTint = vec3(0.08, 0.22, 0.05);
+
+          vec3 col = mix(horizonLava, cloudColor, smoothstep(-0.1, 0.35, y));
+          col = mix(col, deepSky, smoothstep(0.35, 0.9, y));
+
+          // Acid storm toxic clouds
+          col = mix(col, acidTint, acidGlow * 0.45);
+
+          // Lightning flash burst
+          col += vec3(0.6, 0.85, 1.0) * lightningFlash * 1.5;
+
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `
+    });
+    const skyDome = new THREE.Mesh(skyGeo, skyMat);
+    scene.add(skyDome);
+
+    /* =========================================================================
+       5. HIGH-FIDELITY OCEAN SHADER WITH DYNAMIC TSUNAMI RIPPLES
+       ========================================================================= */
+    const oceanGeo = new THREE.PlaneGeometry(2400, 2400, 160, 160);
+    oceanGeo.rotateX(-Math.PI / 2);
+
+    const oceanMat = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 },
+        tsunamiRadius: { value: 0 },
+        tsunamiAmp: { value: 0 },
+        lightningIntensity: { value: 0 },
+        calderaPos: { value: new THREE.Vector3(0, 0, 0) },
+        godzillaPos: { value: new THREE.Vector3(140, 0, 80) }
+      },
+      vertexShader: `
+        uniform float time;
+        uniform float tsunamiRadius;
+        uniform float tsunamiAmp;
+        uniform vec3 calderaPos;
+        uniform vec3 godzillaPos;
+        varying vec3 vWorldPos;
+        varying vec3 vNormal;
+        varying float vTsunamiFoam;
+
+        void main() {
+          vec3 p = position;
+
+          // 1. Turbulent background ocean swells (sum of sines)
+          float wave1 = sin(p.x * 0.015 + time * 1.8) * cos(p.z * 0.018 + time * 1.4) * 4.2;
+          float wave2 = sin(p.x * 0.038 - time * 2.5) * sin(p.z * 0.032 + time * 2.1) * 2.2;
+          float wave3 = sin(p.x * 0.08 + p.z * 0.07 + time * 3.8) * 1.1;
+          float baseWaves = wave1 + wave2 + wave3;
+
+          // 2. Giant Tsunami Ripple radiating from Rising Volcano caldera (0,0)
+          float distToCaldera = length(p.xz - calderaPos.xz);
+          float ringDist = abs(distToCaldera - tsunamiRadius);
+          float ringFalloff = exp(-ringDist * 0.022);
+          float tsunamiWave = sin(ringDist * 0.14 - time * 3.0) * ringFalloff * tsunamiAmp;
+
+          // 3. Secondary wake wave from Godzilla's stomps
+          float distToGz = length(p.xz - godzillaPos.xz);
+          float gzWake = sin(distToGz * 0.12 - time * 4.0) * exp(-distToGz * 0.03) * 6.5;
+
+          float totalDisplacement = baseWaves + tsunamiWave + gzWake;
+          p.y += totalDisplacement;
+
+          vWorldPos = (modelMatrix * vec4(p, 1.0)).xyz;
+          vNormal = normalize(vec3(
+            -cos(p.x * 0.02) * 0.15,
+            1.0,
+            -sin(p.z * 0.02) * 0.15
+          ));
+          vTsunamiFoam = smoothstep(6.0, 18.0, tsunamiWave) + smoothstep(3.5, 8.0, gzWake);
+
+          gl_Position = projectionMatrix * viewMatrix * vec4(vWorldPos, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float lightningIntensity;
+        uniform float time;
+        varying vec3 vWorldPos;
+        varying vec3 vNormal;
+        varying float vTsunamiFoam;
+
+        void main() {
+          vec3 viewDir = normalize(cameraPosition - vWorldPos);
+          vec3 norm = normalize(vNormal);
+
+          // Deep abyssal ocean colors
+          vec3 deepWater = vec3(0.01, 0.04, 0.09);
+          vec3 shallowWater = vec3(0.03, 0.12, 0.22);
+          vec3 foamColor = vec3(0.85, 0.94, 0.98);
+          vec3 acidReflect = vec3(0.15, 0.45, 0.12);
+
+          // Fresnel reflection
+          float fresnel = pow(1.0 - max(dot(viewDir, norm), 0.0), 3.5);
+
+          vec3 oceanCol = mix(deepWater, shallowWater, fresnel * 0.65);
+
+          // Acid rain green sheen on water
+          oceanCol = mix(oceanCol, acidReflect, 0.18);
+
+          // Tsunami crest foam
+          oceanCol = mix(oceanCol, foamColor, clamp(vTsunamiFoam, 0.0, 0.95));
+
+          // Lightning reflection highlight
+          float spec = pow(max(dot(reflect(-normalize(vec3(0.2, 0.8, -0.4)), norm), viewDir), 0.0), 32.0);
+          oceanCol += vec3(0.7, 0.9, 1.0) * spec * (0.8 + lightningIntensity * 3.5);
+
+          // Lightning screen burst reflection
+          oceanCol += vec3(0.4, 0.6, 0.8) * lightningIntensity * 0.8;
+
+          gl_FragColor = vec4(oceanCol, 0.92);
+        }
+      `,
+      transparent: true
+    });
+
+    const oceanMesh = new THREE.Mesh(oceanGeo, oceanMat);
+    scene.add(oceanMesh);
+
+    /* =========================================================================
+       6. PROCEDURAL RISING VOLCANO & CALDERA MAGMA SYSTEM
+       ========================================================================= */
+    const volcanoGroup = new THREE.Group();
+    volcanoGroup.position.set(0, -115, 0); // starts submerged!
+    scene.add(volcanoGroup);
+
+    // Procedural Mountain Cone with Jagged Basalt Ridges
+    const mountainGeo = new THREE.CylinderGeometry(28, 220, 190, 64, 48, false);
+    // Sculpt crater and jagged fissures directly on vertices
+    const posAttr = mountainGeo.attributes.position;
+    for (let i = 0; i < posAttr.count; i++) {
+      let x = posAttr.getX(i);
+      let y = posAttr.getY(i);
+      let z = posAttr.getZ(i);
+
+      // Radial angle and distance
+      const angle = Math.atan2(z, x);
+      const rad = Math.sqrt(x * x + z * z);
+
+      // Deep volcanic caldera dip at the summit
+      if (y > 75) {
+        const craterFactor = (y - 75) / 20.0;
+        if (rad < 32) {
+          y -= (32 - rad) * 0.85; // dip downward to form inner magma basin
+        }
+      }
+
+      // Procedural crags and volcanic fissures
+      const noise = Math.sin(angle * 7.0 + y * 0.06) * 12.0 +
+                    Math.cos(angle * 13.0 - y * 0.04) * 6.5 +
+                    Math.sin(angle * 3.0 + rad * 0.08) * 14.0;
+      x += (x / (rad + 0.001)) * noise;
+      z += (z / (rad + 0.001)) * noise;
+
+      posAttr.setXYZ(i, x, y, z);
+    }
+    mountainGeo.computeVertexNormals();
+
+    // Mountain Material with Glowing Lava Veins
+    const mountainMat = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 },
+        eruptionHeat: { value: 0.5 },
+        lightningFlash: { value: 0 }
+      },
+      vertexShader: `
+        varying vec3 vWorldPos;
+        varying vec3 vNormal;
+        void main() {
+          vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * viewMatrix * vec4(vWorldPos, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float time;
+        uniform float eruptionHeat;
+        uniform float lightningFlash;
+        varying vec3 vWorldPos;
+        varying vec3 vNormal;
+
+        void main() {
+          // Basalt dark crag rock
+          vec3 darkBasalt = vec3(0.04, 0.045, 0.06);
+          vec3 warmRock = vec3(0.12, 0.08, 0.07);
+
+          // Lava veins running through rock fissures
+          float veinPattern = sin(vWorldPos.y * 0.25 + sin(vWorldPos.x * 0.15) * 4.0) *
+                              cos(vWorldPos.z * 0.25 + time * 1.5);
+          float isLava = smoothstep(0.72, 0.95, veinPattern) * eruptionHeat;
+
+          vec3 lavaColor = mix(vec3(1.0, 0.15, 0.0), vec3(1.0, 0.8, 0.1), isLava);
+
+          // Height based lighting (caldera glowing hot at top)
+          float summitGlow = smoothstep(30.0, 95.0, vWorldPos.y) * eruptionHeat;
+          lavaColor += vec3(1.0, 0.3, 0.0) * summitGlow * 1.2;
+
+          vec3 baseColor = mix(darkBasalt, warmRock, 0.4);
+          vec3 finalColor = mix(baseColor, lavaColor, isLava * 0.85 + summitGlow * 0.5);
+
+          // Diffuse storm lighting
+          vec3 lightDir = normalize(vec3(0.3, 0.8, -0.5));
+          float diff = max(dot(vNormal, lightDir), 0.0);
+          finalColor += baseColor * diff * 0.6;
+
+          // Lightning illumination
+          finalColor += vec3(0.4, 0.6, 0.8) * lightningFlash;
+
+          gl_FragColor = vec4(finalColor, 1.0);
+        }
+      `
+    });
+
+    const mountainMesh = new THREE.Mesh(mountainGeo, mountainMat);
+    mountainMesh.castShadow = true;
+    mountainMesh.receiveShadow = true;
+    volcanoGroup.add(mountainMesh);
+
+    // Caldera Molten Magma Lake (Inside the Crater)
+    const magmaGeo = new THREE.CircleGeometry(26, 32);
+    magmaGeo.rotateX(-Math.PI / 2);
+    const magmaMat = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 }
+      },
+      vertexShader: `
+        uniform float time;
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          vec3 p = position;
+          p.y += sin(p.x * 0.2 + time * 3.0) * cos(p.z * 0.2 + time * 2.5) * 1.5;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float time;
+        varying vec2 vUv;
+        void main() {
+          vec2 c = vUv - vec2(0.5);
+          float d = length(c);
+          float swirl = sin(d * 20.0 - time * 4.0) * cos(atan(c.y, c.x) * 4.0 + time * 2.0);
+          vec3 magmaCore = vec3(1.0, 0.95, 0.4); // white-yellow heat
+          vec3 magmaMid = vec3(1.0, 0.35, 0.0);  // blazing orange
+          vec3 magmaCrust = vec3(0.2, 0.03, 0.01);// cooling crust
+          vec3 col = mix(magmaMid, magmaCore, smoothstep(0.0, 0.8, swirl));
+          col = mix(col, magmaCrust, smoothstep(0.35, 0.5, d));
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `
+    });
+    const magmaLake = new THREE.Mesh(magmaGeo, magmaMat);
+    magmaLake.position.set(0, 84, 0);
+    volcanoGroup.add(magmaLake);
+
+    // Erupting Volcanic Lava Bombs & Fire Particles
+    const LAVA_BOMB_COUNT = 80;
+    const bombGeo = new THREE.DodecahedronGeometry(1.6, 1);
+    const bombMat = new THREE.MeshBasicMaterial({ color: 0xff6600 });
+    const lavaBombs = new THREE.InstancedMesh(bombGeo, bombMat, LAVA_BOMB_COUNT);
+    const bombData = [];
+    const dummy = new THREE.Object3D();
+
+    for (let i = 0; i < LAVA_BOMB_COUNT; i++) {
+      bombData.push({
+        pos: new THREE.Vector3(0, 84, 0),
+        vel: new THREE.Vector3(
+          (Math.random() - 0.5) * 45,
+          40 + Math.random() * 55,
+          (Math.random() - 0.5) * 45
+        ),
+        active: false,
+        timer: Math.random() * 3.0
+      });
+      dummy.position.set(0, -999, 0);
+      dummy.updateMatrix();
+      lavaBombs.setMatrixAt(i, dummy.matrix);
+    }
+    lavaBombs.instanceMatrix.needsUpdate = true;
+    volcanoGroup.add(lavaBombs);
+
+    /* =========================================================================
+       7. INSTANCED ACID RAIN SYSTEM (12,000+ TOXIC RAINDROPS)
+       ========================================================================= */
+    const RAIN_COUNT = 12000;
+    const rainGeo = new THREE.CylinderGeometry(0.08, 0.08, 3.8, 4);
+    rainGeo.rotateX(0.18); // angled rain with wind shear
+    const rainMat = new THREE.MeshBasicMaterial({
+      color: 0x72ff38, // neon acid green
+      transparent: true,
+      opacity: 0.55
+    });
+    const rainInstanced = new THREE.InstancedMesh(rainGeo, rainMat, RAIN_COUNT);
+    const rainVelocities = new Float32Array(RAIN_COUNT * 3);
+    const rainPositions = new Float32Array(RAIN_COUNT * 3);
+
+    for (let i = 0; i < RAIN_COUNT; i++) {
+      const x = (Math.random() - 0.5) * 1400;
+      const y = Math.random() * 500;
+      const z = (Math.random() - 0.5) * 1400;
+
+      rainPositions[i * 3] = x;
+      rainPositions[i * 3 + 1] = y;
+      rainPositions[i * 3 + 2] = z;
+
+      rainVelocities[i * 3] = 4.0; // wind drift
+      rainVelocities[i * 3 + 1] = -120 - Math.random() * 80; // falling speed
+      rainVelocities[i * 3 + 2] = 2.0;
+
+      dummy.position.set(x, y, z);
+      dummy.updateMatrix();
+      rainInstanced.setMatrixAt(i, dummy.matrix);
+    }
+    rainInstanced.instanceMatrix.needsUpdate = true;
+    scene.add(rainInstanced);
+
+    /* =========================================================================
+       8. METEORITE SHOWER SYSTEM & EXPLOSION SHOCKWAVES
+       ========================================================================= */
+    const METEOR_COUNT = 5;
+    const meteors = [];
+
+    // Explosion Fireball & Shockwave Ring Geometry
+    const explosionGeo = new THREE.SphereGeometry(1, 24, 18);
+    const shockwaveRingGeo = new THREE.RingGeometry(1, 3, 32);
+    shockwaveRingGeo.rotateX(-Math.PI / 2);
+
+    for (let i = 0; i < METEOR_COUNT; i++) {
+      const meteorGroup = new THREE.Group();
+
+      // Rocky incandescent core
+      const coreGeo = new THREE.DodecahedronGeometry(3.5, 2);
+      const coreMat = new THREE.MeshStandardMaterial({
+        color: 0xff3300,
+        emissive: 0xffaa00,
+        emissiveIntensity: 2.5,
+        roughness: 0.4
+      });
+      const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+      meteorGroup.add(coreMesh);
+
+      // Fiery plasma tail (Cone)
+      const tailGeo = new THREE.ConeGeometry(3.2, 28, 16);
+      tailGeo.rotateX(Math.PI / 2);
+      const tailMat = new THREE.MeshBasicMaterial({
+        color: 0xff5500,
+        transparent: true,
+        opacity: 0.75
+      });
+      const tailMesh = new THREE.Mesh(tailGeo, tailMat);
+      tailMesh.position.set(0, 0, -14);
+      meteorGroup.add(tailMesh);
+
+      // Meteor Point Light
+      const mLight = new THREE.PointLight(0xff7700, 3.0, 180);
+      meteorGroup.add(mLight);
+
+      scene.add(meteorGroup);
+
+      // Explosion fireball
+      const expMat = new THREE.MeshBasicMaterial({
+        color: 0xffaa00,
+        transparent: true,
+        opacity: 0
+      });
+      const expMesh = new THREE.Mesh(explosionGeo, expMat);
+      scene.add(expMesh);
+
+      // Expanding Shockwave Water Ring
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x00f0ff,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide
+      });
+      const ringMesh = new THREE.Mesh(shockwaveRingGeo, ringMat);
+      scene.add(ringMesh);
+
+      meteors.push({
+        group: meteorGroup,
+        expMesh: expMesh,
+        ringMesh: ringMesh,
+        pos: new THREE.Vector3(0, -999, 0),
+        target: new THREE.Vector3(0, 0, 0),
+        dir: new THREE.Vector3(0, 0, 0),
+        speed: 380,
+        active: false,
+        exploding: false,
+        expScale: 0,
+        triggerTime: 48 + i * 7.5 // staggered timings during Phase 4 & 5
+      });
+    }
+
+    /* =========================================================================
+       9. OBSERVATION MILITARY HELICOPTERS (CIRCLING WITH SPOTLIGHTS)
+       ========================================================================= */
+    const helicopters = [];
+    const HELICOPTER_COUNT = 3;
+
+    function buildHelicopterModel() {
+      const chopper = new THREE.Group();
+
+      // Fuselage Body
+      const bodyGeo = new THREE.BoxGeometry(4.2, 3.2, 11);
+      const chopperMat = new THREE.MeshStandardMaterial({
+        color: 0x1f2937, // dark naval grey
+        metalness: 0.8,
+        roughness: 0.25
+      });
+      const bodyMesh = new THREE.Mesh(bodyGeo, chopperMat);
+      chopper.add(bodyMesh);
+
+      // Cockpit Canopy (Reflective Glass)
+      const cockpitGeo = new THREE.BoxGeometry(3.6, 2.4, 4.5);
+      const glassMat = new THREE.MeshStandardMaterial({
+        color: 0x00f0ff,
+        emissive: 0x003366,
+        roughness: 0.1,
+        metalness: 0.9,
+        transparent: true,
+        opacity: 0.75
+      });
+      const cockpitMesh = new THREE.Mesh(cockpitGeo, glassMat);
+      cockpitMesh.position.set(0, 0.4, 4.8);
+      chopper.add(cockpitMesh);
+
+      // Tail Boom
+      const tailGeo = new THREE.CylinderGeometry(0.7, 1.1, 14, 8);
+      tailGeo.rotateX(Math.PI / 2);
+      const tailMesh = new THREE.Mesh(tailGeo, chopperMat);
+      tailMesh.position.set(0, 0.6, -9.5);
+      chopper.add(tailMesh);
+
+      // Tail Fin
+      const finGeo = new THREE.BoxGeometry(0.3, 3.8, 2.2);
+      const finMesh = new THREE.Mesh(finGeo, chopperMat);
+      finMesh.position.set(0, 2.0, -15.5);
+      chopper.add(finMesh);
+
+      // Main Rotor Mast & Blades
+      const rotorGroup = new THREE.Group();
+      rotorGroup.position.set(0, 2.2, 0.5);
+      const mastGeo = new THREE.CylinderGeometry(0.3, 0.3, 1.2, 8);
+      const mastMesh = new THREE.Mesh(mastGeo, chopperMat);
+      rotorGroup.add(mastMesh);
+
+      // 4 Long Rotor Blades
+      for (let b = 0; b < 4; b++) {
+        const bladeGeo = new THREE.BoxGeometry(0.7, 0.08, 14);
+        const bladeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+        const blade = new THREE.Mesh(bladeGeo, bladeMat);
+        blade.rotation.y = (b * Math.PI) / 2;
+        blade.position.set(0, 0.6, 0);
+        rotorGroup.add(blade);
+      }
+      chopper.add(rotorGroup);
+
+      // Tail Rotor
+      const tailRotor = new THREE.Group();
+      tailRotor.position.set(0.5, 2.8, -15.5);
+      for (let tr = 0; tr < 2; tr++) {
+        const trBladeGeo = new THREE.BoxGeometry(0.2, 2.8, 0.05);
+        const trBlade = new THREE.Mesh(trBladeGeo, new THREE.MeshBasicMaterial({ color: 0x111111 }));
+        trBlade.rotation.x = (tr * Math.PI) / 2;
+        tailRotor.add(trBlade);
+      }
+      chopper.add(tailRotor);
+
+      // Landing Skids
+      const skidMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9 });
+      for (let s of [-2.0, 2.0]) {
+        const skidGeo = new THREE.CylinderGeometry(0.18, 0.18, 11, 8);
+        skidGeo.rotateX(Math.PI / 2);
+        const skid = new THREE.Mesh(skidGeo, skidMat);
+        skid.position.set(s, -2.1, 0);
+        chopper.add(skid);
+      }
+
+      // High-Intensity Directional Searchlight SpotLight
+      const spotLight = new THREE.SpotLight(0xcceeff, 5.0, 450, Math.PI / 6, 0.35, 1.2);
+      spotLight.position.set(0, -1.8, 2.5);
+      const spotTarget = new THREE.Object3D();
+      scene.add(spotTarget);
+      spotLight.target = spotTarget;
+      chopper.add(spotLight);
+
+      // Searchlight Volumetric Light Cone
+      const coneGeo = new THREE.ConeGeometry(24, 180, 16, 1, true);
+      coneGeo.rotateX(Math.PI / 2);
+      coneGeo.translate(0, 0, 90);
+      const coneMat = new THREE.MeshBasicMaterial({
+        color: 0x99ddff,
+        transparent: true,
+        opacity: 0.18,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const coneMesh = new THREE.Mesh(coneGeo, coneMat);
+      coneMesh.position.set(0, -1.8, 2.5);
+      chopper.add(coneMesh);
+
+      // Red / Green Wingtip Strobe Lights
+      const redStrobe = new THREE.PointLight(0xff0000, 1.5, 25);
+      redStrobe.position.set(-2.4, 0.5, 0);
+      chopper.add(redStrobe);
+
+      const greenStrobe = new THREE.PointLight(0x00ff44, 1.5, 25);
+      greenStrobe.position.set(2.4, 0.5, 0);
+      chopper.add(greenStrobe);
+
+      return {
+        mesh: chopper,
+        rotorGroup: rotorGroup,
+        tailRotor: tailRotor,
+        coneMesh: coneMesh,
+        spotLight: spotLight,
+        spotTarget: spotTarget
+      };
+    }
+
+    // Initialize 3 Patrol Choppers
+    for (let c = 0; c < HELICOPTER_COUNT; c++) {
+      const hModel = buildHelicopterModel();
+      scene.add(hModel.mesh);
+      helicopters.push({
+        ...hModel,
+        radius: 170 + c * 50,
+        height: 110 + c * 35,
+        speed: 0.35 + c * 0.08,
+        angleOffset: (c * Math.PI * 2) / HELICOPTER_COUNT
+      });
+    }
+
+    /* =========================================================================
+       10. NAVAL PATROL FLEET / SHIPS (RIDING TSUNAMI WAVES)
+       ========================================================================= */
+    const boats = [];
+    const BOAT_COUNT = 3;
+
+    function buildBattleshipModel() {
+      const ship = new THREE.Group();
+
+      // Sharp Hull
+      const hullGeo = new THREE.BoxGeometry(9, 6, 38);
+      const hullMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4 });
+      const hull = new THREE.Mesh(hullGeo, hullMat);
+      ship.add(hull);
+
+      // Bridge Superstructure
+      const bridgeGeo = new THREE.BoxGeometry(6.5, 7.5, 14);
+      const bridge = new THREE.Mesh(bridgeGeo, hullMat);
+      bridge.position.set(0, 5.5, -2);
+      ship.add(bridge);
+
+      // Radar Mast & Rotating Dish
+      const mastGeo = new THREE.CylinderGeometry(0.3, 0.4, 8, 8);
+      const mast = new THREE.Mesh(mastGeo, hullMat);
+      mast.position.set(0, 12, -2);
+      ship.add(mast);
+
+      // Deck Searchlight
+      const deckLight = new THREE.SpotLight(0xffffff, 4.0, 280, Math.PI / 7, 0.4);
+      deckLight.position.set(0, 6, 14);
+      const dt = new THREE.Object3D();
+      dt.position.set(0, 40, 80);
+      ship.add(dt);
+      deckLight.target = dt;
+      ship.add(deckLight);
+
+      return ship;
+    }
+
+    for (let b = 0; b < BOAT_COUNT; b++) {
+      const boatMesh = buildBattleshipModel();
+      scene.add(boatMesh);
+      boats.push({
+        mesh: boatMesh,
+        angle: (b * Math.PI * 2) / BOAT_COUNT + 0.4,
+        distance: 280 + b * 70,
+        speed: 0.12
+      });
+    }
+
+    /* =========================================================================
+       11. GODZILLA TITAN (3D MODEL WITH ANIMATED STRIDE, SPINES & LAUGH)
+       ========================================================================= */
+    const godzilla = new THREE.Group();
+    godzilla.position.set(130, -10, 90); // starts wading in oceanic shelf
+    scene.add(godzilla);
+
+    // Godzilla Materials
+    const kaijuSkinMat = new THREE.MeshStandardMaterial({
+      color: 0x14181f, // charcoal armored scales
+      roughness: 0.85,
+      metalness: 0.2
+    });
+
+    const spineMat = new THREE.MeshStandardMaterial({
+      color: 0x00f0ff,
+      emissive: 0x00a8ff,
+      emissiveIntensity: 2.5,
+      roughness: 0.2
+    });
+
+    // 1. Torso & Pelvis
+    const torso = new THREE.Group();
+    torso.position.set(0, 45, 0);
+    godzilla.add(torso);
+
+    const chestGeo = new THREE.BoxGeometry(22, 28, 16);
+    const chestMesh = new THREE.Mesh(chestGeo, kaijuSkinMat);
+    torso.add(chestMesh);
+
+    // 2. Head & Articulated Roaring/Laughing Jaw
+    const headGroup = new THREE.Group();
+    headGroup.position.set(0, 20, 6);
+    torso.add(headGroup);
+
+    // Upper Skull & Snout
+    const skullGeo = new THREE.BoxGeometry(10, 9, 15);
+    const skullMesh = new THREE.Mesh(skullGeo, kaijuSkinMat);
+    skullMesh.position.set(0, 0, 4);
+    headGroup.add(skullMesh);
+
+    // Glowing Eyes
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+    for (let side of [-4.2, 4.2]) {
+      const eyeGeo = new THREE.SphereGeometry(0.8, 8, 8);
+      const eye = new THREE.Mesh(eyeGeo, eyeMat);
+      eye.position.set(side, 2.2, 6.5);
+      headGroup.add(eye);
+    }
+
+    // Lower Jaw (Hinged for Roaring & Laughing)
+    const jawGroup = new THREE.Group();
+    jawGroup.position.set(0, -3.8, 2);
+    const jawGeo = new THREE.BoxGeometry(8.5, 4.0, 13);
+    const jawMesh = new THREE.Mesh(jawGeo, kaijuSkinMat);
+    jawMesh.position.set(0, 0, 5.5);
+    jawGroup.add(jawMesh);
+
+    // Inner Oral Atomic Plasma Glow
+    const mouthGlow = new THREE.PointLight(0x00f0ff, 0, 35);
+    mouthGlow.position.set(0, 2, 4);
+    jawGroup.add(mouthGlow);
+
+    headGroup.add(jawGroup);
+
+    // 3. Iconic Triple-Row Dorsal Spines (Back Fins)
+    const spinePlates = [];
+    for (let r = -1; r <= 1; r++) {
+      for (let s = 0; s < 7; s++) {
+        const pSize = 1.0 - Math.abs(s - 3) * 0.16;
+        const plateGeo = new THREE.ConeGeometry(2.8 * pSize, 8.5 * pSize, 4);
+        plateGeo.rotateX(Math.PI / 6);
+        const plate = new THREE.Mesh(plateGeo, spineMat);
+        plate.position.set(r * 4.2, 12 - s * 4.5, -8 - Math.abs(r) * 1.5);
+        torso.add(plate);
+        spinePlates.push(plate);
+      }
+    }
+
+    // 4. Arms & Claws
+    const arms = [];
+    for (let side of [-1, 1]) {
+      const armGroup = new THREE.Group();
+      armGroup.position.set(side * 13, 8, 3);
+
+      const bicepGeo = new THREE.BoxGeometry(5.5, 14, 6);
+      const bicep = new THREE.Mesh(bicepGeo, kaijuSkinMat);
+      bicep.position.set(0, -5, 0);
+      armGroup.add(bicep);
+
+      const forearm = new THREE.Group();
+      forearm.position.set(0, -11, 0);
+      const foreGeo = new THREE.BoxGeometry(4.8, 12, 5.2);
+      const foreMesh = new THREE.Mesh(foreGeo, kaijuSkinMat);
+      foreMesh.position.set(0, -4, 2);
+      forearm.add(foreMesh);
+
+      // Claws
+      const clawMat = new THREE.MeshStandardMaterial({ color: 0x0a0c10, roughness: 0.3 });
+      for (let c = -1; c <= 1; c++) {
+        const clawGeo = new THREE.ConeGeometry(0.8, 3.5, 4);
+        clawGeo.rotateX(Math.PI / 4);
+        const claw = new THREE.Mesh(clawGeo, clawMat);
+        claw.position.set(c * 1.4, -9.5, 3.8);
+        forearm.add(claw);
+      }
+
+      armGroup.add(forearm);
+      torso.add(armGroup);
+      arms.push({ armGroup, forearm, side });
+    }
+
+    // 5. Massive Muscular Legs (Walking Stride Joints)
+    const legs = [];
+    for (let side of [-1, 1]) {
+      const legGroup = new THREE.Group();
+      legGroup.position.set(side * 10, -4, 0);
+
+      const thighGeo = new THREE.BoxGeometry(9.5, 20, 11);
+      const thigh = new THREE.Mesh(thighGeo, kaijuSkinMat);
+      thigh.position.set(0, -7, 0);
+      legGroup.add(thigh);
+
+      const shinGroup = new THREE.Group();
+      shinGroup.position.set(0, -16, 0);
+      const shinGeo = new THREE.BoxGeometry(8, 18, 9);
+      const shin = new THREE.Mesh(shinGeo, kaijuSkinMat);
+      shin.position.set(0, -6, -1);
+      shinGroup.add(shin);
+
+      // Giant Stomping Foot
+      const footGeo = new THREE.BoxGeometry(11, 6, 17);
+      const foot = new THREE.Mesh(footGeo, kaijuSkinMat);
+      foot.position.set(0, -15, 3.5);
+      shinGroup.add(foot);
+
+      legGroup.add(shinGroup);
+      torso.add(legGroup);
+      legs.push({ legGroup, shinGroup, foot, side });
+    }
+
+    // 6. Segmented Undulating Tail
+    const tailSegments = [];
+    let prevSeg = torso;
+    for (let t = 0; t < 7; t++) {
+      const segGroup = new THREE.Group();
+      segGroup.position.set(0, t === 0 ? -10 : -4.5, -9);
+      const segW = 14 * (1.0 - t * 0.12);
+      const segH = 12 * (1.0 - t * 0.12);
+      const segL = 15;
+      const segGeo = new THREE.BoxGeometry(segW, segH, segL);
+      const segMesh = new THREE.Mesh(segGeo, kaijuSkinMat);
+      segMesh.position.set(0, 0, -6);
+      segGroup.add(segMesh);
+
+      // Tail Spine on segment
+      const tSpineGeo = new THREE.ConeGeometry(1.8 * (1.0 - t * 0.12), 6 * (1.0 - t * 0.12), 4);
+      tSpineGeo.rotateX(Math.PI / 4);
+      const tSpine = new THREE.Mesh(tSpineGeo, spineMat);
+      tSpine.position.set(0, segH * 0.5, -6);
+      segGroup.add(tSpine);
+
+      prevSeg.add(segGroup);
+      tailSegments.push(segGroup);
+      prevSeg = segGroup;
+    }
+
+    // Atomic Spine Light
+    const atomicSpineLight = new THREE.PointLight(0x00f0ff, 3.0, 80);
+    atomicSpineLight.position.set(0, 50, -5);
+    godzilla.add(atomicSpineLight);
+
+    /* =========================================================================
+       12. MULTI-ANGLE CINEMATIC CAMERA SYSTEM
+       ========================================================================= */
+    let cameraMode = 'cinematic'; // 'cinematic' | 'helicopter' | 'boat' | 'underwater' | 'volcano' | 'above' | 'orbit'
+    const targetCamPos = new THREE.Vector3();
+    const targetCamLook = new THREE.Vector3();
+    const currentCamLook = new THREE.Vector3(0, 40, 0);
+
+    function setCameraMode(mode) {
+      cameraMode = mode;
+      orbitControls.enabled = (mode === 'orbit');
+
+      // Update button styles
+      document.querySelectorAll('.cam-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`cam-btn-${mode}`);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    /* =========================================================================
+       13. INTERACTIVE TIMELINE CONTROLLER & SCRUBBER LOGIC
+       ========================================================================= */
+    function updateTimelineUI() {
+      const progress = Math.min(1.0, Math.max(0.0, currentTime / TOTAL_DURATION));
+
+      // Update scrubber elements
+      document.getElementById('scrubber-fill').style.width = `${progress * 100}%`;
+      document.getElementById('scrubber-thumb').style.left = `${progress * 100}%`;
+
+      // Time display
+      const mins = Math.floor(currentTime / 60);
+      const secs = (currentTime % 60).toFixed(2);
+      document.getElementById('time-display').innerText =
+        `${String(mins).padStart(2, '0')}:${String(secs).padStart(5, '0')} / 01:30.00`;
+
+      // Find active chapter
+      let activeChap = CHAPTERS[0];
+      for (let ch of CHAPTERS) {
+        if (currentTime >= ch.startTime && currentTime <= ch.endTime) {
+          activeChap = ch;
+          break;
+        }
+      }
+      document.getElementById('chapter-title').innerText = activeChap.title;
+      document.getElementById('narrative-cue').innerText = activeChap.cue;
+
+      // Update Quick-Jump active button
+      const chapButtons = document.querySelectorAll('.chap-btn');
+      CHAPTERS.forEach((ch, idx) => {
+        if (chapButtons[idx]) {
+          if (currentTime >= ch.startTime && currentTime < ch.endTime) {
+            chapButtons[idx].classList.add('active');
+          } else {
+            chapButtons[idx].classList.remove('active');
+          }
+        }
+      });
+
+      // Update Telemetry Elevation
+      const currentHeight = Math.round(volcanoGroup.position.y);
+      document.getElementById('telemetry-height').innerText = `${currentHeight > 0 ? '+' : ''}${currentHeight} M`;
+      document.getElementById('seismic-badge').innerText =
+        currentHeight > 0 ? "🌋 SEISMIC: SUB-AERIAL ERUPTION" : "🌋 SEISMIC: CRUST SHEAR (MAG 9.4)";
+    }
+
+    // Scrubber interaction
+    const scrubberTrack = document.getElementById('scrubber-track');
+    let isScrubbing = false;
+
+    function calcTargetElevation(t) {
+      if (t < 16) return -115 + (t / 16) * 95;
+      if (t < 36) return -20 + ((t - 16) / 20) * 70;
+      if (t < 65) return 50 + ((t - 36) / 29) * 30;
+      return 80 + Math.sin(t * 2.0) * 1.2;
+    }
+
+    function handleScrub(e) {
+      const rect = scrubberTrack.getBoundingClientRect();
+      const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      currentTime = ratio * TOTAL_DURATION;
+      volcanoGroup.position.y = calcTargetElevation(currentTime);
+      updateTimelineUI();
+    }
+
+    scrubberTrack.addEventListener('mousedown', (e) => {
+      isScrubbing = true;
+      handleScrub(e);
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (isScrubbing) handleScrub(e);
+    });
+    window.addEventListener('mouseup', () => { isScrubbing = false; });
+    scrubberTrack.addEventListener('touchstart', (e) => {
+      isScrubbing = true;
+      handleScrub(e);
+    }, { passive: true });
+    window.addEventListener('touchmove', (e) => {
+      if (isScrubbing) handleScrub(e);
+    }, { passive: true });
+    window.addEventListener('touchend', () => { isScrubbing = false; });
+
+    function seekToTime(t) {
+      currentTime = t;
+      volcanoGroup.position.y = calcTargetElevation(t);
+      meteors.forEach(m => {
+        if (t < m.triggerTime) {
+          m.active = false;
+          m.exploding = false;
+          m.group.position.set(0, -999, 0);
+          m.expMesh.scale.setScalar(0);
+          m.ringMesh.scale.setScalar(0);
+        }
+      });
+      updateTimelineUI();
+    }
+
+    function togglePlayPause() {
+      isPlaying = !isPlaying;
+      document.getElementById('play-icon').innerText = isPlaying ? '⏸️' : '▶️';
+      document.getElementById('play-text').innerText = isPlaying ? 'PAUSE' : 'PLAY';
+    }
+
+    function restartTimeline() {
+      currentTime = 0;
+      isPlaying = true;
+      updateTimelineUI();
+    }
+
+    function setSpeed(sp, btn) {
+      playbackSpeed = sp;
+      document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('speed-label').innerText = `TIMELINE: (${sp}X)`;
+    }
+
+    function toggleLetterbox() {
+      document.body.classList.toggle('hide-bars');
+    }
+
+    // Keyboard Hotkeys
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlayPause();
+      } else if (e.key >= '1' && e.key <= '7') {
+        const modes = ['cinematic', 'helicopter', 'boat', 'underwater', 'volcano', 'above', 'orbit'];
+        setCameraMode(modes[parseInt(e.key) - 1]);
+      }
+    });
+
+    /* =========================================================================
+       14. ANIMATION & SIMULATION LOOP (60 FPS OPTIMIZED)
+       ========================================================================= */
+    const clock = new THREE.Clock();
+    let nextLightningTime = 4.0;
+    let nextGodzillaLaughTime = 68.0;
+    let tsunamiRadius = 0.0;
+    let tsunamiAmp = 0.0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const dt = clock.getDelta();
+      if (isPlaying) {
+        currentTime += dt * playbackSpeed;
+        if (currentTime > TOTAL_DURATION) {
+          currentTime = 0; // seamless replay loop
+        }
+      }
+      updateTimelineUI();
+
+      const time = currentTime;
+
+      // 1. VOLCANIC MOUNTAIN RISING FROM UNDER OCEAN
+      // Calculate target elevation from timeline curve
+      let targetElevation = -115;
+      if (time < 16) {
+        // Phase 1: Slow rise below water (-115 to -20)
+        targetElevation = -115 + (time / 16) * 95;
+      } else if (time < 36) {
+        // Phase 2: Breaches water surface (-20 to +50)
+        targetElevation = -20 + ((time - 16) / 20) * 70;
+      } else if (time < 65) {
+        // Phase 3 & 4: Towering volcano (+50 to +80)
+        targetElevation = 50 + ((time - 36) / 29) * 30;
+      } else {
+        targetElevation = 80 + Math.sin(time * 2.0) * 1.2; // tectonic tremors
+      }
+      volcanoGroup.position.y += (targetElevation - volcanoGroup.position.y) * 0.05;
+
+      // Caldera Lava Lake Pulsation
+      magmaLake.material.uniforms.time.value = time;
+      mountainMat.uniforms.time.value = time;
+      mountainMat.uniforms.eruptionHeat.value = Math.min(1.0, Math.max(0.1, (volcanoGroup.position.y + 50) / 120));
+
+      calderaLight.position.set(0, volcanoGroup.position.y + 88, 0);
+      calderaLight.intensity = 2.5 + Math.sin(time * 6.0) * 1.5;
+
+      // 2. TSUNAMI DISPLACEMENT RIPPLE PROPAGATION
+      if (volcanoGroup.position.y > -40) {
+        tsunamiRadius = ((time * 38.0) % 850);
+        tsunamiAmp = Math.max(4.0, (volcanoGroup.position.y + 40) * 0.45);
+      } else {
+        tsunamiRadius = 0.0;
+        tsunamiAmp = 0.0;
+      }
+      oceanMat.uniforms.time.value = time;
+      oceanMat.uniforms.tsunamiRadius.value = tsunamiRadius;
+      oceanMat.uniforms.tsunamiAmp.value = tsunamiAmp;
+      oceanMat.uniforms.calderaPos.value.copy(volcanoGroup.position);
+      oceanMat.uniforms.godzillaPos.value.copy(godzilla.position);
+
+      // 3. LAVA BOMBS ERUPTING FROM CALDERA
+      if (volcanoGroup.position.y > 10) {
+        for (let i = 0; i < LAVA_BOMB_COUNT; i++) {
+          const b = bombData[i];
+          b.timer -= dt * playbackSpeed;
+          if (b.timer <= 0) {
+            b.pos.set(
+              (Math.random() - 0.5) * 15,
+              volcanoGroup.position.y + 84,
+              (Math.random() - 0.5) * 15
+            );
+            b.vel.set(
+              (Math.random() - 0.5) * 60,
+              45 + Math.random() * 65,
+              (Math.random() - 0.5) * 60
+            );
+            b.timer = 1.8 + Math.random() * 2.2;
+            b.active = true;
+          }
+
+          if (b.active) {
+            b.vel.y -= 75 * dt * playbackSpeed; // gravity
+            b.pos.addScaledVector(b.vel, dt * playbackSpeed);
+            if (b.pos.y < 0) {
+              b.active = false; // splashed into ocean
+            }
+            dummy.position.copy(b.pos);
+            dummy.scale.setScalar(b.pos.y > 0 ? 1 : 0);
+            dummy.updateMatrix();
+            lavaBombs.setMatrixAt(i, dummy.matrix);
+          }
+        }
+        lavaBombs.instanceMatrix.needsUpdate = true;
+      }
+
+      // 4. ACID RAIN FALLING PARTICLES (INSTANCED MESH)
+      for (let i = 0; i < RAIN_COUNT; i++) {
+        let x = rainPositions[i * 3];
+        let y = rainPositions[i * 3 + 1];
+        let z = rainPositions[i * 3 + 2];
+
+        y += rainVelocities[i * 3 + 1] * dt * playbackSpeed;
+        x += rainVelocities[i * 3] * dt * playbackSpeed;
+
+        if (y < 0) {
+          y = 350 + Math.random() * 50;
+          x = (Math.random() - 0.5) * 1400;
+          z = (Math.random() - 0.5) * 1400;
+        }
+
+        rainPositions[i * 3] = x;
+        rainPositions[i * 3 + 1] = y;
+        rainPositions[i * 3 + 2] = z;
+
+        dummy.position.set(x, y, z);
+        dummy.updateMatrix();
+        rainInstanced.setMatrixAt(i, dummy.matrix);
+      }
+      rainInstanced.instanceMatrix.needsUpdate = true;
+
+      // 5. RANDOM PROCEDURAL LIGHTNING STRIKES & SCREEN FLASH
+      if (time > nextLightningTime) {
+        const strikeX = (Math.random() - 0.5) * 400;
+        const strikeZ = (Math.random() - 0.5) * 400;
+        lightningLight.position.set(strikeX, 220, strikeZ);
+        lightningLight.intensity = 18.0;
+
+        skyMat.uniforms.lightningFlash.value = 1.0;
+        oceanMat.uniforms.lightningIntensity.value = 1.0;
+        mountainMat.uniforms.lightningFlash.value = 1.0;
+
+        document.getElementById('lightning-flash').style.opacity = '0.9';
+        setTimeout(() => {
+          document.getElementById('lightning-flash').style.opacity = '0';
+        }, 80);
+
+        soundEngine.playLightningThunder();
+        nextLightningTime = time + 5.0 + Math.random() * 8.0;
+      } else {
+        lightningLight.intensity *= 0.88;
+        skyMat.uniforms.lightningFlash.value *= 0.88;
+        oceanMat.uniforms.lightningIntensity.value *= 0.88;
+        mountainMat.uniforms.lightningFlash.value *= 0.88;
+      }
+      skyMat.uniforms.acidGlow.value = time > 25 ? 1.0 : 0.2;
+
+      // 6. METEORITES INCURSION & EXPLOSIONS
+      meteors.forEach(m => {
+        if (time >= m.triggerTime && !m.active && !m.exploding) {
+          // Launch meteor
+          m.active = true;
+          m.pos.set(
+            (Math.random() - 0.5) * 500,
+            420,
+            (Math.random() - 0.5) * 500
+          );
+          m.target.set(
+            (Math.random() - 0.5) * 160,
+            volcanoGroup.position.y > 0 ? 20 : 0,
+            (Math.random() - 0.5) * 160
+          );
+          m.dir.subVectors(m.target, m.pos).normalize();
+          m.group.position.copy(m.pos);
+          m.group.lookAt(m.target);
+        }
+
+        if (m.active) {
+          m.pos.addScaledVector(m.dir, m.speed * dt * playbackSpeed);
+          m.group.position.copy(m.pos);
+
+          if (m.pos.y <= m.target.y + 5) {
+            // Impact!
+            m.active = false;
+            m.exploding = true;
+            m.expScale = 2.0;
+            m.expMesh.position.copy(m.target);
+            m.ringMesh.position.copy(m.target);
+            m.ringMesh.position.y = 1.5;
+            soundEngine.playMeteorExplosion();
+          }
+        }
+
+        if (m.exploding) {
+          m.expScale += 85 * dt * playbackSpeed;
+          m.expMesh.scale.setScalar(m.expScale);
+          m.expMesh.material.opacity = Math.max(0, 1.0 - m.expScale / 70);
+
+          m.ringMesh.scale.setScalar(m.expScale * 1.5);
+          m.ringMesh.material.opacity = Math.max(0, 0.9 - (m.expScale * 1.5) / 120);
+
+          if (m.expScale > 70) {
+            m.exploding = false;
+            m.group.position.set(0, -999, 0);
+          }
+        }
+      });
+
+      // Periodic Volcano Sub-Bass Shaking Explosion during Phase 4 & 6
+      if (Math.floor(time) % 22 === 0 && Math.abs(time - Math.floor(time)) < dt * playbackSpeed) {
+        soundEngine.playVolcanoExplosion();
+      }
+
+      // 7. HELICOPTERS CIRCLING & WATCHING
+      helicopters.forEach((h, idx) => {
+        const curAngle = time * h.speed + h.angleOffset;
+        const targetX = Math.cos(curAngle) * h.radius;
+        const targetZ = Math.sin(curAngle) * h.radius;
+
+        h.mesh.position.set(targetX, h.height, targetZ);
+        // Bank into turns
+        h.mesh.rotation.y = -curAngle + Math.PI / 2;
+        h.mesh.rotation.z = -0.15; // banking tilt
+
+        // Spin rotors
+        h.rotorGroup.rotation.y += 32 * dt * playbackSpeed;
+        h.tailRotor.rotation.x += 45 * dt * playbackSpeed;
+
+        // Spotlights track either Godzilla or Volcano
+        if (idx === 0) {
+          h.spotTarget.position.copy(godzilla.position).add(new THREE.Vector3(0, 35, 0));
+        } else {
+          h.spotTarget.position.set(0, volcanoGroup.position.y + 40, 0);
+        }
+      });
+
+      // 8. SHIPS RIDING TSUNAMI WAVES
+      boats.forEach(b => {
+        const bAngle = time * b.speed * 0.15 + b.angle;
+        const bx = Math.cos(bAngle) * b.distance;
+        const bz = Math.sin(bAngle) * b.distance;
+
+        // Wave height at ship pos
+        const distToCenter = Math.sqrt(bx * bx + bz * bz);
+        const wave = Math.sin(distToCenter * 0.08 - time * 2.5) * 5.0;
+        b.mesh.position.set(bx, wave + 2.5, bz);
+        b.mesh.rotation.y = -bAngle - Math.PI / 2;
+        b.mesh.rotation.z = Math.sin(time * 2.0) * 0.12; // pitch & roll
+        b.mesh.rotation.x = Math.cos(time * 1.8) * 0.08;
+      });
+
+      // 9. GODZILLA WALKING STRIDE & DEFIANT LAUGH
+      // Walking motion: striding forward in the shallows
+      const strideSpeed = 1.4;
+      const walkCycle = time * strideSpeed;
+
+      // Leg stride kinematics
+      legs[0].legGroup.rotation.x = Math.sin(walkCycle) * 0.45;
+      legs[1].legGroup.rotation.x = -Math.sin(walkCycle) * 0.45;
+
+      // Torso heaving and swishing
+      torso.position.y = 45 + Math.abs(Math.sin(walkCycle * 2.0)) * 3.5;
+      torso.rotation.y = Math.sin(walkCycle) * 0.12;
+
+      // Tail fluid undulating wave
+      tailSegments.forEach((seg, sIdx) => {
+        seg.rotation.y = Math.sin(walkCycle - sIdx * 0.6) * 0.18;
+      });
+
+      // Arms swinging
+      arms[0].armGroup.rotation.x = -Math.sin(walkCycle) * 0.35 + 0.2;
+      arms[1].armGroup.rotation.x = Math.sin(walkCycle) * 0.35 + 0.2;
+
+      // Atomic Spine Pulsation
+      const spinePulse = 0.5 + Math.sin(time * 5.0) * 0.5;
+      spineMat.emissiveIntensity = 1.5 + spinePulse * 3.0;
+      atomicSpineLight.intensity = 2.0 + spinePulse * 4.0;
+
+      // Check if it's Godzilla's Laugh / Roar moment (Phase 5: 67s - 80s)
+      const isGodzillaLaughPhase = (time >= 66 && time <= 82);
+      const kaijuAlert = document.getElementById('kaiju-alert');
+
+      if (isGodzillaLaughPhase) {
+        // Godzilla tosses head back and laughs/roars!
+        const laughWave = Math.sin(time * 12.0); // rapid chuckles / throat roar
+        headGroup.rotation.x = -0.55 + Math.sin(time * 3.0) * 0.15; // head tilted upward to sky
+        jawGroup.rotation.x = 0.65 + laughWave * 0.15; // jaw wide open laughing!
+        mouthGlow.intensity = 8.0 + laughWave * 4.0; // atomic breath glow in mouth
+
+        // Raise arms in defiant laughter gestures
+        arms[0].armGroup.rotation.x = -0.85 + Math.sin(time * 6.0) * 0.2;
+        arms[1].armGroup.rotation.x = -0.85 + Math.cos(time * 6.0) * 0.2;
+
+        kaijuAlert.classList.add('active');
+
+        if (time > nextGodzillaLaughTime) {
+          soundEngine.playGodzillaLaughRoar();
+          nextGodzillaLaughTime = time + 7.5;
+        }
+      } else {
+        headGroup.rotation.x = 0.05 + Math.sin(walkCycle) * 0.05;
+        jawGroup.rotation.x = 0.1;
+        mouthGlow.intensity = 0;
+        kaijuAlert.classList.remove('active');
+      }
+
+      // Forward walking translation
+      godzilla.position.x = 130 + Math.sin(time * 0.08) * 45;
+      godzilla.position.z = 90 + Math.cos(time * 0.08) * 35;
+      godzilla.rotation.y = time * 0.08 + Math.PI / 2;
+
+      // 10. MULTI-CAMERA PERSPECTIVES
+      if (cameraMode === 'cinematic') {
+        // Director camera: dynamic angles smoothly tailored to narrative events
+        if (time < 16) {
+          // Phase 1: Underwater tectonic shot
+          targetCamPos.set(0, -50, 180);
+          targetCamLook.set(0, volcanoGroup.position.y + 40, 0);
+        } else if (time < 32) {
+          // Phase 2: Boat sea-level facing the rising seamount & tsunami
+          targetCamPos.set(boats[0].mesh.position.x + 8, boats[0].mesh.position.y + 12, boats[0].mesh.position.z + 18);
+          targetCamLook.set(0, volcanoGroup.position.y + 40, 0);
+        } else if (time < 50) {
+          // Phase 3: Helicopter chase camera
+          const h1 = helicopters[0].mesh.position;
+          targetCamPos.set(h1.x * 1.25, h1.y + 25, h1.z * 1.25);
+          targetCamLook.set(0, volcanoGroup.position.y + 30, 0);
+        } else if (time < 67) {
+          // Phase 4: Extreme angle into volcano caldera with meteors crashing
+          targetCamPos.set(45, volcanoGroup.position.y + 115, 60);
+          targetCamLook.set(0, volcanoGroup.position.y + 75, 0);
+        } else {
+          // Phase 5 & 6: Dramatic low-angle looking up at Godzilla laughing
+          const gzPos = godzilla.position;
+          targetCamPos.set(gzPos.x + 45, 12, gzPos.z + 55);
+          targetCamLook.set(gzPos.x, gzPos.y + 55, gzPos.z);
+        }
+      } else if (cameraMode === 'helicopter') {
+        // Mounted on Helicopter #1
+        const h0 = helicopters[0].mesh.position;
+        targetCamPos.set(h0.x + 12, h0.y + 8, h0.z + 12);
+        targetCamLook.set(godzilla.position.x, 30, godzilla.position.z);
+      } else if (cameraMode === 'boat') {
+        // Sea-Level Boat deck
+        const b0 = boats[0].mesh.position;
+        targetCamPos.set(b0.x, b0.y + 8, b0.z);
+        targetCamLook.set(0, volcanoGroup.position.y + 50, 0);
+      } else if (cameraMode === 'underwater') {
+        // Deep Underwater Abyss looking up
+        targetCamPos.set(60, -75, 140);
+        targetCamLook.set(0, volcanoGroup.position.y + 30, 0);
+      } else if (cameraMode === 'volcano') {
+        // Inside Volcano Caldera
+        targetCamPos.set(15, volcanoGroup.position.y + 105, 20);
+        targetCamLook.set(0, volcanoGroup.position.y + 82, 0);
+      } else if (cameraMode === 'godzilla') {
+        // Close-up cinematic hero framing on Godzilla's face, roaring jaws and dorsal spines
+        const gzPos = godzilla.position;
+        targetCamPos.set(gzPos.x + 36, 32, gzPos.z + 46);
+        targetCamLook.set(gzPos.x, gzPos.y + 58, gzPos.z);
+      } else if (cameraMode === 'above') {
+        // Satellite / High God View
+        targetCamPos.set(0, 680, 240);
+        targetCamLook.set(0, 0, 0);
+      }
+
+      if (cameraMode !== 'orbit') {
+        camera.position.lerp(targetCamPos, 0.05);
+        currentCamLook.lerp(targetCamLook, 0.06);
+        camera.lookAt(currentCamLook);
+      } else {
+        orbitControls.update();
+      }
+
+      // Update sound engine continuous layers
+      soundEngine.updateContinuousLayers(cameraMode, volcanoGroup.position.y, time);
+
+      renderer.render(scene, camera);
+    }
+
+    /* =========================================================================
+       15. EXPLICIT WINDOW RESIZE HANDLING
+       ========================================================================= */
+    window.addEventListener('resize', onWindowResize, false);
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    }
+
+    // Start simulation loop
+    animate();
+  </script>
+</body>
+</html>

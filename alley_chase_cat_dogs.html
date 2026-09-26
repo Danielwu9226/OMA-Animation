@@ -1,0 +1,2118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>THE ALLEY PURSUIT // The Golden Cat's Great Escape</title>
+  <style>
+    :root {
+      --gold-accent: #f59e0b;
+      --dog-red: #ef4444;
+      --alley-cyan: #06b6d4;
+      --lamp-warm: #fbbf24;
+      --panel-bg: rgba(13, 17, 28, 0.82);
+      --panel-border: rgba(245, 158, 11, 0.3);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: #05070c;
+      color: #f1f5f9;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Cinematic Bars */
+    .cinema-bars {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 44px;
+      background: #000000;
+      z-index: 8;
+      pointer-events: none;
+      transition: transform 0.4s ease;
+    }
+    .cinema-top { top: 0; }
+    .cinema-bottom { bottom: 0; }
+    body.hide-bars .cinema-top { transform: translateY(-100%); }
+    body.hide-bars .cinema-bottom { transform: translateY(100%); }
+
+    /* Screen Vibe Overlays */
+    #vignette {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+      box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.8), inset 0 0 50px rgba(15, 23, 42, 0.6);
+    }
+
+    #impact-flash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 60, 60, 0.4);
+      z-index: 7;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.08s ease-out;
+    }
+
+    /* UI Layout */
+    #ui-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 50px 36px 50px 36px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .brand-title {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #ffffff 0%, var(--gold-accent) 50%, var(--dog-red) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-title .live-pulse {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--gold-accent);
+      box-shadow: 0 0 10px var(--gold-accent);
+      animation: pulseDot 1.4s infinite;
+    }
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(0.75); opacity: 0.4; }
+    }
+
+    .scene-desc {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #cbd5e1;
+      margin-top: 4px;
+      text-transform: uppercase;
+      font-weight: 700;
+      opacity: 0.85;
+    }
+
+    .status-badges {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 4px;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      font-weight: 800;
+      backdrop-filter: blur(8px);
+    }
+    .badge.cat { color: #fcd34d; border-color: rgba(245, 158, 11, 0.4); }
+    .badge.dog { color: #f87171; border-color: rgba(239, 68, 68, 0.4); }
+    .badge.human { color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); }
+
+    /* Top Right Controls */
+    .top-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .telemetry-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 8px 16px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 3px;
+    }
+
+    .timer-display {
+      font-family: 'Courier New', monospace;
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--gold-accent);
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+
+    .status-text {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      color: #94a3b8;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .audio-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 5px 12px;
+      backdrop-filter: blur(12px);
+    }
+
+    .audio-btn {
+      background: none;
+      border: none;
+      color: var(--gold-accent);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .volume-slider {
+      -webkit-appearance: none;
+      width: 60px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      outline: none;
+    }
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--gold-accent);
+      cursor: pointer;
+    }
+
+    /* Narrative Alert Banner */
+    #action-banner {
+      position: absolute;
+      top: 135px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      padding: 12px 28px;
+      background: rgba(15, 23, 42, 0.92);
+      border: 2px solid var(--gold-accent);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #fff;
+      text-transform: uppercase;
+      box-shadow: 0 0 25px rgba(245, 158, 11, 0.5);
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 20;
+    }
+    #action-banner.active {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Subtitle Cue */
+    #narrative-cue {
+      position: absolute;
+      bottom: 195px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #f8fafc;
+      text-transform: uppercase;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 7px 22px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(6px);
+      text-align: center;
+      pointer-events: none;
+    }
+
+    /* Camera Viewing Bar (Docked to Left Side) */
+    .camera-bar {
+      position: absolute;
+      left: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      background: var(--panel-bg);
+      padding: 12px 10px;
+      border-radius: 14px;
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.65);
+      z-index: 25;
+      min-width: 175px;
+    }
+
+    .camera-bar-header {
+      font-size: 10px;
+      letter-spacing: 2px;
+      font-weight: 900;
+      color: var(--gold-accent);
+      text-transform: uppercase;
+      padding: 2px 8px 8px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cam-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #94a3b8;
+      padding: 8px 12px;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      text-align: left;
+    }
+    .cam-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateX(3px);
+    }
+    .cam-btn.active {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(239, 68, 68, 0.45));
+      border-color: var(--gold-accent);
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+      transform: translateX(4px);
+    }
+
+    /* Timeline Controller */
+    .timeline-container {
+      width: 100%;
+      max-width: 1000px;
+      align-self: center;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: auto;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 12px 20px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6);
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      letter-spacing: 2px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .current-chapter-title {
+      color: var(--gold-accent);
+      text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+    }
+
+    /* Scrubber Track */
+    .scrubber-track {
+      position: relative;
+      width: 100%;
+      height: 8px;
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .scrubber-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #f59e0b 0%, #ef4444 60%, #38bdf8 100%);
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+      pointer-events: none;
+    }
+    .scrubber-thumb {
+      position: absolute;
+      top: 50%;
+      left: 0%;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2px solid var(--gold-accent);
+      box-shadow: 0 0 10px var(--gold-accent);
+      transform: translate(-50%, -50%);
+      cursor: grab;
+      pointer-events: none;
+    }
+
+    /* Chapter Bookmarks */
+    .chapter-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      padding-top: 3px;
+    }
+    .chap-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-size: 9px;
+      letter-spacing: 1px;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+      flex: 1;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .chap-btn:hover {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fff;
+    }
+    .chap-btn.active {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: var(--gold-accent);
+      color: var(--gold-accent);
+    }
+
+    /* Controls Bar */
+    .timeline-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2px;
+    }
+    .ctrl-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ctrl-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #f8fafc;
+      padding: 5px 12px;
+      border-radius: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .ctrl-btn:hover {
+      background: rgba(245, 158, 11, 0.25);
+      border-color: var(--gold-accent);
+    }
+    .speed-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .speed-btn.active {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: var(--gold-accent);
+      color: var(--gold-accent);
+    }
+
+    /* Start Modal */
+    #sound-splash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 50;
+      background: radial-gradient(circle at center, rgba(10, 15, 28, 0.94) 0%, rgba(3, 5, 10, 0.98) 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    #sound-splash.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .splash-box {
+      max-width: 580px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 32px 36px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(245, 158, 11, 0.25);
+      backdrop-filter: blur(18px);
+    }
+    .splash-title {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #ffffff 0%, var(--gold-accent) 50%, var(--dog-red) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+    .splash-sub {
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .splash-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      text-align: left;
+      margin-bottom: 24px;
+      font-size: 11px;
+      color: #cbd5e1;
+    }
+    .splash-features div span { color: var(--gold-accent); margin-right: 5px; }
+    .start-btn {
+      background: linear-gradient(135deg, var(--gold-accent) 0%, #ea580c 50%, var(--dog-red) 100%);
+      border: none;
+      color: #ffffff;
+      padding: 12px 38px;
+      font-size: 13px;
+      letter-spacing: 3px;
+      font-weight: 900;
+      text-transform: uppercase;
+      border-radius: 25px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+      transition: all 0.3s;
+    }
+    .start-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 28px rgba(239, 68, 68, 0.6);
+    }
+
+    @media (max-width: 800px) {
+      #ui-overlay { padding: 35px 15px; }
+      .camera-bar { left: 10px; padding: 8px 6px; min-width: 135px; }
+      .cam-btn { font-size: 9px; padding: 6px 8px; }
+      .chapter-buttons { display: none; }
+    }
+  </style>
+
+  <!-- Three.js and OrbitControls via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <div class="cinema-bars cinema-top"></div>
+  <div class="cinema-bars cinema-bottom"></div>
+  <div id="vignette"></div>
+  <div id="impact-flash"></div>
+
+  <div id="canvas-container"></div>
+
+  <!-- Big Dramatic Action Banner -->
+  <div id="action-banner">
+    <span id="banner-icon" style="font-size: 20px;">🐱</span>
+    <div>
+      <div id="banner-title" style="color: var(--gold-accent);">THE CLIMAX</div>
+      <div id="banner-desc" style="font-size: 10px; color: #cbd5e1;">THE VALUABLE CAT ESCAPES // DOGS HIT WALL</div>
+    </div>
+  </div>
+
+  <!-- Narrative Subtitle Cue -->
+  <div id="narrative-cue">THE BAD DOGS ARE HUNTING THE VALUABLE GOLDEN CAT</div>
+
+  <!-- UI Overlay -->
+  <div id="ui-overlay">
+    <!-- Top Header -->
+    <div class="header">
+      <div>
+        <div class="brand-title">
+          <span class="live-pulse"></span>
+          THE ALLEY PURSUIT
+        </div>
+        <div class="scene-desc">Noir City Alleyway • High-Stakes Canine Chase • Bat Hero</div>
+        <div class="status-badges">
+          <div class="badge cat">🐱 TARGET: VALUABLE GOLDEN CAT</div>
+          <div class="badge dog">🐕 HUNTERS: 3 AGGRESSIVE HOUNDS</div>
+          <div class="badge human">🏏 DEFENDER: BAT RESCUE</div>
+        </div>
+      </div>
+
+      <div class="top-right">
+        <div class="telemetry-card">
+          <div class="timer-display" id="time-display">00:00.00 / 00:45.00</div>
+          <div class="status-text">PURSUIT DISTANCE: <span id="telemetry-dist" style="color:#fff;">18 METERS</span></div>
+          <div class="status-text">CAT STATUS: <span id="telemetry-cat" style="color:#fcd34d;">SPRINTING</span></div>
+        </div>
+
+        <div class="audio-controls">
+          <button class="audio-btn" id="audio-btn" onclick="toggleAudioEngine()">
+            <span id="audio-icon">🔊</span>
+            <span id="audio-label">SOUND: ON</span>
+          </button>
+          <input type="range" class="volume-slider" id="vol-slider" min="0" max="1" step="0.05" value="0.8" oninput="setMasterVolume(this.value)" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Camera Viewing Bar (Docked to Left Side) -->
+    <div class="camera-bar" id="camera-bar">
+      <div class="camera-bar-header">📹 VIEWING ANGLE</div>
+      <button class="cam-btn active" id="cam-cinematic" onclick="setCameraMode('cinematic')">🎬 Director View</button>
+      <button class="cam-btn" id="cam-cat" onclick="setCameraMode('cat')">🐱 Cat Chase Cam</button>
+      <button class="cam-btn" id="cam-dogs" onclick="setCameraMode('dogs')">🐕 Bad Dogs Cam</button>
+      <button class="cam-btn" id="cam-human" onclick="setCameraMode('human')">🏏 Bat Swing View</button>
+      <button class="cam-btn" id="cam-alley" onclick="setCameraMode('alley')">🏙️ Alley Corridor</button>
+      <button class="cam-btn" id="cam-deadend" onclick="setCameraMode('deadend')">🧱 Dead End Jump</button>
+      <button class="cam-btn" id="cam-orbit" onclick="setCameraMode('orbit')">🎮 Free Orbit</button>
+    </div>
+
+    <!-- Timeline Controller -->
+    <div class="timeline-container">
+      <div class="timeline-header">
+        <span class="current-chapter-title" id="chapter-title">ACT 1: THE ALLEYWAY CHASE BEGINS</span>
+        <span id="speed-label" style="color: #94a3b8;">SPEED: 1.0X</span>
+      </div>
+
+      <div class="scrubber-track" id="scrubber-track">
+        <div class="scrubber-fill" id="scrubber-fill"></div>
+        <div class="scrubber-thumb" id="scrubber-thumb"></div>
+      </div>
+
+      <div class="chapter-buttons">
+        <button class="chap-btn active" onclick="seekToTime(0)">1. Dogs Chase Cat</button>
+        <button class="chap-btn" onclick="seekToTime(10)">2. Human Swings Bat</button>
+        <button class="chap-btn" onclick="seekToTime(20)">3. Dogs Resume Chase</button>
+        <button class="chap-btn" onclick="seekToTime(30)">4. Dead End Confrontation</button>
+        <button class="chap-btn" onclick="seekToTime(36)">5. Cat Leaps & Dogs Slam Wall</button>
+      </div>
+
+      <div class="timeline-actions">
+        <div class="ctrl-group">
+          <button class="ctrl-btn" id="play-pause-btn" onclick="togglePlayPause()">⏸️ PAUSE</button>
+          <button class="ctrl-btn" onclick="restartTimeline()">🔄 REPLAY</button>
+          <button class="ctrl-btn" onclick="toggleLetterbox()">📺 BARS</button>
+        </div>
+
+        <div class="ctrl-group">
+          <span style="font-size: 10px; color: #64748b; font-weight:700;">SPEED:</span>
+          <button class="speed-btn" onclick="setSpeed(0.5, this)">0.5x</button>
+          <button class="speed-btn active" onclick="setSpeed(1.0, this)">1.0x</button>
+          <button class="speed-btn" onclick="setSpeed(2.0, this)">2.0x</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Splash Modal -->
+  <div id="sound-splash">
+    <div class="splash-box">
+      <div class="splash-title">THE ALLEY PURSUIT</div>
+      <div class="splash-sub">A Cinematic 3D Alleyway Chase & Heroic Escape</div>
+      
+      <div class="splash-features">
+        <div><span>🐱</span> Valuable Sleek Golden Cat Running & Leaping</div>
+        <div><span>🐕</span> 3 Vicious Dogs with Sharp Teeth & Snarls</div>
+        <div><span>🏏</span> Human Defender with Animated Bat Swing</div>
+        <div><span>🏙️</span> Gritty Alleyway: Streetlamps, Trash & Puddles</div>
+        <div><span>🔊</span> Real-Time Audio: Barks, Meows, Bat Swings & Wall Slam</div>
+        <div><span>🧱</span> High Wall Acrobatic Escape at the Dead End</div>
+      </div>
+
+      <button class="start-btn" onclick="startExperience()">WATCH THE PURSUIT ❯</button>
+      <div style="font-size: 10px; color:#64748b; margin-top: 12px; letter-spacing: 1px;">HEADPHONES RECOMMENDED // INTERACTIVE TIMELINE</div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       1. TIMELINE & NARRATIVE DEFINITIONS
+       ========================================================================= */
+    const TOTAL_DURATION = 45.0; // 45 seconds total cinematic story
+    let currentTime = 0.0;
+    let isPlaying = true;
+    let playbackSpeed = 1.0;
+
+    const CHAPTERS = [
+      {
+        startTime: 0,
+        endTime: 10,
+        title: "ACT 1: THE BAD DOGS CHASE THE VALUABLE CAT",
+        cue: "THE HUNGRY BAD DOGS CHASE THE VALUABLE CAT DOWN THE RAIN-SOAKED ALLEYWAY",
+        cam: "cat"
+      },
+      {
+        startTime: 10,
+        endTime: 20,
+        title: "ACT 2: HUMAN DEFENDER SWINGS THE BAT",
+        cue: "A HUMAN STEPS OUT WITH A REAL BASEBALL BAT TO SCARE OFF THE DOGS!",
+        cam: "human"
+      },
+      {
+        startTime: 20,
+        endTime: 30,
+        title: "ACT 3: THE DOGS RELENTLESSLY CHASE THE CAT STILL",
+        cue: "DODGING THE BAT, THE VICIOUS DOGS SPRINT TOWARDS THE CAT AT FULL SPEED",
+        cam: "dogs"
+      },
+      {
+        startTime: 30,
+        endTime: 36,
+        title: "ACT 4: DEAD END // FACE-TO-FACE CONFRONTATION",
+        cue: "THE CAT CORNERED AT THE DEAD END WALL! DOGS CROUCH TO LUNGE!",
+        cam: "deadend"
+      },
+      {
+        startTime: 36,
+        endTime: 45,
+        title: "ACT 5: THE HIGH JUMP ESCAPE // DOGS HIT THE WALL",
+        cue: "THE CAT JUMPS SPECTACULARLY ONTO THE WALL! THE DOGS SLAM HARD INTO THE BRICKS!",
+        cam: "deadend"
+      }
+    ];
+
+    /* =========================================================================
+       2. PROCEDURAL WEB AUDIO SYNTHESIZER ENGINE (ZERO EXTERNAL ASSETS)
+       ========================================================================= */
+    class AlleyAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.masterGain = null;
+        this.isMuted = false;
+        this.initialized = false;
+
+        // Ambient layers
+        this.rainGain = null;
+        this.footstepsCatTimer = 0;
+        this.footstepsDogTimer = 0;
+      }
+
+      init() {
+        if (this.initialized) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContext();
+
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.setValueAtTime(0.8, this.ctx.currentTime);
+        this.masterGain.connect(this.ctx.destination);
+
+        // Ambient rainy city alley hum
+        this.setupAlleyAmbience();
+
+        this.initialized = true;
+      }
+
+      setupAlleyAmbience() {
+        const t = this.ctx.currentTime;
+        const bufferSize = this.ctx.sampleRate * 2;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * 0.3;
+        }
+
+        const rainSource = this.ctx.createBufferSource();
+        rainSource.buffer = noiseBuffer;
+        rainSource.loop = true;
+
+        const rainFilter = this.ctx.createBiquadFilter();
+        rainFilter.type = 'lowpass';
+        rainFilter.frequency.setValueAtTime(450, t);
+
+        this.rainGain = this.ctx.createGain();
+        this.rainGain.gain.setValueAtTime(0.08, t);
+
+        rainSource.connect(rainFilter);
+        rainFilter.connect(this.rainGain);
+        this.rainGain.connect(this.masterGain);
+
+        rainSource.start();
+      }
+
+      // Dog Loud Aggressive Bark Sound
+      playDogBark(pitch = 140, isLoud = true) {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        // Pitch envelope for guttural canine bark
+        const osc = this.ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(pitch * 1.5, t);
+        osc.frequency.exponentialRampToValueAtTime(pitch * 0.6, t + 0.18);
+
+        // Vocal formant filter (dog throat)
+        const formant = this.ctx.createBiquadFilter();
+        formant.type = 'bandpass';
+        formant.frequency.setValueAtTime(420, t);
+        formant.Q.setValueAtTime(3.0, t);
+
+        // Snarl noise burst
+        const bufferSize = this.ctx.sampleRate * 0.2;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const noiseSource = this.ctx.createBufferSource();
+        noiseSource.buffer = noiseBuffer;
+
+        const noiseFilter = this.ctx.createBiquadFilter();
+        noiseFilter.type = 'lowpass';
+        noiseFilter.frequency.setValueAtTime(650, t);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(isLoud ? 0.9 : 0.45, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+
+        osc.connect(formant);
+        formant.connect(gain);
+        noiseSource.connect(noiseFilter);
+        noiseFilter.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(t);
+        noiseSource.start(t);
+        osc.stop(t + 0.23);
+        noiseSource.stop(t + 0.23);
+      }
+
+      // Cat Meowing & Feline Vocal Sound
+      playCatMeow(isFrightened = false) {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        osc.type = 'sine';
+
+        // Melodic feline inflection
+        if (isFrightened) {
+          // Sharp yowl
+          osc.frequency.setValueAtTime(650, t);
+          osc.frequency.linearRampToValueAtTime(1100, t + 0.12);
+          osc.frequency.exponentialRampToValueAtTime(800, t + 0.35);
+        } else {
+          // Victorious, cute high meow on wall
+          osc.frequency.setValueAtTime(520, t);
+          osc.frequency.linearRampToValueAtTime(880, t + 0.25);
+          osc.frequency.exponentialRampToValueAtTime(620, t + 0.65);
+        }
+
+        // Tremolo vibrato
+        const vib = this.ctx.createOscillator();
+        vib.frequency.setValueAtTime(8, t);
+        const vibGain = this.ctx.createGain();
+        vibGain.gain.setValueAtTime(25, t);
+        vib.connect(vibGain);
+        vibGain.connect(osc.frequency);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.01, t);
+        gain.gain.linearRampToValueAtTime(0.5, t + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + (isFrightened ? 0.38 : 0.7));
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(t);
+        vib.start(t);
+        const dur = isFrightened ? 0.4 : 0.75;
+        osc.stop(t + dur);
+        vib.stop(t + dur);
+      }
+
+      // Human Bat Swing Whoosh Sound ("SWOOSH!")
+      playBatSwing() {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        // Aerodynamic whoosh through the air
+        const bufferSize = this.ctx.sampleRate * 0.4;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const whooshSource = this.ctx.createBufferSource();
+        whooshSource.buffer = noiseBuffer;
+
+        const whooshFilter = this.ctx.createBiquadFilter();
+        whooshFilter.type = 'bandpass';
+        whooshFilter.frequency.setValueAtTime(220, t);
+        whooshFilter.frequency.exponentialRampToValueAtTime(950, t + 0.16);
+        whooshFilter.frequency.exponentialRampToValueAtTime(180, t + 0.38);
+        whooshFilter.Q.setValueAtTime(4.0, t);
+
+        const whooshGain = this.ctx.createGain();
+        whooshGain.gain.setValueAtTime(0.01, t);
+        whooshGain.gain.linearRampToValueAtTime(0.85, t + 0.14);
+        whooshGain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+
+        whooshSource.connect(whooshFilter);
+        whooshFilter.connect(whooshGain);
+        whooshGain.connect(this.masterGain);
+
+        whooshSource.start(t);
+        whooshSource.stop(t + 0.42);
+
+        // Vocal shout ("HEY! GET AWAY!")
+        const voiceOsc = this.ctx.createOscillator();
+        voiceOsc.type = 'sawtooth';
+        voiceOsc.frequency.setValueAtTime(160, t + 0.05);
+        voiceOsc.frequency.exponentialRampToValueAtTime(110, t + 0.35);
+
+        const vFormant = this.ctx.createBiquadFilter();
+        vFormant.type = 'bandpass';
+        vFormant.frequency.setValueAtTime(650, t);
+        vFormant.Q.setValueAtTime(2.5, t);
+
+        const vGain = this.ctx.createGain();
+        vGain.gain.setValueAtTime(0.01, t + 0.05);
+        vGain.gain.linearRampToValueAtTime(0.55, t + 0.12);
+        vGain.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
+
+        voiceOsc.connect(vFormant);
+        vFormant.connect(vGain);
+        vGain.connect(this.masterGain);
+
+        voiceOsc.start(t + 0.05);
+        voiceOsc.stop(t + 0.4);
+      }
+
+      // Footstep Sounds (Cat light taps vs Dogs heavy clatters)
+      playFootsteps(isDog = false) {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(isDog ? 85 : 240, t);
+        osc.frequency.exponentialRampToValueAtTime(25, t + 0.06);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(isDog ? 0.35 : 0.15, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start(t);
+        osc.stop(t + 0.07);
+      }
+
+      // Dogs Hitting The Brick Wall at High Speed ("WHAM!")
+      playDogsWallImpact() {
+        if (!this.initialized || this.isMuted) return;
+        const t = this.ctx.currentTime;
+
+        // Sub-bass heavy impact thud
+        const thudOsc = this.ctx.createOscillator();
+        thudOsc.type = 'sine';
+        thudOsc.frequency.setValueAtTime(140, t);
+        thudOsc.frequency.exponentialRampToValueAtTime(28, t + 0.6);
+
+        const thudGain = this.ctx.createGain();
+        thudGain.gain.setValueAtTime(1.0, t);
+        thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+
+        thudOsc.connect(thudGain);
+        thudGain.connect(this.masterGain);
+        thudOsc.start(t);
+        thudOsc.stop(t + 0.75);
+
+        // Brick crunch and clatter noise
+        const bufferSize = this.ctx.sampleRate * 0.5;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const crunchSource = this.ctx.createBufferSource();
+        crunchSource.buffer = noiseBuffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(900, t);
+        filter.frequency.exponentialRampToValueAtTime(80, t + 0.45);
+
+        const crunchGain = this.ctx.createGain();
+        crunchGain.gain.setValueAtTime(0.9, t);
+        crunchGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+
+        crunchSource.connect(filter);
+        filter.connect(crunchGain);
+        crunchGain.connect(this.masterGain);
+
+        crunchSource.start(t);
+        crunchSource.stop(t + 0.55);
+
+        // Dog surprised yelp / whimper after impact
+        setTimeout(() => {
+          if (!this.initialized || this.isMuted) return;
+          const wt = this.ctx.currentTime;
+          const whimper = this.ctx.createOscillator();
+          whimper.type = 'sawtooth';
+          whimper.frequency.setValueAtTime(450, wt);
+          whimper.frequency.linearRampToValueAtTime(680, wt + 0.25);
+          whimper.frequency.exponentialRampToValueAtTime(220, wt + 0.65);
+
+          const wGain = this.ctx.createGain();
+          wGain.gain.setValueAtTime(0.35, wt);
+          wGain.gain.exponentialRampToValueAtTime(0.001, wt + 0.7);
+
+          whimper.connect(wGain);
+          wGain.connect(this.masterGain);
+          whimper.start(wt);
+          whimper.stop(wt + 0.75);
+        }, 180);
+      }
+
+      setVolume(val) {
+        if (!this.masterGain) return;
+        this.masterGain.gain.setValueAtTime(val, this.ctx.currentTime);
+      }
+    }
+
+    const soundEngine = new AlleyAudioEngine();
+
+    function startExperience() {
+      document.getElementById('sound-splash').classList.add('hidden');
+      soundEngine.init();
+      if (soundEngine.ctx && soundEngine.ctx.state === 'suspended') {
+        soundEngine.ctx.resume();
+      }
+    }
+
+    function toggleAudioEngine() {
+      if (!soundEngine.initialized) soundEngine.init();
+      soundEngine.isMuted = !soundEngine.isMuted;
+      const icon = document.getElementById('audio-icon');
+      const label = document.getElementById('audio-label');
+      if (soundEngine.isMuted) {
+        soundEngine.setVolume(0);
+        icon.innerText = '🔇';
+        label.innerText = 'SOUND: OFF';
+      } else {
+        const val = parseFloat(document.getElementById('vol-slider').value);
+        soundEngine.setVolume(val);
+        icon.innerText = '🔊';
+        label.innerText = 'SOUND: ON';
+      }
+    }
+
+    function setMasterVolume(v) {
+      if (!soundEngine.isMuted) soundEngine.setVolume(parseFloat(v));
+    }
+
+    /* =========================================================================
+       3. THREE.JS 3D ENVIRONMENT (NOIR RAINY ALLEYWAY)
+       ========================================================================= */
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x0a0f1d, 0.007);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.5, 600);
+    camera.position.set(0, 15, -160);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.25;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // OrbitControls
+    const orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+    orbitControls.enableDamping = true;
+    orbitControls.dampingFactor = 0.06;
+    orbitControls.enabled = false;
+
+    // Ambient night lighting - boosted for clear visibility
+    const ambientLight = new THREE.AmbientLight(0x283548, 2.2);
+    scene.add(ambientLight);
+
+    // Moonlight / city sky rim light
+    const moonLight = new THREE.DirectionalLight(0x93c5fd, 1.8);
+    moonLight.position.set(40, 140, -50);
+    moonLight.castShadow = true;
+    moonLight.shadow.mapSize.width = 2048;
+    moonLight.shadow.mapSize.height = 2048;
+    scene.add(moonLight);
+
+    // Warm alley fill light moving along corridor
+    const alleyFillLight = new THREE.DirectionalLight(0xfef08a, 1.2);
+    alleyFillLight.position.set(-30, 80, 50);
+    scene.add(alleyFillLight);
+
+    // 1. Wet Asphalt Ground with Puddles
+    const streetGeo = new THREE.PlaneGeometry(36, 440, 48, 120);
+    streetGeo.rotateX(-Math.PI / 2);
+    const streetMat = new THREE.MeshStandardMaterial({
+      color: 0x171923,
+      roughness: 0.15, // wet sheen
+      metalness: 0.75
+    });
+    const streetMesh = new THREE.Mesh(streetGeo, streetMat);
+    streetMesh.receiveShadow = true;
+    scene.add(streetMesh);
+
+    // Sidewalk Curbs
+    const curbGeo = new THREE.BoxGeometry(2.5, 0.8, 440);
+    const curbMat = new THREE.MeshStandardMaterial({ color: 0x2d3748, roughness: 0.6 });
+    const leftCurb = new THREE.Mesh(curbGeo, curbMat);
+    leftCurb.position.set(-16.5, 0.4, 0);
+    scene.add(leftCurb);
+
+    const rightCurb = new THREE.Mesh(curbGeo, curbMat);
+    rightCurb.position.set(16.5, 0.4, 0);
+    scene.add(rightCurb);
+
+    // 2. High Brick Walls along both sides
+    const wallGeo = new THREE.BoxGeometry(4, 55, 440);
+    const brickMat = new THREE.MeshStandardMaterial({
+      color: 0x3a2520, // dark vintage urban red-brick
+      roughness: 0.85,
+      metalness: 0.1
+    });
+    const leftWall = new THREE.Mesh(wallGeo, brickMat);
+    leftWall.position.set(-18.5, 27.5, 0);
+    leftWall.receiveShadow = true;
+    scene.add(leftWall);
+
+    const rightWall = new THREE.Mesh(wallGeo, brickMat);
+    rightWall.position.set(18.5, 27.5, 0);
+    rightWall.receiveShadow = true;
+    scene.add(rightWall);
+
+    // 3. DEAD END WALL (At z = +120)
+    const deadEndWallGeo = new THREE.BoxGeometry(38, 42, 4);
+    const deadEndMat = new THREE.MeshStandardMaterial({
+      color: 0x2e1d1a,
+      roughness: 0.8,
+      metalness: 0.15
+    });
+    const deadEndWall = new THREE.Mesh(deadEndWallGeo, deadEndMat);
+    deadEndWall.position.set(0, 21, 120);
+    deadEndWall.receiveShadow = true;
+    scene.add(deadEndWall);
+
+    // Concrete Ledge on top of the dead end wall (Cat jumps here!)
+    const ledgeGeo = new THREE.BoxGeometry(38, 1.8, 6);
+    const ledgeMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.5 });
+    const ledge = new THREE.Mesh(ledgeGeo, ledgeMat);
+    ledge.position.set(0, 19.5, 119); // The safe perch height
+    scene.add(ledge);
+
+    // Metal safety pipe railing on ledge
+    const pipeGeo = new THREE.CylinderGeometry(0.3, 0.3, 36, 12);
+    pipeGeo.rotateZ(Math.PI / 2);
+    const pipeMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.3 });
+    const pipe = new THREE.Mesh(pipeGeo, pipeMat);
+    pipe.position.set(0, 22.2, 120);
+    scene.add(pipe);
+
+    // 4. Street Lamps with Volumetric Light Cones
+    const lampPositions = [-140, -70, 0, 70];
+    lampPositions.forEach((lz, idx) => {
+      const lampGroup = new THREE.Group();
+      lampGroup.position.set(-16.5, 0, lz);
+
+      // Metal pole
+      const poleGeo = new THREE.CylinderGeometry(0.35, 0.45, 22, 8);
+      const poleMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9, roughness: 0.2 });
+      const pole = new THREE.Mesh(poleGeo, poleMat);
+      pole.position.set(0, 11, 0);
+      lampGroup.add(pole);
+
+      // Curved arm
+      const armGeo = new THREE.BoxGeometry(6, 0.4, 0.6);
+      const arm = new THREE.Mesh(armGeo, poleMat);
+      arm.position.set(2.8, 22, 0);
+      lampGroup.add(arm);
+
+      // Lamp Head
+      const headGeo = new THREE.CylinderGeometry(1.6, 1.2, 1.2, 8);
+      const head = new THREE.Mesh(headGeo, poleMat);
+      head.position.set(5.5, 21.5, 0);
+      lampGroup.add(head);
+
+      // Amber Warm Spotlight
+      const spot = new THREE.SpotLight(0xfbbf24, 4.2, 120, Math.PI / 5, 0.45, 1.2);
+      spot.position.set(5.5, 21, 0);
+      const target = new THREE.Object3D();
+      target.position.set(5.5, 0, 0);
+      lampGroup.add(target);
+      spot.target = target;
+      spot.castShadow = true;
+      lampGroup.add(spot);
+
+      // Volumetric Light Cone
+      const coneGeo = new THREE.ConeGeometry(14, 21, 16, 1, true);
+      coneGeo.translate(0, -10.5, 0);
+      const coneMat = new THREE.MeshBasicMaterial({
+        color: 0xfbbf24,
+        transparent: true,
+        opacity: 0.08,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const cone = new THREE.Mesh(coneGeo, coneMat);
+      cone.position.set(5.5, 21, 0);
+      lampGroup.add(cone);
+
+      scene.add(lampGroup);
+    });
+
+    // 5. Alley Props: Dumpsters, Trash Bags, Cardboard Boxes
+    const dumpsterGeo = new THREE.BoxGeometry(6, 5, 10);
+    const dumpsterMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.6 }); // green metal
+    const d1 = new THREE.Mesh(dumpsterGeo, dumpsterMat);
+    d1.position.set(-13, 2.5, -95);
+    scene.add(d1);
+
+    const d2 = new THREE.Mesh(dumpsterGeo, dumpsterMat);
+    d2.position.set(13, 2.5, 20);
+    scene.add(d2);
+
+    // Overturned Trash Cans & Scatter
+    const canGeo = new THREE.CylinderGeometry(1.2, 1.0, 3.2, 12);
+    const canMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.7, roughness: 0.4 });
+    const trashCan = new THREE.Mesh(canGeo, canMat);
+    trashCan.rotateZ(Math.PI / 2.2);
+    trashCan.position.set(9, 1.1, -25);
+    scene.add(trashCan);
+
+    // Dark garbage bags
+    const bagGeo = new THREE.DodecahedronGeometry(1.4, 1);
+    const bagMat = new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.2, metalness: 0.8 });
+    for (let bg = 0; bg < 8; bg++) {
+      const bag = new THREE.Mesh(bagGeo, bagMat);
+      bag.position.set(
+        (bg % 2 === 0 ? -12 : 12) + (Math.random() - 0.5) * 2,
+        0.9,
+        -110 + bg * 28 + (Math.random() - 0.5) * 10
+      );
+      bag.scale.set(1, 0.7, 1);
+      scene.add(bag);
+    }
+
+    // 6. Homeless Person Shelter & Glowing Fire Barrel
+    const homelessGroup = new THREE.Group();
+    homelessGroup.position.set(13, 0, 55);
+
+    // Rusty metal fire barrel
+    const barrelGeo = new THREE.CylinderGeometry(1.5, 1.4, 4.0, 12);
+    const barrelMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.9 });
+    const barrel = new THREE.Mesh(barrelGeo, barrelMat);
+    barrel.position.set(0, 2.0, 0);
+    homelessGroup.add(barrel);
+
+    // Warm glowing fire light inside barrel
+    const barrelFireLight = new THREE.PointLight(0xff5500, 3.0, 35);
+    barrelFireLight.position.set(0, 4.2, 0);
+    homelessGroup.add(barrelFireLight);
+
+    // Homeless figure wrapped in heavy blanket
+    const figureGeo = new THREE.ConeGeometry(2.4, 5.0, 8);
+    const figureMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.95 });
+    const figure = new THREE.Mesh(figureGeo, figureMat);
+    figure.position.set(0, 2.5, 4.5);
+    figure.rotateX(-0.1);
+    homelessGroup.add(figure);
+
+    // Cardboard shelter backdrop
+    const cardGeo = new THREE.BoxGeometry(0.2, 6, 8);
+    const cardMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 });
+    const card = new THREE.Mesh(cardGeo, cardMat);
+    card.position.set(2.5, 3.0, 4.5);
+    homelessGroup.add(card);
+
+    scene.add(homelessGroup);
+
+    /* =========================================================================
+       4. PROCEDURAL VALUABLE GOLDEN CAT (DETAILED 3D FELINE)
+       ========================================================================= */
+    const catGroup = new THREE.Group();
+    scene.add(catGroup);
+
+    // Premium silky golden fur material with glossy highlights
+    const catFurMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b, // shimmering golden amber
+      roughness: 0.35,
+      metalness: 0.3,
+      emissive: 0x78350f,
+      emissiveIntensity: 0.25
+    });
+
+    const catWhiteFurMat = new THREE.MeshStandardMaterial({
+      color: 0xfffbeb,
+      roughness: 0.3
+    });
+
+    // Cat Body / Torso
+    const catTorso = new THREE.Group();
+    catTorso.position.set(0, 2.0, 0);
+    catGroup.add(catTorso);
+
+    const cBodyGeo = new THREE.BoxGeometry(1.6, 1.8, 4.2);
+    const cBodyMesh = new THREE.Mesh(cBodyGeo, catFurMat);
+    catTorso.add(cBodyMesh);
+
+    // Golden Chest bib
+    const cBibGeo = new THREE.BoxGeometry(1.4, 1.2, 1.6);
+    const cBib = new THREE.Mesh(cBibGeo, catWhiteFurMat);
+    cBib.position.set(0, -0.3, 1.2);
+    catTorso.add(cBib);
+
+    // Cat Head
+    const catHead = new THREE.Group();
+    catHead.position.set(0, 1.4, 2.6);
+    catTorso.add(catHead);
+
+    const cHeadGeo = new THREE.BoxGeometry(1.8, 1.6, 1.8);
+    const cHeadMesh = new THREE.Mesh(cHeadGeo, catFurMat);
+    catHead.add(cHeadMesh);
+
+    // Cute Pointed Ears
+    const earGeo = new THREE.ConeGeometry(0.5, 1.0, 4);
+    for (let s of [-0.65, 0.65]) {
+      const ear = new THREE.Mesh(earGeo, catFurMat);
+      ear.position.set(s, 1.1, -0.2);
+      ear.rotateZ(s * -0.25);
+      catHead.add(ear);
+    }
+
+    // Glowing Emerald Eyes (Signs of an extremely valuable purebred cat)
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+    for (let s of [-0.48, 0.48]) {
+      const eyeGeo = new THREE.SphereGeometry(0.24, 8, 8);
+      const eye = new THREE.Mesh(eyeGeo, eyeMat);
+      eye.position.set(s, 0.2, 0.95);
+      catHead.add(eye);
+    }
+
+    // 4 Articulated Feline Legs
+    const catLegs = [];
+    const cLegGeo = new THREE.BoxGeometry(0.5, 1.8, 0.6);
+    const cPawGeo = new THREE.BoxGeometry(0.55, 0.35, 0.7);
+
+    const legOffsets = [
+      { x: -0.65, y: -0.8, z: 1.4, isFront: true },
+      { x: 0.65, y: -0.8, z: 1.4, isFront: true },
+      { x: -0.65, y: -0.8, z: -1.4, isFront: false },
+      { x: 0.65, y: -0.8, z: -1.4, isFront: false }
+    ];
+
+    legOffsets.forEach(lo => {
+      const legPivot = new THREE.Group();
+      legPivot.position.set(lo.x, lo.y, lo.z);
+
+      const legMesh = new THREE.Mesh(cLegGeo, catFurMat);
+      legMesh.position.set(0, -0.6, 0);
+      legPivot.add(legMesh);
+
+      const pawMesh = new THREE.Mesh(cPawGeo, catWhiteFurMat);
+      pawMesh.position.set(0, -1.3, 0.1);
+      legPivot.add(pawMesh);
+
+      catTorso.add(legPivot);
+      catLegs.push(legPivot);
+    });
+
+    // Long Graceful Swishing Tail
+    const catTail = new THREE.Group();
+    catTail.position.set(0, 0.6, -2.1);
+    const tailSegGeo = new THREE.CylinderGeometry(0.2, 0.25, 4.0, 6);
+    tailSegGeo.rotateX(Math.PI / 3);
+    const tailMesh = new THREE.Mesh(tailSegGeo, catFurMat);
+    tailMesh.position.set(0, 1.5, -1.4);
+    catTail.add(tailMesh);
+    catTorso.add(catTail);
+
+    // Valuable Glimmer Halo Light around the cat
+    const catGlowLight = new THREE.PointLight(0xfbbf24, 2.0, 14);
+    catGlowLight.position.set(0, 2.5, 0);
+    catGroup.add(catGlowLight);
+
+    /* =========================================================================
+       5. THE BAD DOGS (3 VICIOUS PREDATOR HOUNDS WITH SHARP TEETH)
+       ========================================================================= */
+    const dogs = [];
+    const DOG_COUNT = 3;
+
+    const dogCoatMat = new THREE.MeshStandardMaterial({
+      color: 0x241d1a, // fierce dark brown/black brindle
+      roughness: 0.65,
+      metalness: 0.2
+    });
+
+    const mouthInsideMat = new THREE.MeshBasicMaterial({ color: 0x991b1b }); // deep red mouth interior
+    const teethMat = new THREE.MeshBasicMaterial({ color: 0xffffff }); // sharp white teeth
+    const dogEyeMat = new THREE.MeshBasicMaterial({ color: 0xff2222 }); // vicious glowing red eyes
+    const collarMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.8, roughness: 0.2 }); // studded golden collar
+
+    function buildDogModel(index) {
+      const dog = new THREE.Group();
+
+      const dTorso = new THREE.Group();
+      dTorso.position.set(0, 3.2, 0);
+      dog.add(dTorso);
+
+      // Muscular Chest & Pelvis
+      const dChestGeo = new THREE.BoxGeometry(3.2, 3.6, 6.8);
+      const dChest = new THREE.Mesh(dChestGeo, dogCoatMat);
+      dChest.castShadow = true;
+      dTorso.add(dChest);
+
+      // Spiked Studded Collar
+      const colGeo = new THREE.BoxGeometry(3.4, 3.8, 0.9);
+      const collar = new THREE.Mesh(colGeo, collarMat);
+      collar.position.set(0, 0.2, 3.0);
+      dTorso.add(collar);
+
+      // Aggressive Snarling Head
+      const dHeadGroup = new THREE.Group();
+      dHeadGroup.position.set(0, 2.0, 4.0);
+      dTorso.add(dHeadGroup);
+
+      const dSkullGeo = new THREE.BoxGeometry(2.8, 2.6, 3.4);
+      const dSkull = new THREE.Mesh(dSkullGeo, dogCoatMat);
+      dHeadGroup.add(dSkull);
+
+      // Snout
+      const snoutGeo = new THREE.BoxGeometry(2.2, 1.5, 3.0);
+      const snout = new THREE.Mesh(snoutGeo, dogCoatMat);
+      snout.position.set(0, -0.4, 2.6);
+      dHeadGroup.add(snout);
+
+      // Mouth Cavity
+      const mouthGeo = new THREE.BoxGeometry(2.0, 0.8, 2.5);
+      const mouthMesh = new THREE.Mesh(mouthGeo, mouthInsideMat);
+      mouthMesh.position.set(0, -0.5, 2.6);
+      dHeadGroup.add(mouthMesh);
+
+      // Lower Snarling Jaw
+      const dJaw = new THREE.Group();
+      dJaw.position.set(0, -1.0, 1.2);
+      const jawGeo = new THREE.BoxGeometry(2.0, 0.8, 2.8);
+      const jawMesh = new THREE.Mesh(jawGeo, dogCoatMat);
+      jawMesh.position.set(0, 0, 1.4);
+      dJaw.add(jawMesh);
+
+      // Pink Tongue
+      const tongueGeo = new THREE.BoxGeometry(1.2, 0.25, 2.0);
+      const tongueMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
+      const tongue = new THREE.Mesh(tongueGeo, tongueMat);
+      tongue.position.set(0, 0.35, 1.4);
+      dJaw.add(tongue);
+
+      // Sharp Teeth (Upper & Lower Canines + Incisors)
+      for (let t = -2; t <= 2; t++) {
+        const isCanine = Math.abs(t) === 2;
+        const toothH = isCanine ? 0.85 : 0.5;
+        const toothR = isCanine ? 0.22 : 0.14;
+
+        // Upper tooth
+        const uFangGeo = new THREE.ConeGeometry(toothR, toothH, 4);
+        uFangGeo.rotateX(Math.PI);
+        const uFang = new THREE.Mesh(uFangGeo, teethMat);
+        uFang.position.set(t * 0.42, -0.75, 3.6);
+        dHeadGroup.add(uFang);
+
+        // Lower tooth
+        const lFangGeo = new THREE.ConeGeometry(toothR, toothH, 4);
+        const lFang = new THREE.Mesh(lFangGeo, teethMat);
+        lFang.position.set(t * 0.38, 0.45, 2.5);
+        dJaw.add(lFang);
+      }
+      dHeadGroup.add(dJaw);
+
+      // Predator Red Glowing Eyes with Point Lights
+      for (let s of [-0.85, 0.85]) {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), dogEyeMat);
+        eye.position.set(s, 0.6, 1.7);
+        dHeadGroup.add(eye);
+      }
+
+      // Pointed Attack Ears
+      const dEarGeo = new THREE.ConeGeometry(0.7, 1.8, 4);
+      for (let s of [-1.05, 1.05]) {
+        const ear = new THREE.Mesh(dEarGeo, dogCoatMat);
+        ear.position.set(s, 1.6, -0.4);
+        ear.rotateZ(s * -0.2);
+        dHeadGroup.add(ear);
+      }
+
+      // Subtle localized light to illuminate the dog's fierce face
+      const faceLight = new THREE.PointLight(0xffedd5, 1.4, 18);
+      faceLight.position.set(0, 1.5, 4.5);
+      dTorso.add(faceLight);
+      // 4 Powerful Galloping Legs
+      const dLegs = [];
+      const dLegGeo = new THREE.BoxGeometry(0.8, 3.0, 1.0);
+      const dPawGeo = new THREE.BoxGeometry(1.0, 0.6, 1.2);
+      const dLegOffsets = [
+        { x: -1.2, z: 2.2 },
+        { x: 1.2, z: 2.2 },
+        { x: -1.2, z: -2.2 },
+        { x: 1.2, z: -2.2 }
+      ];
+
+      dLegOffsets.forEach(o => {
+        const lp = new THREE.Group();
+        lp.position.set(o.x, -1.2, o.z);
+
+        const lMesh = new THREE.Mesh(dLegGeo, dogCoatMat);
+        lMesh.position.set(0, -1.2, 0);
+        lp.add(lMesh);
+
+        const pMesh = new THREE.Mesh(dPawGeo, dogCoatMat);
+        pMesh.position.set(0, -2.5, 0.2);
+        lp.add(pMesh);
+
+        dTorso.add(lp);
+        dLegs.push(lp);
+      });
+
+      // Rigid Tail
+      const dTail = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 3.5, 6), dogCoatMat);
+      dTail.position.set(0, 1.2, -3.8);
+      dTail.rotateX(-Math.PI / 3);
+      dTorso.add(dTail);
+
+      scene.add(dog);
+
+      return {
+        group: dog,
+        torso: dTorso,
+        head: dHeadGroup,
+        jaw: dJaw,
+        legs: dLegs,
+        laneOffset: (index - 1) * 3.8, // 3 dogs side-by-side pack formation
+        staggerZ: index * -5.5
+      };
+    }
+
+    for (let i = 0; i < DOG_COUNT; i++) {
+      dogs.push(buildDogModel(i));
+    }
+
+    /* =========================================================================
+       6. THE HUMAN DEFENDER WITH REALISTIC BASEBALL BAT
+       ========================================================================= */
+    const humanGroup = new THREE.Group();
+    humanGroup.position.set(5.5, 0, -35); // Stands in alleyway to intercept
+    scene.add(humanGroup);
+
+    const clothesMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.7 }); // navy blue jacket
+    const pantsMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 }); // dark jeans
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xfbcfe8, roughness: 0.6 });
+
+    // Torso & Legs
+    const hTorso = new THREE.Group();
+    hTorso.position.set(0, 8.5, 0);
+    humanGroup.add(hTorso);
+
+    const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(4.2, 6.5, 2.5), clothesMat);
+    hTorso.add(bodyMesh);
+
+    // Head
+    const hHead = new THREE.Mesh(new THREE.SphereGeometry(1.6, 12, 12), skinMat);
+    hHead.position.set(0, 4.6, 0);
+    hTorso.add(hHead);
+
+    // Legs
+    for (let s of [-1.2, 1.2]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(1.5, 7.5, 1.6), pantsMat);
+      leg.position.set(s, -5.5, 0);
+      hTorso.add(leg);
+    }
+
+    // Right Arm Pivot for Swinging the Baseball Bat
+    const rightArmPivot = new THREE.Group();
+    rightArmPivot.position.set(2.4, 2.2, 0);
+    hTorso.add(rightArmPivot);
+
+    const armMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 5.0, 1.2), clothesMat);
+    armMesh.position.set(0, -2.2, 0);
+    rightArmPivot.add(armMesh);
+
+    // Realistic Wooden / Aluminum Baseball Bat
+    const batGroup = new THREE.Group();
+    batGroup.position.set(0, -4.5, 0);
+
+    // Bat Handle / Grip
+    const handleGeo = new THREE.CylinderGeometry(0.25, 0.35, 3.2, 8);
+    const handleMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 });
+    const handle = new THREE.Mesh(handleGeo, handleMat);
+    batGroup.add(handle);
+
+    // Bat Barrel
+    const barrelGeoBat = new THREE.CylinderGeometry(0.7, 0.35, 7.5, 12);
+    const batWoodMat = new THREE.MeshStandardMaterial({
+      color: 0xd97706, // golden varnished maple wood bat
+      roughness: 0.3,
+      metalness: 0.1
+    });
+    const barrelMesh = new THREE.Mesh(barrelGeoBat, batWoodMat);
+    barrelMesh.position.set(0, 4.8, 0);
+    batGroup.add(barrelMesh);
+
+    batGroup.rotateX(Math.PI / 2);
+    rightArmPivot.add(batGroup);
+
+    /* =========================================================================
+       7. MULTI-CAMERA SYSTEM
+       ========================================================================= */
+    let cameraMode = 'cinematic';
+    const targetCamPos = new THREE.Vector3();
+    const targetCamLook = new THREE.Vector3();
+    const currentCamLook = new THREE.Vector3(0, 5, 0);
+
+    function setCameraMode(mode) {
+      cameraMode = mode;
+      orbitControls.enabled = (mode === 'orbit');
+      document.querySelectorAll('.cam-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`cam-${mode}`);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    /* =========================================================================
+       8. TIMELINE SCRUBBING & UI SYNCHRONIZATION
+       ========================================================================= */
+    function updateTimelineUI() {
+      const progress = Math.min(1.0, Math.max(0.0, currentTime / TOTAL_DURATION));
+      document.getElementById('scrubber-fill').style.width = `${progress * 100}%`;
+      document.getElementById('scrubber-thumb').style.left = `${progress * 100}%`;
+
+      const mins = Math.floor(currentTime / 60);
+      const secs = (currentTime % 60).toFixed(2);
+      document.getElementById('time-display').innerText =
+        `${String(mins).padStart(2, '0')}:${String(secs).padStart(5, '0')} / 00:45.00`;
+
+      // Active Chapter
+      let activeChap = CHAPTERS[0];
+      for (let ch of CHAPTERS) {
+        if (currentTime >= ch.startTime && currentTime <= ch.endTime) {
+          activeChap = ch;
+          break;
+        }
+      }
+      document.getElementById('chapter-title').innerText = activeChap.title;
+      document.getElementById('narrative-cue').innerText = activeChap.cue;
+
+      const chapBtns = document.querySelectorAll('.chap-btn');
+      CHAPTERS.forEach((ch, idx) => {
+        if (chapBtns[idx]) {
+          if (currentTime >= ch.startTime && currentTime < ch.endTime) {
+            chapBtns[idx].classList.add('active');
+          } else {
+            chapBtns[idx].classList.remove('active');
+          }
+        }
+      });
+
+      // Update distance telemetry
+      const catZ = catGroup.position.z;
+      const dogLeadZ = dogs[0].group.position.z;
+      const dist = Math.max(0, Math.round(catZ - dogLeadZ));
+      document.getElementById('telemetry-dist').innerText = `${dist} METERS`;
+
+      if (currentTime >= 36) {
+        document.getElementById('telemetry-cat').innerText = "ESCAPED ON WALL!";
+        document.getElementById('telemetry-cat').style.color = "#34d399";
+      } else {
+        document.getElementById('telemetry-cat').innerText = "FULL SPRINT";
+        document.getElementById('telemetry-cat').style.color = "#fcd34d";
+      }
+    }
+
+    const scrubberTrack = document.getElementById('scrubber-track');
+    let isScrubbing = false;
+
+    function syncAudioOnSeek(targetTime) {
+      if (!soundEngine.initialized) {
+        soundEngine.init();
+      }
+      if (soundEngine.ctx && soundEngine.ctx.state === 'suspended') {
+        soundEngine.ctx.resume();
+      }
+
+      // Reset relative timers to immediately trigger sounds for the current time
+      lastBarkTime = targetTime - 1.25;
+      lastMeowTime = targetTime - 4.6;
+      lastSwingTime = targetTime - 0.85;
+      soundEngine.footstepsCatTimer = targetTime - 0.2;
+      soundEngine.footstepsDogTimer = targetTime - 0.2;
+
+      // Allow wall impact sound to re-trigger if scrubbed before Act 5
+      if (targetTime < 36.0) {
+        impactSoundPlayed = false;
+      }
+
+      // Contextual instant audio cue on jump
+      if (targetTime >= 10 && targetTime < 20) {
+        soundEngine.playBatSwing();
+      } else if (targetTime >= 36) {
+        soundEngine.playDogsWallImpact();
+        soundEngine.playCatMeow(false);
+        impactSoundPlayed = true;
+      } else {
+        soundEngine.playDogBark(145 + Math.random() * 30, true);
+      }
+    }
+
+    function handleScrub(e) {
+      const rect = scrubberTrack.getBoundingClientRect();
+      const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      currentTime = ratio * TOTAL_DURATION;
+      syncAudioOnSeek(currentTime);
+      updateTimelineUI();
+    }
+
+    scrubberTrack.addEventListener('mousedown', (e) => {
+      isScrubbing = true;
+      handleScrub(e);
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (isScrubbing) handleScrub(e);
+    });
+    window.addEventListener('mouseup', () => { isScrubbing = false; });
+    scrubberTrack.addEventListener('touchstart', (e) => {
+      isScrubbing = true;
+      handleScrub(e);
+    }, { passive: true });
+    window.addEventListener('touchmove', (e) => {
+      if (isScrubbing) handleScrub(e);
+    }, { passive: true });
+    window.addEventListener('touchend', () => { isScrubbing = false; });
+
+    function seekToTime(t) {
+      currentTime = t;
+      syncAudioOnSeek(t);
+      updateTimelineUI();
+    }
+
+    function togglePlayPause() {
+      if (!soundEngine.initialized) soundEngine.init();
+      if (soundEngine.ctx && soundEngine.ctx.state === 'suspended') soundEngine.ctx.resume();
+      isPlaying = !isPlaying;
+      document.getElementById('play-pause-btn').innerText = isPlaying ? '⏸️ PAUSE' : '▶️ PLAY';
+    }
+
+    function restartTimeline() {
+      currentTime = 0;
+      isPlaying = true;
+      syncAudioOnSeek(0);
+      updateTimelineUI();
+    }
+
+    function setSpeed(sp, btn) {
+      playbackSpeed = sp;
+      document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('speed-label').innerText = `SPEED: ${sp}X`;
+    }
+
+    function toggleLetterbox() {
+      document.body.classList.toggle('hide-bars');
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlayPause();
+      } else if (e.key >= '1' && e.key <= '6') {
+        const modes = ['cinematic', 'cat', 'dogs', 'human', 'alley', 'deadend'];
+        setCameraMode(modes[parseInt(e.key) - 1]);
+      }
+    });
+
+    /* =========================================================================
+       9. SIMULATION LOOP (60 FPS OPTIMIZED WITH DYNAMIC KINEMATICS)
+       ========================================================================= */
+    const clock = new THREE.Clock();
+    let lastBarkTime = -2.0;
+    let lastMeowTime = -5.0;
+    let lastSwingTime = -2.0;
+    let impactSoundPlayed = false;
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const dt = clock.getDelta();
+      if (isPlaying) {
+        currentTime += dt * playbackSpeed;
+        if (currentTime > TOTAL_DURATION) {
+          currentTime = 0;
+          syncAudioOnSeek(0);
+        }
+      }
+      updateTimelineUI();
+
+      const time = currentTime;
+
+      // Rewind guards for all periodic sounds
+      if (time < lastBarkTime) lastBarkTime = time - 1.25;
+      if (time < lastMeowTime) lastMeowTime = time - 4.6;
+      if (time < lastSwingTime) lastSwingTime = time - 0.85;
+      if (soundEngine.footstepsCatTimer > time) soundEngine.footstepsCatTimer = time - 0.2;
+      if (soundEngine.footstepsDogTimer > time) soundEngine.footstepsDogTimer = time - 0.2;
+      if (time < 36.0) impactSoundPlayed = false;
+
+      // -------------------------------------------------------------
+      // 1. POSITION CALCULATIONS ACROSS THE 5 ACTS
+      // -------------------------------------------------------------
+      let catZ = -190;
+      let catY = 0;
+      let catPitch = 0;
+      let dogBaseZ = -220;
+      let batSwingAngle = 0;
+      let isFaceToFace = false;
+      let isCatEscaped = false;
+
+      // ACT 1: Dogs Chase Cat (0s to 10s)
+      if (time < 10) {
+        const p = time / 10;
+        catZ = -190 + p * 110; // moves -190 -> -80
+        dogBaseZ = -220 + p * 110; // moves -220 -> -110 (lagging 30m behind)
+      }
+      // ACT 2: Human Defender Swings Bat (10s to 20s)
+      else if (time < 20) {
+        const p = (time - 10) / 10;
+        catZ = -80 + p * 80; // moves -80 -> 0 (cat keeps sprinting)
+        dogBaseZ = -110 + p * 60; // dogs slowed slightly near human (-110 -> -50)
+
+        // Human winds up and swings bat in furious sweeps!
+        batSwingAngle = Math.sin(time * 8.0) * 1.8;
+
+        if (time - lastSwingTime > 0.78) {
+          soundEngine.playBatSwing();
+          lastSwingTime = time;
+        }
+      }
+      // ACT 3: Dogs Resume Fast Pursuit (20s to 30s)
+      else if (time < 30) {
+        const p = (time - 20) / 10;
+        catZ = 0 + p * 105; // moves 0 -> 105 (approaching dead-end at 115)
+        dogBaseZ = -50 + p * 140; // dogs sprinting hard: -50 -> 90 (closing to 15m)
+      }
+      // ACT 4: Cornered at Dead End & Confrontation (30s to 36s)
+      else if (time < 36) {
+        isFaceToFace = true;
+        catZ = 108; // trapped against the wall!
+        const p = (time - 30) / 6;
+        dogBaseZ = 90 + p * 18; // dogs creep closer: 90 -> 108
+
+        // Cat crouches low, bristling
+        catY = 0;
+        catTorso.rotation.x = 0.25;
+
+        // Banner trigger
+        const banner = document.getElementById('action-banner');
+        document.getElementById('banner-title').innerText = "CORNERED AT DEAD END!";
+        document.getElementById('banner-desc').innerText = "CAT IS BACKED AGAINST THE BRICK WALL // DOGS LUNGE!";
+        banner.classList.add('active');
+
+        if (time - lastMeowTime > 1.8) {
+          soundEngine.playCatMeow(true); // frightened hissing meow
+          lastMeowTime = time;
+        }
+      }
+      // ACT 5: The Spectacular High Jump Escape & Dogs Slam Wall (36s to 45s)
+      else {
+        isCatEscaped = true;
+        const p = Math.min(1.0, (time - 36) / 2.5); // jump trajectory (first 2.5s)
+
+        if (p < 1.0) {
+          // Parabolic rocket jump arc from ground (y=0) to wall ledge (y=19.5, z=118)
+          const jumpArc = Math.sin(p * Math.PI);
+          catY = p * 19.5 + jumpArc * 4.5;
+          catZ = 108 + p * 10;
+          catPitch = -jumpArc * 0.8; // body arches during jump!
+        } else {
+          // Safely perched on top of the high ledge at y = 19.5, looking down!
+          catY = 19.5;
+          catZ = 118;
+          catPitch = 0;
+          catTorso.rotation.y = Math.PI; // cat turns around to look down at the dogs!
+        }
+
+        // Dogs lunge and smash into the brick wall at z = 118!
+        dogBaseZ = Math.min(116, 108 + ((time - 36) / 1.0) * 8.0);
+
+        // Flash and impact sound
+        if (!impactSoundPlayed) {
+          soundEngine.playDogsWallImpact();
+          soundEngine.playCatMeow(false); // triumphant meow!
+          impactSoundPlayed = true;
+
+          const flash = document.getElementById('impact-flash');
+          flash.style.opacity = '0.85';
+          setTimeout(() => { flash.style.opacity = '0'; }, 100);
+        }
+
+        const banner = document.getElementById('action-banner');
+        document.getElementById('banner-title').innerText = "CAT SUCCESSFULLY ESCAPED!";
+        document.getElementById('banner-desc').innerText = "CAT PERCHED ON WALL LEDGE // DOGS STRUGGLE AT BASE";
+        banner.classList.add('active');
+      }
+
+      if (time < 30) {
+        document.getElementById('action-banner').classList.remove('active');
+      }
+
+      // -------------------------------------------------------------
+      // 2. CAT MODEL ANIMATION & STRIDE
+      // -------------------------------------------------------------
+      catGroup.position.set(0, catY, catZ);
+      catTorso.rotation.x = catPitch;
+
+      const catRunSpeed = 22.0;
+      const catStride = time * catRunSpeed;
+
+      if (!isFaceToFace && !isCatEscaped) {
+        catTorso.rotation.y = 0;
+        // Bounding feline gallop
+        catLegs[0].rotation.x = Math.sin(catStride) * 0.7;
+        catLegs[1].rotation.x = -Math.sin(catStride) * 0.7;
+        catLegs[2].rotation.x = -Math.sin(catStride + 0.3) * 0.75;
+        catLegs[3].rotation.x = Math.sin(catStride + 0.3) * 0.75;
+        catTorso.position.y = 2.0 + Math.abs(Math.sin(catStride * 2.0)) * 0.4;
+        catTail.rotation.y = Math.sin(catStride) * 0.4;
+
+        if (time - soundEngine.footstepsCatTimer > 0.16) {
+          soundEngine.playFootsteps(false);
+          soundEngine.footstepsCatTimer = time;
+        }
+      } else if (isCatEscaped && time >= 38.5) {
+        // Safe on wall: wagging tail calmly, sitting proudly
+        catTail.rotation.y = Math.sin(time * 3.0) * 0.6;
+        catLegs.forEach(l => l.rotation.x = 0);
+      }
+
+      // Periodic Cat meows
+      if (time - lastMeowTime > 4.5 && time < 30) {
+        soundEngine.playCatMeow(true);
+        lastMeowTime = time;
+      }
+
+      // -------------------------------------------------------------
+      // 3. DOGS PACK MODEL ANIMATION & WALL CRASH
+      // -------------------------------------------------------------
+      const dogRunSpeed = 19.0;
+      const dogStride = time * dogRunSpeed;
+
+      dogs.forEach((d, idx) => {
+        const curDogZ = dogBaseZ + d.staggerZ;
+        let curDogY = 0;
+        let dogPitch = 0;
+
+        if (isCatEscaped && time >= 37) {
+          // Dogs hit wall and are struggling / pawing helplessly up the brick wall!
+          const struggle = Math.sin(time * 12.0 + idx);
+          curDogY = 1.0 + Math.abs(struggle) * 1.2;
+          dogPitch = -0.55; // rearing up on hind legs against the wall
+          d.legs[0].rotation.x = -0.9 + struggle * 0.4; // front paws scratching brick
+          d.legs[1].rotation.x = -0.9 - struggle * 0.4;
+          d.legs[2].rotation.x = 0.3; // hind legs planted
+          d.legs[3].rotation.x = 0.3;
+          d.jaw.rotation.x = 0.4 + struggle * 0.2; // snarling upwards
+        } else {
+          // Running gallop
+          d.group.rotation.x = 0;
+          d.legs[0].rotation.x = Math.sin(dogStride + idx) * 0.8;
+          d.legs[1].rotation.x = -Math.sin(dogStride + idx) * 0.8;
+          d.legs[2].rotation.x = -Math.sin(dogStride + idx + 0.4) * 0.85;
+          d.legs[3].rotation.x = Math.sin(dogStride + idx + 0.4) * 0.85;
+          d.jaw.rotation.x = 0.25 + Math.sin(time * 8.0) * 0.15; // aggressive snarling jaw
+        }
+
+        d.group.position.set(d.laneOffset, curDogY, curDogZ);
+        d.torso.rotation.x = dogPitch;
+      });
+
+      // Frequent barking sounds
+      if (time - lastBarkTime > 1.2 && time < 44) {
+        soundEngine.playDogBark(130 + Math.random() * 40, true);
+        lastBarkTime = time;
+      }
+      if (time - soundEngine.footstepsDogTimer > 0.19 && time < 37) {
+        soundEngine.playFootsteps(true);
+        soundEngine.footstepsDogTimer = time;
+      }
+
+      // -------------------------------------------------------------
+      // 4. HUMAN BAT SWING ANIMATION (ACT 2)
+      // -------------------------------------------------------------
+      if (time >= 10 && time <= 20) {
+        rightArmPivot.rotation.x = batSwingAngle;
+        hTorso.rotation.y = Math.sin(time * 8.0) * 0.35;
+      } else {
+        rightArmPivot.rotation.x = 0.4;
+        hTorso.rotation.y = 0;
+      }
+
+      // Flickering homeless fire barrel
+      barrelFireLight.intensity = 2.5 + Math.sin(time * 14.0) * 1.2;
+
+      // -------------------------------------------------------------
+      // 5. DYNAMIC CAMERA VIEWPOINTS
+      // -------------------------------------------------------------
+      if (cameraMode === 'cinematic') {
+        // Director Cut smoothly adapts based on narrative events
+        if (time < 10) {
+          // Trailing the sprinting cat
+          targetCamPos.set(0, 7.5, catZ - 24);
+          targetCamLook.set(0, 3.5, catZ + 15);
+        } else if (time < 20) {
+          // Close up on Human swinging the bat with dogs dodging
+          targetCamPos.set(12, 11, -30);
+          targetCamLook.set(0, 5, -35);
+        } else if (time < 30) {
+          // Low aggressive angle right in front of the barking dog pack
+          targetCamPos.set(0, 4.5, dogBaseZ + 18);
+          targetCamLook.set(0, 3.5, dogBaseZ);
+        } else {
+          // Dramatic dead-end low angle looking up at the high brick wall & jump
+          targetCamPos.set(12, 6.0, 94);
+          targetCamLook.set(0, 16.0, 118);
+        }
+      } else if (cameraMode === 'cat') {
+        // Close third-person chase camera behind the cat
+        targetCamPos.set(0, 5.5, catZ - 18);
+        targetCamLook.set(0, 3.5, catZ + 15);
+      } else if (cameraMode === 'dogs') {
+        // Action pursuit view: right behind the barking hounds, seeing the golden cat sprinting ahead!
+        targetCamPos.set(0, 6.0, dogBaseZ - 15);
+        targetCamLook.set(0, 3.5, catZ);
+      } else if (cameraMode === 'human') {
+        // Perspective looking at the human swinging bat
+        targetCamPos.set(13, 9.5, -28);
+        targetCamLook.set(2, 6, -35);
+      } else if (cameraMode === 'alley') {
+        // Wide overhead alley corridor tracking the whole chase
+        targetCamPos.set(18, 28, catZ - 35);
+        targetCamLook.set(0, 4, catZ);
+      } else if (cameraMode === 'deadend') {
+        // Confrontation & high-jump: dramatic low-angle looking up at the high brick ledge & dogs slamming below
+        targetCamPos.set(-10, 6.0, 97);
+        targetCamLook.set(0, 14.0, 118);
+      }
+
+      if (cameraMode !== 'orbit') {
+        camera.position.lerp(targetCamPos, 0.06);
+        currentCamLook.lerp(targetCamLook, 0.08);
+        camera.lookAt(currentCamLook);
+      } else {
+        orbitControls.update();
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    /* =========================================================================
+       10. RESIZE HANDLING
+       ========================================================================= */
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    });
+
+    // Start simulation
+    animate();
+  </script>
+</body>
+</html>

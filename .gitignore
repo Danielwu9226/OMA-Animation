@@ -3,3 +3,4 @@ __pycache__/
 records.txt
 .DS_Store
 maomi.jpg
+*.log
