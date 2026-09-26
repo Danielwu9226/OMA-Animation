@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>THE SEA EATER (Trevor Henderson) — 30-Second Oceanic Horror Scene</title>
+  <meta name="description" content="Cinematic 30-Second Trevor Henderson Sea Eater encounter: A 25km long, 5km tall moving mountain monster with 5km skeletal arms, iconic abyssal roar, violent ocean waves, and ship swallowing sequence.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Inter:wght@300;400;600;700&family=Orbitron:wght@600;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- MAIN CANVAS ENGINE CONTAINER -->
+  <div class="canvas-viewport" id="viewport-container">
+    <canvas id="fightCanvas"></canvas>
+
+    <!-- CINEMATIC OVERLAYS & VHS EFFECTS -->
+    <div class="vignette-overlay"></div>
+    <div class="water-distortion-overlay"></div>
+    <div class="vhs-overlay" id="vhs-overlay">
+      <div class="vhs-scanlines"></div>
+      <div class="vhs-noise"></div>
+      <div class="vhs-hud">
+        <span class="vhs-rec"><span class="rec-dot"></span>REC [SP]</span>
+        <span class="vhs-timestamp" id="vhs-timestamp">AUG. 14 1998 - 03:41:22 AM</span>
+        <span class="vhs-coords">PACIFIC TRENCH // 14°12'N 142°18'E // DEPTH: 10,920M</span>
+      </div>
+    </div>
+
+    <!-- HUD TOP BAR -->
+    <header class="hud-header">
+      <div class="hud-brand">
+        <span class="hud-badge">TREVOR HENDERSON MYTHOS // CLASSIFIED TITAN</span>
+        <h1 class="hud-title">THE SEA EATER <span class="titan-scale-tag">5 KM TALL &bull; 25 KM LONG</span></h1>
+      </div>
+      <div class="hud-status">
+        <div class="hud-timer" id="hud-timer">00:00.00 / 00:30.00</div>
+        <div class="hud-scene-name" id="hud-scene-name">ACT 1: THE MOUNTAIN AWAKENS</div>
+      </div>
+      <div class="hud-actions">
+        <button class="hud-btn" id="btn-sound-toggle" title="Toggle Sound FX">
+          <svg id="icon-sound" class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <span id="sound-label">Audio ON</span>
+        </button>
+        <button class="hud-btn highlight-btn" id="btn-trigger-roar" title="Trigger Sea Eater Iconic Roar">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+          <span>Iconic Roar</span>
+        </button>
+        <button class="hud-btn" id="btn-camera-toggle" title="Switch Camera Angle">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+          <span id="camera-label">Cinematic Cam</span>
+        </button>
+        <button class="hud-btn" id="btn-vhs-toggle" title="Toggle Analog Found-Footage Filter">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+            <line x1="7" y1="2" x2="7" y2="22"></line>
+            <line x1="17" y1="2" x2="17" y2="22"></line>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+          </svg>
+          <span id="vhs-label">VHS Style: ON</span>
+        </button>
+        <button class="hud-btn" id="btn-info-modal" title="Creature Lore & Specifications">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span>Lore Specs</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- SUBTITLE CAPTION BANNER -->
+    <div class="subtitle-container">
+      <div class="subtitle-card" id="subtitle-box">
+        <span class="subtitle-time" id="subtitle-time">00:00</span>
+        <p class="subtitle-text" id="subtitle-text">PACIFIC OCEAN TRENCH: A colossal 25 km moving mountain awakens from the deep, water churning with hydrodynamic fury...</p>
+      </div>
+    </div>
+
+    <!-- SEISMIC & HYDRODYNAMIC TELEMETRY BAR -->
+    <div class="telemetry-bar">
+      <div class="telemetry-item">
+        <span class="t-label">ESTIMATED MASS:</span>
+        <span class="t-val">8.4 &times; 10<sup>11</sup> TONS</span>
+      </div>
+      <div class="telemetry-item">
+        <span class="t-label">SURFACE DISPLACEMENT:</span>
+        <span class="t-val" id="telemetry-displacement">5,200 M HEIGHT</span>
+      </div>
+      <div class="telemetry-item">
+        <span class="t-label">SEISMIC FREQUENCY:</span>
+        <span class="t-val" id="telemetry-hz">14.2 HZ (INFRASOUND)</span>
+      </div>
+      <div class="telemetry-item">
+        <span class="t-label">TARGET VESSEL:</span>
+        <span class="t-val warning-text" id="telemetry-target">CARGO CARRIER (IN DANGER)</span>
+      </div>
+    </div>
+
+    <!-- IMPACT FLASH & SHAKE OVERLAYS -->
+    <div class="impact-flash" id="impact-flash"></div>
+    <div class="roar-shockwave" id="roar-shockwave"></div>
+
+    <!-- BOTTOM CINEMATIC CONTROLLER -->
+    <footer class="hud-controller">
+      <!-- TIMELINE SCRUBBER & MARKS (30 SECONDS TOTAL) -->
+      <div class="timeline-container">
+        <div class="timeline-markers-labels">
+          <span class="t-mark" style="left: 0%" data-time="0">0s Mountain Awakens</span>
+          <span class="t-mark" style="left: 20%" data-time="6">6s 5km Bone Arms</span>
+          <span class="t-mark" style="left: 43.3%" data-time="13">13s Iconic Roar</span>
+          <span class="t-mark" style="left: 66.6%" data-time="20">20s Ship Sighted</span>
+          <span class="t-mark" style="left: 83.3%" data-time="25">25s Swallowing Whole</span>
+          <span class="t-mark" style="left: 100%" data-time="30">30s Abyssal Depths</span>
+        </div>
+        <div class="timeline-track-wrapper" id="timeline-track">
+          <div class="timeline-progress" id="timeline-progress"></div>
+          <div class="timeline-handle" id="timeline-handle"></div>
+          <!-- Scene Highlight segments -->
+          <div class="timeline-segment seg-1" style="left: 0%; width: 20%;" title="Act 1: The Mountain Awakens"></div>
+          <div class="timeline-segment seg-2" style="left: 20%; width: 23.3%;" title="Act 2: 5km Bone Arms"></div>
+          <div class="timeline-segment seg-3" style="left: 43.3%; width: 23.3%;" title="Act 3: The Iconic Roar"></div>
+          <div class="timeline-segment seg-4" style="left: 66.6%; width: 16.7%;" title="Act 4: Ship Stalked"></div>
+          <div class="timeline-segment seg-5" style="left: 83.3%; width: 16.7%;" title="Act 5: Swallowed Whole"></div>
+        </div>
+      </div>
+
+      <!-- CONTROL BUTTONS -->
+      <div class="controls-row">
+        <div class="control-group">
+          <button class="ctrl-btn" id="btn-restart" title="Restart Scene (Key: R)">
+            <svg class="ctrl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 4v6h6"></path>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+          </button>
+          <button class="ctrl-btn main-play-btn" id="btn-play-pause" title="Play/Pause (Spacebar)">
+            <svg id="icon-play" class="ctrl-icon-lg hidden" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <svg id="icon-pause" class="ctrl-icon-lg" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="4" width="4" height="16"></rect>
+              <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+          </button>
+          <button class="ctrl-btn" id="btn-next-scene" title="Next Scene Marker (N)">
+            <svg class="ctrl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 4 15 12 5 20 5 4"></polygon>
+              <line x1="19" y1="5" x2="19" y2="19"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- QUICK SCENE SELECTOR -->
+        <div class="scene-quick-picker">
+          <button class="scene-chip active" data-scene="1" data-time="0">1. Mountain Rises (0s)</button>
+          <button class="scene-chip" data-scene="2" data-time="6">2. 5km Bone Arms (6s)</button>
+          <button class="scene-chip" data-scene="3" data-time="13">3. Iconic Roar (13s)</button>
+          <button class="scene-chip" data-scene="4" data-time="20">4. Ship Sighted (20s)</button>
+          <button class="scene-chip" data-scene="5" data-time="25">5. Swallowed Whole (25s)</button>
+        </div>
+
+        <div class="speed-selector">
+          <span class="speed-label">Speed:</span>
+          <button class="speed-btn" data-speed="0.5">0.5x</button>
+          <button class="speed-btn active" data-speed="1.0">1.0x</button>
+          <button class="speed-btn" data-speed="1.5">1.5x</button>
+          <button class="speed-btn" data-speed="2.0">2.0x</button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- CREATURE SPECIFICATIONS MODAL (TREVOR HENDERSON LORE) -->
+  <div class="modal-backdrop hidden" id="modal-lore">
+    <div class="modal-card">
+      <button class="modal-close" id="btn-modal-close">&times;</button>
+      <div class="modal-badge">MYTHOS ARCHIVE // FILE #TH-092</div>
+      <h2 class="modal-title">THE SEA EATER &mdash; OFFICIAL SPECIFICATIONS & SCALE</h2>
+      
+      <div class="modal-grid">
+        <!-- THE SEA EATER CARD -->
+        <div class="lore-card titan-theme">
+          <div class="lore-header">
+            <h3>THE SEA EATER</h3>
+            <span class="lore-tag">STAGGERINGLY MASSIVE LEVIATHAN</span>
+          </div>
+          <p class="lore-desc">
+            Created by horror artist <strong>Trevor Henderson</strong>. The Sea Eater is a cosmic-scale ocean terror resembling a titanic moving mountain churning through the world's deepest abysses.
+          </p>
+          <ul class="lore-stats">
+            <li><strong>Height:</strong> ~5 km (3 miles) tall</li>
+            <li><strong>Width:</strong> ~4.5 km (4 miles) wide</li>
+            <li><strong>Length:</strong> &ge; 25 km (15 miles) long &mdash; resembling a living mountain</li>
+            <li><strong>Hide & Biology:</strong> Thick blubbery black and cyan hide with continuous hydro-channels letting ocean water flow straight through, giving it astounding hydrodynamic agility.</li>
+            <li><strong>Habitat:</strong> Roams the deep abyss of the Pacific and Indian Oceans.</li>
+          </ul>
+        </div>
+
+        <!-- THE ARMS & HANDS -->
+        <div class="lore-card bone-theme">
+          <div class="lore-header">
+            <h3>THE 5 KM BONE ARMS</h3>
+            <span class="lore-tag">AMALGAMATION OF SLAIN GIANTS</span>
+          </div>
+          <p class="lore-desc">
+            Its two giant arms extend over 5 kilometers into the sky. They are composed entirely of dead marine animals (megalodons, blue whales, colossal squids) and the calcified skeletal remains of defeated ocean giants.
+          </p>
+          <ul class="lore-stats">
+            <li><strong>Limbs:</strong> 2 colossal arms, each &gt; 5,000 meters in length</li>
+            <li><strong>Hands:</strong> Humanoid bone hands with abnormal amounts of stretchy skin webbing between elongated fingers</li>
+            <li><strong>Grip:</strong> Capable of trapping supertankers, battleships, or entire fleets like crumbs</li>
+            <li><strong>Auditory Signature:</strong> Iconic subterranean roar accompanied by bone clattering and crushing vortex whirlpools</li>
+          </ul>
+        </div>
+
+        <!-- THE VICTIM VESSEL -->
+        <div class="lore-card ship-theme">
+          <div class="lore-header">
+            <h3>CONTAINER VESSEL</h3>
+            <span class="lore-tag">HUMAN CIVILIAN SHIP</span>
+          </div>
+          <p class="lore-desc">
+            A 200-meter commercial freight ship caught in the violent tempest generated by the beast's displacement. Swallowed entirely in a single gulp.
+          </p>
+          <ul class="lore-stats">
+            <li><strong>Vessel Length:</strong> 200 meters (~0.8% of the Sea Eater's length)</li>
+            <li><strong>Tonnage:</strong> 120,000 DWT</li>
+            <li><strong>Fate:</strong> Pulled into the abyssal maw; zero survivors</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- SCALE GRAPHIC COMPARISON -->
+      <div class="scale-graphic-box">
+        <h4>ACCURATE COMPARATIVE SCALE DIAGRAM</h4>
+        <div class="scale-bars">
+          <div class="scale-item">
+            <span>Human Diver (1.8 m)</span>
+            <div class="bar bar-human"></div>
+            <span class="scale-num">1.8 m</span>
+          </div>
+          <div class="scale-item">
+            <span>Blue Whale (30 m)</span>
+            <div class="bar bar-whale"></div>
+            <span class="scale-num">30 m</span>
+          </div>
+          <div class="scale-item">
+            <span>Container Ship (200 m)</span>
+            <div class="bar bar-ship"></div>
+            <span class="scale-num">200 m</span>
+          </div>
+          <div class="scale-item">
+            <span>Burj Khalifa (828 m)</span>
+            <div class="bar bar-burj"></div>
+            <span class="scale-num">828 m</span>
+          </div>
+          <div class="scale-item">
+            <span>Mount Everest (8,848 m)</span>
+            <div class="bar bar-everest"></div>
+            <span class="scale-num">8.8 km</span>
+          </div>
+          <div class="scale-item">
+            <span><strong>The Sea Eater (Height: 5,000 m / Length: 25,000 m)</strong></span>
+            <div class="bar bar-seaeater"></div>
+            <span class="scale-num highlight-cyan">25.0 km &bull; 5.0 km tall</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
