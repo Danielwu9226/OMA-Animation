@@ -623,10 +623,10 @@
 
   <!-- Big Dramatic Action Banner -->
   <div id="action-banner">
-    <span id="banner-icon" style="font-size: 20px;">🚗</span>
+    <span id="banner-icon" style="font-size: 20px;">💨</span>
     <div>
-      <div id="banner-title" style="color: var(--gold-accent);">TRAFFIC COLLISION!</div>
-      <div id="banner-desc" style="font-size: 10px; color: #cbd5e1;">ONE DOG HIT BY CAR // CAT LEAPS TO SAFETY</div>
+      <div id="banner-title" style="color: var(--gold-accent);">THE DOG WAS NOT THERE!</div>
+      <div id="banner-desc" style="font-size: 10px; color: #cbd5e1;">CAR SKIDS TO A STOP // DOG DISAPPEARED INTO THIN AIR!</div>
     </div>
   </div>
 
@@ -697,7 +697,7 @@
       <div class="chapter-buttons">
         <button class="chap-btn active" onclick="seekToTime(0)">1. Approach Road</button>
         <button class="chap-btn" onclick="seekToTime(10)">2. Weaving Traffic</button>
-        <button class="chap-btn" onclick="seekToTime(22)">3. Dog Hit by Car!</button>
+        <button class="chap-btn" onclick="seekToTime(22)">3. Dog Is Not There!</button>
         <button class="chap-btn" onclick="seekToTime(32)">4. Human Scares Dogs</button>
         <button class="chap-btn" onclick="seekToTime(38)">5. Cat Safely Across</button>
       </div>
@@ -766,8 +766,8 @@
       {
         startTime: 22,
         endTime: 32,
-        title: "ACT 3: THE COLLISION // ONE DOG GETS HIT BY A CAR!",
-        cue: "TIRES SCREECH! A CAR BRAKES HARD AND BUMPS ONE OF THE RECKLESS DOGS!",
+        title: "ACT 3: THE DISAPPEARANCE // THE DOG WAS ACTUALLY NOT THERE!",
+        cue: "TIRES SCREECH AS THE CAR SLAMS BRAKES — BUT THE DOG IS ACTUALLY NOT THERE!",
         cam: "dogs"
       },
       {
@@ -940,45 +940,57 @@
         source.stop(t + 0.8);
       }
 
-      // Dog Hit by Car Impact & Yelp ("THUD + YELP!")
+      // Dog Vanishes / Was Actually Not There! Comedic & mystery poof sound ("POOF + CONFUSED HONK!")
       playCarDogCollision() {
         if (!this.initialized || this.isMuted) return;
         const t = this.ctx.currentTime;
 
-        // Bumper impact thud
-        const thudOsc = this.ctx.createOscillator();
-        thudOsc.type = 'sine';
-        thudOsc.frequency.setValueAtTime(130, t);
-        thudOsc.frequency.exponentialRampToValueAtTime(32, t + 0.5);
+        // 1. Airy / cartoon "POOF" whoosh (bandpassed noise sweeping down)
+        const bufferSize = Math.floor(this.ctx.sampleRate * 0.45);
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 2 - 1;
+        }
 
-        const thudGain = this.ctx.createGain();
-        thudGain.gain.setValueAtTime(0.9, t);
-        thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+        const whiteNoise = this.ctx.createBufferSource();
+        whiteNoise.buffer = noiseBuffer;
 
-        thudOsc.connect(thudGain);
-        thudGain.connect(this.masterGain);
-        thudOsc.start(t);
-        thudOsc.stop(t + 0.6);
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1600, t);
+        filter.frequency.exponentialRampToValueAtTime(280, t + 0.38);
+        filter.Q.setValueAtTime(4.0, t);
 
-        // Dog surprise pain yelp
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.setValueAtTime(0.85, t);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+
+        whiteNoise.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(this.masterGain);
+        whiteNoise.start(t);
+
+        // 2. Comedic mystery chime / pop tone (pitch drops with sparkling overtone)
+        const chime = this.ctx.createOscillator();
+        chime.type = 'sine';
+        chime.frequency.setValueAtTime(920, t);
+        chime.frequency.exponentialRampToValueAtTime(260, t + 0.32);
+
+        const chimeGain = this.ctx.createGain();
+        chimeGain.gain.setValueAtTime(0.55, t);
+        chimeGain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+
+        chime.connect(chimeGain);
+        chimeGain.connect(this.masterGain);
+        chime.start(t);
+        chime.stop(t + 0.36);
+
+        // 3. Driver bewildered double-honk ("BEEP-BEEP?!")
         setTimeout(() => {
           if (!this.initialized || this.isMuted) return;
-          const yt = this.ctx.currentTime;
-          const yelp = this.ctx.createOscillator();
-          yelp.type = 'sawtooth';
-          yelp.frequency.setValueAtTime(580, yt);
-          yelp.frequency.linearRampToValueAtTime(920, yt + 0.2);
-          yelp.frequency.exponentialRampToValueAtTime(240, yt + 0.7);
-
-          const yGain = this.ctx.createGain();
-          yGain.gain.setValueAtTime(0.65, yt);
-          yGain.gain.exponentialRampToValueAtTime(0.001, yt + 0.75);
-
-          yelp.connect(yGain);
-          yGain.connect(this.masterGain);
-          yelp.start(yt);
-          yelp.stop(yt + 0.8);
-        }, 120);
+          this.playCarHorn();
+        }, 320);
       }
 
       // Dog Bark
@@ -1600,6 +1612,38 @@
     }
 
     /* =========================================================================
+       6B. THE "NOT THERE" COMIC POOF & SMOKE PUFF EFFECT
+       ========================================================================= */
+    const poofGroup = new THREE.Group();
+    scene.add(poofGroup);
+    poofGroup.position.set(-3.5, 1.2, 0); // Where Dog #1 was when the car arrived
+    poofGroup.visible = false;
+
+    const poofSpheres = [];
+    const poofMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.8,
+      transparent: true,
+      opacity: 0.9
+    });
+
+    for (let p = 0; p < 18; p++) {
+      const pGeo = new THREE.SphereGeometry(0.5 + Math.random() * 0.45, 8, 8);
+      const pMesh = new THREE.Mesh(pGeo, poofMat.clone());
+      const angle = (p / 18) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+      const dist = 0.4 + Math.random() * 1.6;
+      pMesh.userData = {
+        baseX: Math.cos(angle) * dist,
+        baseY: 0.2 + Math.random() * 1.5,
+        baseZ: Math.sin(angle) * dist,
+        speed: 1.5 + Math.random() * 2.2
+      };
+      pMesh.position.set(pMesh.userData.baseX, pMesh.userData.baseY, pMesh.userData.baseZ);
+      poofGroup.add(pMesh);
+      poofSpheres.push(pMesh);
+    }
+
+    /* =========================================================================
        7. THE HUMAN DEFENDER WITH BASEBALL BAT
        ========================================================================= */
     const humanGroup = new THREE.Group();
@@ -1760,6 +1804,9 @@
       if (currentTime >= 38) {
         document.getElementById('telemetry-cat').innerText = "SAFE & UNINJURED!";
         document.getElementById('telemetry-cat').style.color = "#34d399";
+      } else if (currentTime >= 24.4 && currentTime < 32) {
+        document.getElementById('telemetry-cat').innerText = "DOG WAS NOT THERE!";
+        document.getElementById('telemetry-cat').style.color = "#38bdf8";
       } else {
         document.getElementById('telemetry-cat').innerText = "DODGING TRAFFIC";
         document.getElementById('telemetry-cat').style.color = "#fcd34d";
@@ -1935,7 +1982,7 @@
         dogBaseZ = -16 + p * 18; // dogs enter Lane 3 (-16 -> +2)
         humanZ = -32 + p * 20; // human rushes forward (-32 -> -12)
 
-        // Collision Trigger at ~24.5s
+        // Collision Event at ~24.2s - Car brakes hard, but the dog is actually NOT there!
         if (time >= 24.2 && !dogHitProcessed) {
           soundEngine.playTireSkid();
           soundEngine.playCarDogCollision();
@@ -1946,8 +1993,9 @@
           setTimeout(() => { flash.style.opacity = '0'; }, 110);
 
           const banner = document.getElementById('action-banner');
-          document.getElementById('banner-title').innerText = "DOG BUMPED BY CAR!";
-          document.getElementById('banner-desc').innerText = "YELLOW COUPE TIRES SCREECH // ONE DOG SENT SKIDDING!";
+          document.getElementById('banner-icon').innerText = "💨";
+          document.getElementById('banner-title').innerText = "WAIT... IT'S ACTUALLY NOT THERE!";
+          document.getElementById('banner-desc').innerText = "TIRES SCREECH! CAR HITS EMPTY AIR // THE DOG DISAPPEARED INTO THIN AIR!";
           banner.classList.add('active');
         }
 
@@ -1980,8 +2028,9 @@
         humanZ = 0; // human standing guard at median
 
         const banner = document.getElementById('action-banner');
+        document.getElementById('banner-icon').innerText = "🏆";
         document.getElementById('banner-title').innerText = "CAT SAFELY ACROSS!";
-        document.getElementById('banner-desc').innerText = "GOLDEN CAT UNHARMED ON PARK LAWN // DOGS BLOCKED BY HUMAN";
+        document.getElementById('banner-desc').innerText = "GOLDEN CAT UNHARMED ON PARK LAWN // DOGS BAFFLED BY DISAPPEARANCE";
         banner.classList.add('active');
 
         if (time - lastMeowTime > 3.5) {
@@ -2019,7 +2068,7 @@
       }
 
       // -------------------------------------------------------------
-      // 4. DOGS ANIMATION & DOG HIT TUMBLE
+      // 4. DOGS ANIMATION & DOG VANISHING (ACTUALLY NOT THERE)
       // -------------------------------------------------------------
       const dogStride = time * 20.0;
       dogs.forEach((d, idx) => {
@@ -2029,22 +2078,21 @@
         let pitch = 0;
         let roll = 0;
 
-        if (d.isHitDog && time >= 24.5) {
-          // Dog #1 was hit by the yellow car! It tumbles onto the median and sits dazed
-          const hitTime = time - 24.5;
-          if (hitTime < 2.0) {
-            // Tumble and roll
-            roll = hitTime * Math.PI * 2.0;
-            curY = Math.sin(hitTime * Math.PI) * 2.5;
-            curX += (hitTime / 2.0) * 4.5;
+        if (d.isHitDog) {
+          if (time >= 24.4) {
+            // Dog #1 is ACTUALLY NOT THERE when the car arrives/hits!
+            // It completely vanishes into thin air!
+            d.group.visible = false;
+            return;
           } else {
-            // Sitting on median, whimpering and shaking head
-            curY = 0;
-            roll = 0.4; // leaning to side
-            pitch = -0.3;
+            d.group.visible = true;
           }
-        } else if (time >= 32) {
-          // Other dogs halted, barking in frustration at the human
+        } else {
+          d.group.visible = true;
+        }
+
+        if (time >= 32) {
+          // Other dogs halted at median, barking in frustration and confusion
           pitch = Math.sin(time * 10.0 + idx) * 0.15;
           d.jaw.rotation.x = 0.35 + Math.sin(time * 8.0) * 0.2;
         } else {
@@ -2060,6 +2108,24 @@
         d.torso.rotation.x = pitch;
         d.torso.rotation.z = roll;
       });
+
+      // 4B. COMIC POOF PARTICLES ANIMATION (Act 3: ~24.3s - 27.5s)
+      if (time >= 24.3 && time <= 27.5) {
+        poofGroup.visible = true;
+        const pProg = (time - 24.3) / 3.2;
+        poofSpheres.forEach(pm => {
+          const expand = 1.0 + pProg * pm.userData.speed;
+          pm.position.set(
+            pm.userData.baseX * expand,
+            pm.userData.baseY + pProg * 2.2,
+            pm.userData.baseZ * expand
+          );
+          pm.scale.setScalar(Math.max(0.01, (1.0 + pProg * 1.5) * (1.0 - pProg)));
+          pm.material.opacity = Math.max(0, 0.85 * (1.0 - pProg));
+        });
+      } else {
+        poofGroup.visible = false;
+      }
 
       // Barking frequency
       if (time - lastBarkTime > 1.3 && time < 42) {
@@ -2104,7 +2170,7 @@
           targetCamPos.set(-28, 14, catZ - 10);
           targetCamLook.set(0, 3.0, catZ + 8);
         } else if (time < 32) {
-          // Dramatic collision shot: close up on Lane 3 as car hits dog!
+          // Dramatic shot: close up on Lane 3 as car skids to a halt and dog vanishes!
           targetCamPos.set(16, 8.0, 4);
           targetCamLook.set(0, 2.0, 10);
         } else {
