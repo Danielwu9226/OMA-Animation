@@ -658,6 +658,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="textures_data.js"></script>
 </head>
 <body>
   <div class="cinema-bars cinema-top"></div>
@@ -1240,8 +1241,8 @@
        ========================================================================= */
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x080b12);
-    scene.fog = new THREE.FogExp2(0x080b12, 0.022);
+    scene.background = new THREE.Color(0x060913);
+    scene.fog = new THREE.FogExp2(0x060913, 0.018);
 
     const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 500);
     camera.position.set(0, 4.5, 14);
@@ -1252,143 +1253,298 @@
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.18;
     container.appendChild(renderer.domElement);
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.maxPolarAngle = Math.PI / 2 - 0.02; // Don't go below floor
+    controls.maxPolarAngle = Math.PI / 2 - 0.02;
     controls.enabled = false;
+
+    // Load Authentic Textures from Sketchfab Embed Data
+    const texLoader = new THREE.TextureLoader();
+    let shibaTex = null, catBodyTex = null, catHeadTex = null, catCollarTex = null, catEyesTex = null;
+
+    if (window.SKETCHFAB_TEXTURES) {
+      if (window.SKETCHFAB_TEXTURES.shiba) {
+        shibaTex = texLoader.load(window.SKETCHFAB_TEXTURES.shiba);
+        shibaTex.wrapS = THREE.RepeatWrapping;
+        shibaTex.wrapT = THREE.RepeatWrapping;
+      }
+      if (window.SKETCHFAB_TEXTURES.catBody) {
+        catBodyTex = texLoader.load(window.SKETCHFAB_TEXTURES.catBody);
+        catBodyTex.wrapS = THREE.RepeatWrapping;
+        catBodyTex.wrapT = THREE.RepeatWrapping;
+      }
+      if (window.SKETCHFAB_TEXTURES.catHead) {
+        catHeadTex = texLoader.load(window.SKETCHFAB_TEXTURES.catHead);
+        catHeadTex.wrapS = THREE.RepeatWrapping;
+        catHeadTex.wrapT = THREE.RepeatWrapping;
+      }
+      if (window.SKETCHFAB_TEXTURES.catCollar) {
+        catCollarTex = texLoader.load(window.SKETCHFAB_TEXTURES.catCollar);
+        catCollarTex.wrapS = THREE.RepeatWrapping;
+        catCollarTex.wrapT = THREE.RepeatWrapping;
+      }
+      if (window.SKETCHFAB_TEXTURES.catEyes) {
+        catEyesTex = texLoader.load(window.SKETCHFAB_TEXTURES.catEyes);
+      }
+    }
 
     // Atmospheric Lights
     const ambientLight = new THREE.AmbientLight(0x1e293b, 1.4);
     scene.add(ambientLight);
 
-    const moonLight = new THREE.DirectionalLight(0x93c5fd, 1.8);
-    moonLight.position.set(-15, 25, 20);
+    const moonLight = new THREE.DirectionalLight(0x93c5fd, 2.0);
+    moonLight.position.set(-15, 30, 25);
     moonLight.castShadow = true;
     moonLight.shadow.mapSize.width = 2048;
     moonLight.shadow.mapSize.height = 2048;
-    moonLight.shadow.bias = -0.0005;
+    moonLight.shadow.bias = -0.0004;
     scene.add(moonLight);
 
-    const warmFillLight = new THREE.DirectionalLight(0xf59e0b, 1.2);
-    warmFillLight.position.set(18, 12, -15);
+    const warmFillLight = new THREE.DirectionalLight(0xf59e0b, 1.3);
+    warmFillLight.position.set(18, 14, -15);
     scene.add(warmFillLight);
 
     // Dynamic Battle Arena Ring Spotlight
-    const battleSpot = new THREE.SpotLight(0xffedd5, 2.8, 45, Math.PI / 3.5, 0.4);
-    battleSpot.position.set(0, 18, 0);
+    const battleSpot = new THREE.SpotLight(0xffedd5, 3.2, 50, Math.PI / 3.2, 0.4);
+    battleSpot.position.set(0, 20, 0);
     battleSpot.castShadow = true;
     scene.add(battleSpot);
 
-    // Ground Arena: Dark wet cobblestone courtyard
-    const floorGeo = new THREE.PlaneGeometry(120, 120);
+    // ==========================================
+    // REALISTIC BACKGROUND ENVIRONMENT
+    // ==========================================
+    const envGroup = new THREE.Group();
+    scene.add(envGroup);
+
+    // 1. Sky Dome with Twinkling Starfield
+    const starCount = 800;
+    const starGeo = new THREE.BufferGeometry();
+    const starPos = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount * 3; i += 3) {
+      const u = Math.random();
+      const v = Math.random();
+      const theta = u * 2.0 * Math.PI;
+      const phi = Math.acos(2.0 * v - 1.0);
+      const r = 90 + Math.random() * 20;
+      starPos[i] = r * Math.sin(phi) * Math.cos(theta);
+      starPos[i+1] = Math.abs(r * Math.cos(phi)) + 15; // upper hemisphere
+      starPos[i+2] = r * Math.sin(phi) * Math.sin(theta);
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.6, transparent: true, opacity: 0.85 });
+    const stars = new THREE.Points(starGeo, starMat);
+    envGroup.add(stars);
+
+    // Glowing Full Moon
+    const moonGroup = new THREE.Group();
+    moonGroup.position.set(-35, 42, -50);
+    const moonMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(6.5, 24, 24),
+      new THREE.MeshBasicMaterial({ color: 0xfef9c3 })
+    );
+    moonGroup.add(moonMesh);
+
+    const moonGlow = new THREE.Mesh(
+      new THREE.SphereGeometry(8.5, 24, 24),
+      new THREE.MeshBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.22, side: THREE.BackSide })
+    );
+    moonGroup.add(moonGlow);
+    envGroup.add(moonGroup);
+
+    // 2. Ground Arena: Wet Reflective Cobblestone Courtyard
+    const floorGeo = new THREE.PlaneGeometry(140, 140, 32, 32);
     const floorMat = new THREE.MeshStandardMaterial({
-      color: 0x0f172a,
-      roughness: 0.28,
-      metalness: 0.15
+      color: 0x0c121e,
+      roughness: 0.22,
+      metalness: 0.35
     });
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
-    scene.add(floor);
+    envGroup.add(floor);
 
-    // Decorative Battle Arena: Stone curbs, lantern pillars, and cat observation bench
-    const ringGeo = new THREE.RingGeometry(13.8, 14.5, 32);
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
+    // Glowing Arena Combat Ring with Runes
+    const ringGeo = new THREE.RingGeometry(13.6, 14.5, 48);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide, transparent: true, opacity: 0.45 });
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = 0.02;
-    scene.add(ring);
+    envGroup.add(ring);
 
-    // Stone Bench / Cat Pedestal (where the cat swishes its tail in Act 1)
+    // Inner Battle Circle
+    const innerRingGeo = new THREE.RingGeometry(6.8, 7.2, 36);
+    const innerRingMat = new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
+    const innerRing = new THREE.Mesh(innerRingGeo, innerRingMat);
+    innerRing.rotation.x = -Math.PI / 2;
+    innerRing.position.y = 0.02;
+    envGroup.add(innerRing);
+
+    // 3. Perimeter Stone Brick Courtyard Walls with Arches
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85, metalness: 0.1 });
+    const wallTrimMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 });
+
+    const wallConfigs = [
+      { x: 0, z: -25, w: 55, h: 9, d: 2, rotY: 0 },
+      { x: -25, z: 0, w: 2, h: 9, d: 55, rotY: 0 },
+      { x: 25, z: 0, w: 2, h: 9, d: 55, rotY: 0 }
+    ];
+
+    wallConfigs.forEach(wc => {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(wc.w, wc.h, wc.d), wallMat);
+      wall.position.set(wc.x, wc.h / 2, wc.z);
+      wall.castShadow = true;
+      wall.receiveShadow = true;
+      envGroup.add(wall);
+
+      // Top Cornice Trim
+      const trim = new THREE.Mesh(new THREE.BoxGeometry(wc.w + 0.4, 0.6, wc.d + 0.4), wallTrimMat);
+      trim.position.set(wc.x, wc.h + 0.3, wc.z);
+      trim.castShadow = true;
+      envGroup.add(trim);
+    });
+
+    // 4. Courtyard Decorative Elements: Wooden Crates & Barrels
+    const crateMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.85 });
+    const barrelMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.8 });
+
+    const crateLocs = [
+      { x: -16, z: -21, s: 2.2 }, { x: -13.5, z: -21.5, s: 1.8 }, { x: -15, z: -21, y: 2.0, s: 1.5 },
+      { x: 18, z: -20, s: 2.0 }, { x: 19.5, z: -18, s: 1.6 }
+    ];
+    crateLocs.forEach(c => {
+      const crate = new THREE.Mesh(new THREE.BoxGeometry(c.s, c.s, c.s), crateMat);
+      crate.position.set(c.x, (c.y || 0) + c.s / 2, c.z);
+      crate.castShadow = true;
+      crate.receiveShadow = true;
+      envGroup.add(crate);
+    });
+
+    for (let bx of [-11, 15, -21]) {
+      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.9, 2.2, 12), barrelMat);
+      barrel.position.set(bx, 1.1, -19);
+      barrel.castShadow = true;
+      envGroup.add(barrel);
+    }
+
+    // 5. Victorian Park Bench (Where Cat rests in Act 1)
     const benchGroup = new THREE.Group();
-    benchGroup.position.set(2.5, 0, -2.5);
-    scene.add(benchGroup);
+    benchGroup.position.set(4.5, 0, -1.0);
+    benchGroup.rotation.y = -0.45;
+    envGroup.add(benchGroup);
 
-    const benchTop = new THREE.Mesh(
-      new THREE.BoxGeometry(3.8, 0.4, 1.6),
-      new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 })
-    );
-    benchTop.position.set(0, 1.2, 0);
-    benchTop.castShadow = true;
-    benchTop.receiveShadow = true;
-    benchGroup.add(benchTop);
+    const benchWoodMat = new THREE.MeshStandardMaterial({ color: 0x5a2d0c, roughness: 0.7 });
+    const benchIronMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5, metalness: 0.7 });
 
-    for (let bx of [-1.5, 1.5]) {
-      const leg = new THREE.Mesh(
-        new THREE.BoxGeometry(0.5, 1.2, 1.4),
-        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 })
-      );
-      leg.position.set(bx, 0.6, 0);
+    // Wooden Slats
+    for (let s = 0; s < 4; s++) {
+      const slat = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.12, 0.32), benchWoodMat);
+      slat.position.set(0, 1.15, -0.45 + s * 0.38);
+      slat.castShadow = true;
+      benchGroup.add(slat);
+    }
+
+    // Backrest Slats
+    for (let b = 0; b < 3; b++) {
+      const bSlat = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.3, 0.1), benchWoodMat);
+      bSlat.position.set(0, 1.55 + b * 0.35, -0.65);
+      bSlat.castShadow = true;
+      benchGroup.add(bSlat);
+    }
+
+    // Cast Iron Legs
+    for (let lx of [-1.5, 1.5]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.15, 1.4), benchIronMat);
+      leg.position.set(lx, 0.58, 0.05);
       leg.castShadow = true;
       benchGroup.add(leg);
     }
 
-    // Street Lantern Pillars with Warm Glowing Bulbs
-    for (let lp of [{x: -8, z: -8}, {x: 8, z: 8}, {x: -8, z: 8}, {x: 8, z: -8}]) {
+    // 6. Victorian Street Lantern Pillars with Warm Lighting
+    for (let lp of [{x: -9, z: -9}, {x: 9, z: 9}, {x: -9, z: 9}, {x: 9, z: -9}]) {
       const pillar = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.18, 0.25, 7.5, 8),
-        new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6, metalness: 0.6 })
+        new THREE.CylinderGeometry(0.18, 0.28, 8.0, 8),
+        new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5, metalness: 0.7 })
       );
-      pillar.position.set(lp.x, 3.75, lp.z);
+      pillar.position.set(lp.x, 4.0, lp.z);
       pillar.castShadow = true;
-      scene.add(pillar);
+      envGroup.add(pillar);
+
+      const lampHousing = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.65, 0),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.8 })
+      );
+      lampHousing.position.set(lp.x, 8.0, lp.z);
+      envGroup.add(lampHousing);
 
       const bulb = new THREE.Mesh(
         new THREE.SphereGeometry(0.35, 12, 12),
         new THREE.MeshBasicMaterial({ color: 0xfef08a })
       );
-      bulb.position.set(lp.x, 7.5, lp.z);
-      scene.add(bulb);
+      bulb.position.set(lp.x, 8.0, lp.z);
+      envGroup.add(bulb);
 
-      const lampLight = new THREE.PointLight(0xfef08a, 1.2, 18);
-      lampLight.position.set(lp.x, 7.5, lp.z);
-      scene.add(lampLight);
+      const lampLight = new THREE.PointLight(0xfef08a, 1.5, 20);
+      lampLight.position.set(lp.x, 8.0, lp.z);
+      envGroup.add(lampLight);
     }
+
+    // 7. Champion's Stone Victory Pedestal (Center stage in Act 4)
+    const podiumGeo = new THREE.CylinderGeometry(3.5, 4.2, 0.6, 24);
+    const podiumMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.6, metalness: 0.2 });
+    const podium = new THREE.Mesh(podiumGeo, podiumMat);
+    podium.position.set(0, 0.3, -4.2);
+    podium.receiveShadow = true;
+    envGroup.add(podium);
 
     /* =========================================================================
        4. THE PLAYFUL SHIBA INU DOG MODEL
           Direct match to Sketchfab: "Playful Dog" (3d4b542bd27144ccba382e2825ecd8b5)
-          - Fawn / red-gold coat with creamy white Urajiro markings
+          - Fawn / reddish-orange coat with authentic Sketchfab texture map
+          - Creamy white Urajiro markings (bib, cheeks, socks, belly)
           - Curled sickle tail arching high over the back
-          - Triangular prick ears with white inner fuzz
-          - Expressive almond eyes with white eyebrow pips
+          - Triangular prick ears with soft inner fuzz
+          - Expressive dark amber eyes (NO red eyes! Pure intense rage through facial snarl)
           - Articulated snout & jaw capable of chomping, snarling, and howling
-          - Supercharged Full Power Aura & glowing crimson battle eyes
        ========================================================================= */
     const shibaFawnMat = new THREE.MeshStandardMaterial({
-      color: 0xc87a3e, // rich warm golden-fawn
-      roughness: 0.52,
+      color: 0xffffff,
+      map: shibaTex,
+      roughness: 0.55,
       metalness: 0.05
     });
 
     const shibaUrajiroMat = new THREE.MeshStandardMaterial({
-      color: 0xf6f2ea, // creamy white underbelly/cheeks
+      color: 0xf6f2ea,
       roughness: 0.62,
       metalness: 0.02
     });
 
     const shibaDarkSpineMat = new THREE.MeshStandardMaterial({
-      color: 0x8a4d22, // darker saddle wash
-      roughness: 0.55
+      color: 0x8a4d22,
+      roughness: 0.58
     });
 
     const shibaInnerEarMat = new THREE.MeshStandardMaterial({
-      color: 0xebd2c4, // soft pinkish fuzz
+      color: 0xebd2c4,
       roughness: 0.65
     });
 
     const shibaNoseMat = new THREE.MeshStandardMaterial({
-      color: 0x0f1115, // black wet leather
-      roughness: 0.25,
+      color: 0x0f1115,
+      roughness: 0.22,
       metalness: 0.1
     });
 
-    const shibaEyeMat = new THREE.MeshBasicMaterial({ color: 0x451a03 }); // dark amber-brown
-    const shibaRageEyeMat = new THREE.MeshBasicMaterial({ color: 0xff1e00 }); // glowing furious crimson
+    // Authentic dark amber eyes with white highlight glint - NO RED EYES!
+    const shibaEyeMat = new THREE.MeshStandardMaterial({
+      color: 0x3d1702,
+      roughness: 0.15,
+      metalness: 0.2
+    });
 
     const shibaTongueMat = new THREE.MeshStandardMaterial({
       color: 0xf43f5e,
@@ -1480,7 +1636,7 @@
     rightCheek.position.set(0.9, -0.1, 0.2);
     dHead.add(rightCheek);
 
-    // Distinct White Eyebrow Pips ("Maro" spots)
+    // Distinct White Eyebrow Pips ("Maro" spots) - Angled for Rage Scowl!
     const leftPip = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.18, 0.15), shibaUrajiroMat);
     leftPip.position.set(-0.45, 0.75, 0.82);
     dHead.add(leftPip);
@@ -1503,7 +1659,7 @@
     dNose.position.set(0, 0.28, 1.95);
     dHead.add(dNose);
 
-    // Scratch Marks Mesh (Initially hidden, revealed after Act 2!)
+    // Scratch Marks Mesh (Revealed post-Act 2!)
     const scratchGroup = new THREE.Group();
     scratchGroup.position.set(0, 0.2, 1.3);
     scratchGroup.visible = false;
@@ -1512,44 +1668,51 @@
     for (let sc = -1; sc <= 1; sc++) {
       const slashStreak = new THREE.Mesh(
         new THREE.BoxGeometry(0.08, 0.35, 0.8),
-        new THREE.MeshBasicMaterial({ color: 0xef4444 })
+        new THREE.MeshBasicMaterial({ color: 0xdc2626 })
       );
       slashStreak.position.set(sc * 0.28, 0.18, 0.1);
       slashStreak.rotation.set(0.2, sc * 0.25, 0.4);
       scratchGroup.add(slashStreak);
     }
 
-    // Eyes
+    // Eyes - Natural Amber with Specular Pupil Glint (NO RED EYES!)
     const dEyes = [];
     for (let s of [-0.62, 0.62]) {
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), shibaEyeMat);
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), shibaEyeMat);
       eye.position.set(s, 0.42, 0.82);
       eye.scale.set(0.8, 1.0, 1.2);
       dHead.add(eye);
       dEyes.push(eye);
+
+      // Eye Glint
+      const glint = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      glint.position.set(s * 0.9, 0.48, 0.94);
+      dHead.add(glint);
     }
 
-    // Triangular Prick Ears (Upright, slight forward tilt)
+    // Triangular Prick Ears (Upright, articulates into pinned-back rage posture)
+    const dEarPivots = [];
     const earGeo = new THREE.ConeGeometry(0.42, 1.1, 4);
     earGeo.scale(1.0, 1.0, 0.5);
     for (let s of [-0.7, 0.7]) {
-      const earGroup = new THREE.Group();
-      earGroup.position.set(s, 0.95, -0.15);
-      earGroup.rotation.set(-0.2, 0, (s < 0 ? 1 : -1) * 0.15);
+      const earPivot = new THREE.Group();
+      earPivot.position.set(s, 0.95, -0.15);
+      earPivot.rotation.set(-0.2, 0, (s < 0 ? 1 : -1) * 0.15);
 
       const earOuter = new THREE.Mesh(earGeo, shibaFawnMat);
       earOuter.position.set(0, 0.5, 0);
-      earGroup.add(earOuter);
+      earPivot.add(earOuter);
 
       const earInner = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.85, 4), shibaInnerEarMat);
       earInner.scale.set(0.9, 1.0, 0.4);
       earInner.position.set(0, 0.45, 0.08);
-      earGroup.add(earInner);
+      earPivot.add(earInner);
 
-      dHead.add(earGroup);
+      dHead.add(earPivot);
+      dEarPivots.push(earPivot);
     }
 
-    // Articulated Lower Jaw
+    // Articulated Lower Jaw (Bares fangs in rage!)
     const dJaw = new THREE.Group();
     dJaw.position.set(0, -0.35, 0.8);
     dHead.add(dJaw);
@@ -1562,14 +1725,14 @@
     tongue.position.set(0, 0.1, 0.6);
     dJaw.add(tongue);
 
-    // Canines
+    // Razor Sharp Fangs
     for (let s of [-0.38, 0.38]) {
-      const uFang = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.45, 4), shibaTeethMat);
+      const uFang = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.45, 6), shibaTeethMat);
       uFang.rotateX(Math.PI);
       uFang.position.set(s, -0.18, 1.7);
       dHead.add(uFang);
 
-      const lFang = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.4, 4), shibaTeethMat);
+      const lFang = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.4, 6), shibaTeethMat);
       lFang.position.set(s * 0.9, 0.22, 1.05);
       dJaw.add(lFang);
     }
@@ -1602,7 +1765,6 @@
       paw.position.set(0, -1.55, 0.12);
       legGroup.add(paw);
 
-      // Black claws
       for (let c of [-0.16, 0.16]) {
         const claw = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.2), shibaNoseMat);
         claw.position.set(c, -1.6, 0.52);
@@ -1613,64 +1775,151 @@
       dLegs.push(legGroup);
     });
 
-    // Full Power Flaming Battle Aura (Appears in Act 3 & 4!)
+    // ==========================================
+    // SUPERCHARGED BATTLE POWER VFX SUITE
+    // (Activated in Act 3 Rage Mode & Act 4 Tackle Charge!)
+    // ==========================================
     const auraGroup = new THREE.Group();
     auraGroup.position.set(0, 0, 0);
     auraGroup.visible = false;
     dTorso.add(auraGroup);
 
-    const auraGeo = new THREE.SphereGeometry(3.2, 16, 16);
+    // 1. Outer Blazing Energy Shell
+    const auraGeo = new THREE.SphereGeometry(3.6, 24, 24);
     const auraMat = new THREE.MeshBasicMaterial({
-      color: 0xff3b30,
+      color: 0xf59e0b,
       transparent: true,
-      opacity: 0.35,
+      opacity: 0.45,
       wireframe: true
     });
     const auraSphere = new THREE.Mesh(auraGeo, auraMat);
     auraGroup.add(auraSphere);
 
-    const auraCore = new THREE.PointLight(0xff4500, 3.5, 15);
+    // 2. Inner Flaming Core
+    const innerAuraMat = new THREE.MeshBasicMaterial({
+      color: 0xef4444,
+      transparent: true,
+      opacity: 0.28
+    });
+    const innerAura = new THREE.Mesh(new THREE.SphereGeometry(2.8, 16, 16), innerAuraMat);
+    auraGroup.add(innerAura);
+
+    // 3. Blazing Dynamic Core Light
+    const auraCore = new THREE.PointLight(0xff3b30, 4.5, 18);
     auraGroup.add(auraCore);
+
+    // 4. Ground Rupture Fissure Cracks (Appears beneath dog during rage!)
+    const groundFissureGroup = new THREE.Group();
+    groundFissureGroup.position.set(0, 0.05, 0);
+    groundFissureGroup.visible = false;
+    scene.add(groundFissureGroup);
+
+    const crackCount = 8;
+    for (let c = 0; c < crackCount; c++) {
+      const angle = (c / crackCount) * Math.PI * 2 + Math.random() * 0.4;
+      const length = 3.5 + Math.random() * 2.5;
+      const crack = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.25, length),
+        new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide })
+      );
+      crack.rotation.x = -Math.PI / 2;
+      crack.rotation.z = angle;
+      crack.position.set(Math.cos(angle) * (length / 2), 0, Math.sin(angle) * (length / 2));
+      groundFissureGroup.add(crack);
+    }
+
+    // Shockwave Blast Rings
+    const blastRingGeo = new THREE.RingGeometry(0.5, 1.2, 32);
+    const blastRingMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+    const blastRing = new THREE.Mesh(blastRingGeo, blastRingMat);
+    blastRing.rotation.x = -Math.PI / 2;
+    groundFissureGroup.add(blastRing);
+
+    // 5. Ascending Fiery Embers Particle System (120 particles)
+    const emberCount = 120;
+    const emberGeo = new THREE.BufferGeometry();
+    const emberPos = new Float32Array(emberCount * 3);
+    const emberVel = new Float32Array(emberCount * 3);
+
+    for (let i = 0; i < emberCount; i++) {
+      const rad = 1.0 + Math.random() * 2.5;
+      const ang = Math.random() * Math.PI * 2;
+      emberPos[i*3] = Math.cos(ang) * rad;
+      emberPos[i*3+1] = Math.random() * 4.0;
+      emberPos[i*3+2] = Math.sin(ang) * rad;
+
+      emberVel[i*3] = (Math.random() - 0.5) * 0.02;
+      emberVel[i*3+1] = 0.04 + Math.random() * 0.08; // upward speed
+      emberVel[i*3+2] = (Math.random() - 0.5) * 0.02;
+    }
+    emberGeo.setAttribute('position', new THREE.BufferAttribute(emberPos, 3));
+    const emberMat = new THREE.PointsMaterial({
+      color: 0xf59e0b,
+      size: 0.35,
+      transparent: true,
+      opacity: 0.85
+    });
+    const emberParticles = new THREE.Points(emberGeo, emberMat);
+    auraGroup.add(emberParticles);
+
+    // Camera Shake intensity controller
+    let cameraShake = 0.0;
 
     /* =========================================================================
        5. THE OFFICE CAT MODEL
           Direct match to Sketchfab: "cat" (72802b97cf2f4caa917c2c0525c61d2e)
-          - Warm grey tabby coat with charcoal stripes
-          - White muzzle blaze, chin & chest
-          - Sky-blue collar with gold bell
+          - Warm grey tabby coat with authentic Sketchfab diffuse texture
+          - White muzzle blaze, chin & chest bib
+          - Sky-blue collar with polished gold bell
           - Luminous olive-green feline eyes
-          - Multi-joint flexible tail that gets bitten!
-          - Razor scratch claw swipe combo with glowing slash VFX
+          - Flexible 6-segment tail that gets bitten
+          - Retractable razor claws & claw slash combo VFX
        ========================================================================= */
     const catTabbyMat = new THREE.MeshStandardMaterial({
-      color: 0x9e9589, // sculpted warm grey tabby
-      roughness: 0.58
+      color: 0xffffff,
+      map: catBodyTex,
+      roughness: 0.55
+    });
+
+    const catHeadMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: catHeadTex,
+      roughness: 0.55
     });
 
     const catStripeMat = new THREE.MeshStandardMaterial({
-      color: 0x3e3630, // charcoal tabby stripe bands
+      color: 0x383028,
       roughness: 0.65
     });
 
     const catWhiteBlazeMat = new THREE.MeshStandardMaterial({
-      color: 0xfdfaf6, // crisp white blaze & chin
+      color: 0xfdfaf6,
       roughness: 0.65
     });
 
     const catPinkNoseMat = new THREE.MeshStandardMaterial({
-      color: 0xf472b6, // delicate soft pink nose
+      color: 0xf472b6,
       roughness: 0.35
     });
 
     const catEarInnerMat = new THREE.MeshStandardMaterial({
-      color: 0xf9a8d4, // pink inner ear skin
+      color: 0xf9a8d4,
       roughness: 0.5
     });
 
-    const catEyeMat = new THREE.MeshBasicMaterial({ color: 0x84cc16 }); // luminous chartreuse-green
-    const catPupilMat = new THREE.MeshBasicMaterial({ color: 0x050505 }); // vertical slit pupil
-    const catCollarMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.35 }); // sky blue collar
-    const catBellMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.9, roughness: 0.15 }); // gold bell
+    const catEyeMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: catEyesTex,
+      roughness: 0.15,
+      metalness: 0.2
+    });
+    const catPupilMat = new THREE.MeshBasicMaterial({ color: 0x050505 });
+    const catCollarMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: catCollarTex,
+      roughness: 0.35
+    });
+    const catBellMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.9, roughness: 0.15 });
 
     // Cat Root Group
     const catGroup = new THREE.Group();
@@ -1699,13 +1948,13 @@
     cChestBib.rotation.x = -0.15;
     cTorso.add(cChestBib);
 
-    // Sky-Blue Collar with Golden Bell (Key feature from model!)
+    // Sky-Blue Collar with Golden Bell
     const cCollar = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.3, 0.35), catCollarMat);
     cCollar.position.set(0, 0.75, 1.35);
     cCollar.rotation.x = -0.3;
     cTorso.add(cCollar);
 
-    const cBell = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), catBellMat);
+    const cBell = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), catBellMat);
     cBell.position.set(0, 0.55, 1.58);
     cTorso.add(cBell);
 
@@ -1725,7 +1974,7 @@
     cHead.position.set(0, 1.0, 0.6);
     cNeck.add(cHead);
 
-    const cSkull = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.4, 1.5), catTabbyMat);
+    const cSkull = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.4, 1.5), catHeadMat);
     cSkull.position.set(0, 0.15, 0);
     cSkull.castShadow = true;
     cHead.add(cSkull);
@@ -1747,9 +1996,20 @@
     cNose.position.set(0, 0.05, 1.42);
     cHead.add(cNose);
 
+    // Delicate Feline Whiskers
+    const whiskerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    for (let side of [-1, 1]) {
+      for (let w = -1; w <= 1; w++) {
+        const whisker = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.03, 0.03), whiskerMat);
+        whisker.position.set(side * 0.75, -0.12 + w * 0.08, 1.25);
+        whisker.rotation.set(0, side * 0.3, w * 0.15);
+        cHead.add(whisker);
+      }
+    }
+
     // Luminous Olive-Green Eyes
     for (let s of [-0.48, 0.48]) {
-      const eyeSphere = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8), catEyeMat);
+      const eyeSphere = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 12), catEyeMat);
       eyeSphere.position.set(s, 0.32, 0.72);
       eyeSphere.scale.set(1.0, 1.0, 0.7);
       cHead.add(eyeSphere);
@@ -1765,7 +2025,7 @@
       const earPivot = new THREE.Group();
       earPivot.position.set(s, 0.95, -0.1);
 
-      const earMesh = new THREE.Mesh(new THREE.ConeGeometry(0.38, 1.2, 4), catTabbyMat);
+      const earMesh = new THREE.Mesh(new THREE.ConeGeometry(0.38, 1.2, 4), catHeadMat);
       earMesh.scale.set(1.0, 1.0, 0.4);
       earMesh.position.set(0, 0.55, 0);
       earMesh.rotation.y = s < 0 ? -0.2 : 0.2;
@@ -1780,7 +2040,7 @@
       cEars.push(earPivot);
     }
 
-    // Multi-Joint Flexible Cat Tail (The Target that gets bitten in Act 1!)
+    // Multi-Joint Flexible Cat Tail (6 segments)
     const cTailSegments = [];
     let prevSegment = cTorso;
     for (let t = 0; t < 6; t++) {
@@ -1793,7 +2053,7 @@
 
       const isStriped = (t % 2 === 0);
       const segMesh = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.18 - t * 0.015, 0.2 - t * 0.015, 0.65, 6),
+        new THREE.CylinderGeometry(0.18 - t * 0.015, 0.2 - t * 0.015, 0.65, 8),
         isStriped ? catStripeMat : catTabbyMat
       );
       segMesh.rotation.x = Math.PI / 2.4;
@@ -2001,64 +2261,118 @@
       const time = currentTime;
 
       // Positions and Poses
-      let dogX = 0, dogY = 0, dogZ = 0, dogRotY = 0, dogPitch = 0, dogJawOpen = 0;
+      let dogX = 0, dogY = 0, dogZ = 0, dogRotY = Math.PI, dogPitch = 0, dogJawOpen = 0;
       let catX = 0, catY = 0, catZ = 0, catRotY = 0, catPitch = 0, catArch = 0;
       let dogStride = 0, catStride = 0;
       let auraActive = false;
       let scratchesVisible = false;
-      let redEyesActive = false;
       let slashesVisible = false;
+      let cameraShake = 0.0;
+
+      // Reset Dog Facial Rage Posture defaults
+      leftPip.rotation.z = 0;
+      rightPip.rotation.z = 0;
+      leftPip.position.set(-0.45, 0.75, 0.82);
+      rightPip.position.set(0.45, 0.75, 0.82);
+      dEarPivots[0].rotation.set(-0.2, 0, 0.15);
+      dEarPivots[1].rotation.set(-0.2, 0, -0.15);
+      dHead.rotation.set(0, 0, 0);
+      dTorso.scale.set(1.0, 1.0, 1.0);
+
+      // Reset Cat Bodily Posture defaults
+      cTorso.scale.set(1.0, 1.0, 1.0);
+      cHead.rotation.set(0, 0, 0);
+      cEars[0].rotation.set(0, 0, 0);
+      cEars[1].rotation.set(0, 0, 0);
 
       // -----------------------------------------------------------------
       // ACT 1: THE TAIL BITE (0.0s - 7.0s)
       // -----------------------------------------------------------------
       if (time < 7.0) {
-        catX = 2.5; catZ = -2.5; catY = 1.4; catRotY = -Math.PI / 4; // Cat resting atop bench
-        dogRotY = Math.atan2(catX - dogX, catZ - dogZ);
+        catX = 4.5; catZ = -1.0; catY = 1.15; catRotY = -0.45; // Resting gracefully atop park bench
+
+        // Cat is actively alive (NOT FROZEN!)
+        // Feline rhythmic breathing
+        cTorso.scale.y = 1.0 + Math.sin(time * 3.5) * 0.035;
+        cTorso.scale.x = 1.0 + Math.cos(time * 3.5) * 0.02;
 
         if (time < 3.5) {
           // Dog stalking playfully towards the bench
           const p = time / 3.5;
-          dogX = -4.0 + p * 4.5;
-          dogZ = 3.5 - p * 4.5;
-          dogStride = time * 12.0;
-          dogJawOpen = 0.15 + Math.sin(time * 6.0) * 0.1;
+          const startX = -4.5, startZ = 3.8;
+          const targetX = 2.6, targetZ = 0.4;
+          dogX = startX + p * (targetX - startX);
+          dogZ = startZ + p * (targetZ - startZ);
+          // Dog faces exact direction of travel so it walks FORWARD!
+          dogRotY = Math.atan2(targetX - startX, targetZ - startZ);
+          dogStride = time * 14.0;
+          dogJawOpen = 0.18 + Math.sin(time * 7.0) * 0.12;
 
-          // Cat flicking tail playfully
-          const tailWag = Math.sin(time * 5.0) * 0.45;
-          cTailSegments[0].rotation.y = tailWag;
-          cTailSegments[1].rotation.x = 0.3 + Math.sin(time * 6.0) * 0.2;
+          // Cat gently looking around, grooming whiskers, twitching ears
+          cHead.rotation.y = Math.sin(time * 1.6) * 0.25;
+          cHead.rotation.x = 0.1 + Math.sin(time * 2.2) * 0.12;
+          cEars[0].rotation.z = Math.sin(time * 4.0) * 0.18;
+          cEars[1].rotation.z = -Math.sin(time * 3.5) * 0.18;
+
+          // Cat lifts front right paw periodically to groom face
+          cLegs[1].group.rotation.x = -0.45 + Math.sin(time * 3.2) * 0.25;
+          cLegs[0].group.rotation.x = 0.05;
+          cLegs[2].group.rotation.x = 0.1;
+          cLegs[3].group.rotation.x = 0.1;
+
+          // Multi-joint tail dangling down off bench edge in fluid S-wave
+          cTailSegments.forEach((seg, idx) => {
+            seg.rotation.x = 0.42 + idx * 0.12 + Math.sin(time * 4.0 + idx * 0.5) * 0.14;
+            seg.rotation.y = Math.cos(time * 3.2 + idx * 0.45) * 0.22;
+          });
 
           if (time - sound.lastBark > 2.0) {
             sound.playPlayfulBark();
             sound.lastBark = time;
           }
         } else if (time < 5.2) {
-          // Dog sneaks in close, crouches, and lunges for the tail tip!
+          // Dog sneaks in close, crouches low, and lunges forward for dangling tail!
           const p = (time - 3.5) / 1.7;
-          dogX = 0.5 + p * 1.5;
-          dogZ = -1.0 - p * 1.0;
-          dogY = Math.sin(p * Math.PI) * 0.8;
-          dogPitch = 0.25;
-          dogJawOpen = 0.65; // Mouth wide open preparing to chomp!
+          dogX = 2.6 + p * 1.3;
+          dogZ = 0.4 - p * 1.0;
+          dogRotY = Math.atan2(1.3, -1.0); // Facing tail target forward
+          dogY = Math.sin(p * Math.PI) * 0.65;
+          dogPitch = 0.28;
+          dogJawOpen = 0.72; // Wide open ready to clamp!
+          dogStride = time * 18.0;
 
-          // Cat tail hanging down near dog's reach
-          cTailSegments[0].rotation.x = 0.7;
-          cTailSegments[1].rotation.z = Math.sin(time * 8.0) * 0.3;
+          // Cat senses movement - ear swivels back towards dog!
+          cEars[0].rotation.y = 0.6;
+          cHead.rotation.y = -0.35;
+
+          // Tail dangles temptingly near dog's snout
+          cTailSegments[0].rotation.x = 0.65;
+          cTailSegments[1].rotation.x = 0.55;
+          cTailSegments.forEach((seg, idx) => {
+            if (idx > 1) seg.rotation.z = Math.sin(time * 9.0 + idx) * 0.35;
+          });
         } else {
-          // 5.2s - 7.0s: CHOMP! Dog bites cat's tail! Cat screams and leaps!
-          dogX = 2.0; dogZ = -2.0;
-          dogJawOpen = 0.05; // Clamped firmly on tail!
+          // 5.2s - 7.0s: CHOMP! Dog bites cat's tail! Cat screams and leaps off bench to center stage!
+          dogX = 3.9; dogZ = -0.6;
+          dogRotY = Math.atan2(0.6, -0.4);
+          dogJawOpen = 0.05; // Clamped firmly on tail tip!
 
           const leapProgress = (time - 5.2) / 1.8;
-          catY = 1.4 + Math.sin(leapProgress * Math.PI) * 2.8;
-          catZ = -2.5 + leapProgress * 2.2;
-          catPitch = -0.6; // Tail clamped, arching backward in shock
-          catArch = 0.8;
+          catX = 4.5 - leapProgress * 4.5; // 4.5 -> 0.0
+          catZ = -1.0 + leapProgress * 0.5; // -1.0 -> -0.5
+          catY = 1.15 + Math.sin(leapProgress * Math.PI) * 2.8; // soaring mid-air arc to center!
+          catPitch = -0.65; // vaulted back in shock
+          catArch = 0.85;
+
+          // Limbs actively flailing in mid-air (NOT FROZEN!)
+          cLegs.forEach((l, i) => {
+            l.group.rotation.x = Math.sin(time * 24.0 + i) * 0.85;
+          });
 
           // Tail flailing wildly
           cTailSegments.forEach((seg, i) => {
-            seg.rotation.x = Math.sin(time * 25.0 + i) * 0.6;
+            seg.rotation.x = Math.sin(time * 28.0 + i) * 0.7;
+            seg.rotation.z = Math.cos(time * 28.0 + i) * 0.6;
           });
 
           if (time - sound.lastMeow > 1.8) {
@@ -2076,14 +2390,24 @@
         scratchesVisible = (time >= 10.5);
 
         if (time < 9.2) {
-          // Cat lands in front of dog, hissing with back arched & ears pinned
+          // Cat lands squarely at Z = -0.5 facing +Z directly at the dog!
           catX = 0; catZ = -0.5; catY = 0;
-          catRotY = Math.PI; // facing dog
-          catArch = 0.5;
-          dogX = 0; dogZ = 2.0; dogRotY = 0; // facing cat
+          catRotY = 0; // Local +Z points directly at dog!
+          catArch = 0.65;
 
-          cEars[0].rotation.z = 0.6; // airplane ears pinned back!
-          cEars[1].rotation.z = -0.6;
+          // Dog steps smoothly from bench into square-off at Z = 2.0 facing -Z directly at the cat!
+          const dogStepP = Math.min(1.0, (time - 7.0) / 0.8);
+          dogX = 3.9 * (1.0 - dogStepP);
+          dogZ = -0.6 + dogStepP * 2.6; // -0.6 -> 2.0
+          dogRotY = Math.PI; // Local +Z rotated by PI points to -Z directly at cat!
+          if (dogStepP < 1.0) dogStride = time * 16.0;
+
+          // Cat hissing posture: airplane ears pinned flat, tail whipping
+          cEars[0].rotation.z = 0.75;
+          cEars[1].rotation.z = -0.75;
+          cTailSegments.forEach((seg, idx) => {
+            seg.rotation.y = Math.sin(time * 16.0 + idx * 0.4) * 0.45;
+          });
 
           if (time - sound.lastMeow > 1.5) {
             sound.playCatHiss();
@@ -2091,39 +2415,50 @@
           }
         } else if (time < 12.2) {
           // Furious multi-swipe scratch combo!
-          catX = 0; catZ = 0.4; catY = 0.2;
-          dogX = 0; dogZ = 1.5;
+          catX = 0; catZ = 0.6; catY = 0.15;
+          catRotY = 0; // Facing dog
+          dogX = 0; dogZ = 1.7;
+          dogRotY = Math.PI; // Facing cat
 
-          const swipeProg = (time - 9.2) * 14.0;
-          cLegs[0].group.rotation.x = -Math.PI / 2 + Math.sin(swipeProg) * 1.2;
-          cLegs[1].group.rotation.x = -Math.PI / 2 - Math.cos(swipeProg) * 1.2;
+          // Cat stands on hind legs and slashes rapidly with front razor claws
+          const swipeProg = (time - 9.2) * 16.0;
+          cLegs[0].group.rotation.x = -Math.PI / 2 + Math.sin(swipeProg) * 1.35;
+          cLegs[1].group.rotation.x = -Math.PI / 2 - Math.cos(swipeProg) * 1.35;
+          cLegs[2].group.rotation.x = 0.35;
+          cLegs[3].group.rotation.x = 0.35;
 
-          dogPitch = -0.4; // Dog recoiling head back in shock
-          dogJawOpen = 0.4;
+          dogPitch = -0.42; // Dog recoiling head back in shock
+          dogJawOpen = 0.55;
 
           slashesVisible = true;
-          slashVFXGroup.position.set(0, 2.0, 1.4);
-          slashVFXGroup.rotation.z = time * 15.0;
+          slashVFXGroup.position.set(0, 1.8, 1.2);
+          slashVFXGroup.rotation.z = time * 18.0;
 
-          if (time - sound.lastScratch > 0.28) {
+          if (time - sound.lastScratch > 0.25) {
             sound.playClawSlash();
             sound.lastScratch = time;
-            // Impact flash
             const flash = document.getElementById('impact-flash');
-            flash.style.opacity = '0.6';
-            setTimeout(() => { flash.style.opacity = '0'; }, 80);
+            flash.style.opacity = '0.65';
+            setTimeout(() => { flash.style.opacity = '0'; }, 70);
           }
         } else {
-          // 12.2s - 15.0s: Dog recoils, head shaking, rage begins to boil!
-          dogX = 0;
-          dogZ = 2.4;
-          dogPitch = Math.sin(time * 20.0) * 0.15; // Shaking head
-          dogRotY = Math.sin(time * 18.0) * 0.25;
+          // 12.2s - 15.0s: Dog recoils to Z = 2.2, shakes head, rage begins to surge!
+          dogX = 0; dogZ = 2.2;
+          dogRotY = Math.PI + Math.sin(time * 22.0) * 0.25; // Shaking head in anger while facing cat
+          dogPitch = Math.sin(time * 18.0) * 0.15;
 
-          catX = 0; catZ = -1.2; catY = 0; catRotY = Math.PI;
+          // Dog expression gets very mad at cat: furrowing brows, pinned ears, baring fangs
+          leftPip.rotation.z = 0.38;
+          rightPip.rotation.z = -0.38;
+          leftPip.position.set(-0.42, 0.67, 0.88);
+          rightPip.position.set(0.42, 0.67, 0.88);
+          dEarPivots[0].rotation.set(0.55, 0.3, -0.55);
+          dEarPivots[1].rotation.set(0.55, -0.3, 0.55);
+          dogJawOpen = 0.62 + Math.sin(time * 12.0) * 0.1;
 
-          // Dog bares teeth, snarl deepens
-          dogJawOpen = 0.35 + Math.sin(time * 8.0) * 0.15;
+          catX = 0; catZ = -1.2; catY = 0; catRotY = 0;
+          // Cat breathing hard after barrage
+          cTorso.scale.y = 1.0 + Math.sin(time * 8.0) * 0.05;
 
           if (time - sound.lastBark > 1.2) {
             sound.playFuriousRoar();
@@ -2134,38 +2469,122 @@
 
       // -----------------------------------------------------------------
       // ACT 3: DOG FULL POWER RAGE MODE UNLEASHED (15.0s - 22.0s)
+      // "make the power look powerful, and do not make any errors like the cat is frozen,
+      //  the dog is walking backwards. Don't make the dog eyes red when it is mad,
+      //  instead when it is on it's rage mode, it is very mad at the cat."
       // -----------------------------------------------------------------
       else if (time < 22.0) {
         scratchesVisible = true;
         auraActive = true;
-        redEyesActive = true;
 
-        dogX = 0; dogZ = 2.2; dogRotY = 0;
-        dogPitch = 0.1;
+        // Dog position: firmly planted at Z = 2.2 FACING THE CAT at -Z!
+        dogX = (Math.random() - 0.5) * 0.05; // Intense volcanic rage trembling
+        dogZ = 2.2 + (Math.random() - 0.5) * 0.05;
+        dogRotY = Math.PI; // Facing -Z directly at the retreating cat!
+        dogPitch = 0.12;
 
-        // Pulsing Battle Aura
-        const pulse = Math.sin(time * 15.0);
-        auraSphere.scale.set(1.0 + pulse * 0.15, 1.0 + pulse * 0.15, 1.0 + pulse * 0.15);
-        auraMat.opacity = 0.4 + Math.abs(pulse) * 0.3;
+        // 1. Dog Furious Rage Facial Expression (NO RED EYES!)
+        // Fierce downward V-scowl eyebrows locked onto the cat
+        leftPip.rotation.z = 0.45;
+        rightPip.rotation.z = -0.45;
+        leftPip.position.set(-0.42, 0.65, 0.88);
+        rightPip.position.set(0.42, 0.65, 0.88);
 
-        // Dog snarling fiercely, chest heaving
-        dTorso.scale.y = 1.0 + Math.sin(time * 10.0) * 0.08;
-        dogJawOpen = 0.55;
+        // Aggressive pinned-back ears in canine attack mode
+        dEarPivots[0].rotation.set(0.72, 0.38, -0.7);
+        dEarPivots[1].rotation.set(0.72, -0.38, 0.7);
 
-        // Cat trembles in fear, stepping back
+        // Wide-open snarling jaw exposing gleaming fangs, quivering with rage
+        dogJawOpen = 0.7 + Math.sin(time * 30.0) * 0.06;
+        dHead.rotation.x = 0.14;
+
+        // Torso heaving with deep, furious rage breaths
+        dTorso.scale.y = 1.0 + Math.sin(time * 14.0) * 0.12;
+        dTorso.scale.x = 1.0 + Math.cos(time * 14.0) * 0.08;
+
+        // 2. SUPERCHARGED POWER BATTLE VFX
+        // Blazing outer energy shell pulsing and spinning with fiery aura
+        const auraPulse = Math.sin(time * 16.0);
+        auraSphere.scale.set(
+          1.15 + Math.abs(auraPulse) * 0.38,
+          1.2 + Math.abs(auraPulse) * 0.45,
+          1.15 + Math.abs(auraPulse) * 0.38
+        );
+        auraSphere.rotation.y = time * 7.0;
+        auraSphere.rotation.x = time * 3.5;
+        auraMat.opacity = 0.55 + Math.abs(auraPulse) * 0.35;
+
+        // Inner flaming plasma core counter-spinning
+        innerAura.rotation.y = -time * 11.0;
+        innerAura.rotation.z = time * 5.5;
+        innerAura.scale.setScalar(0.95 + Math.cos(time * 20.0) * 0.25);
+        innerAuraMat.opacity = 0.45 + Math.sin(time * 24.0) * 0.25;
+
+        // Blazing dynamic aura core light casting pulsating fiery glow on surroundings
+        auraCore.intensity = 8.5 + Math.sin(time * 28.0) * 4.5;
+
+        // Ground Ruptures & Expanding Supersonic Shockwave Blast Rings
+        groundFissureGroup.visible = true;
+        groundFissureGroup.position.set(0, 0.05, 2.2);
+
+        const shockPhase = (time * 2.8) % 1.0;
+        blastRing.scale.set(0.6 + shockPhase * 4.5, 0.6 + shockPhase * 4.5, 1);
+        blastRingMat.opacity = (1.0 - shockPhase) * 0.85;
+
+        // Ascending vortex swirl of 120 fiery embers
+        const emberPositions = emberGeo.attributes.position.array;
+        for (let i = 0; i < emberCount; i++) {
+          emberPositions[i * 3 + 1] += emberVel[i * 3 + 1];
+          // Swirling vortex angle
+          const ang = Math.atan2(emberPositions[i * 3 + 2], emberPositions[i * 3]);
+          const rad = Math.sqrt(emberPositions[i * 3] * emberPositions[i * 3] + emberPositions[i * 3 + 2] * emberPositions[i * 3 + 2]);
+          const newAng = ang + 0.08;
+          emberPositions[i * 3] = Math.cos(newAng) * rad;
+          emberPositions[i * 3 + 2] = Math.sin(newAng) * rad;
+          if (emberPositions[i * 3 + 1] > 4.5) {
+            emberPositions[i * 3 + 1] = 0.15;
+          }
+        }
+        emberGeo.attributes.position.needsUpdate = true;
+
+        // Intense camera rumble from raw ground-shaking power
+        cameraShake = 0.075;
+
+        // 3. Cat is Terrified and Backing Away (NOT FROZEN!)
         const catBackP = (time - 15.0) / 7.0;
-        catX = 0;
-        catZ = -1.5 - catBackP * 3.5;
+        catX = (Math.random() - 0.5) * 0.05; // Trembling violently in fear
+        catZ = -1.5 - catBackP * 3.5; // Stepping backward from -1.5 to -5.0
         catY = 0;
-        catRotY = Math.PI;
-        cTorso.position.y = 1.3 + Math.sin(time * 25.0) * 0.05; // trembling!
+        catRotY = 0; // Facing the terrifying dog
+        cTorso.position.y = 1.35 + Math.sin(time * 30.0) * 0.05; // Body quivering with fright
+        catArch = 0.85; // Spine arched high in terror
+
+        // Active 4-legged backward walking cycle (NO FROZEN LEGS!)
+        const catReverseStride = time * 14.0;
+        cLegs[0].group.rotation.x = Math.sin(catReverseStride) * 0.65;
+        cLegs[1].group.rotation.x = -Math.sin(catReverseStride) * 0.65;
+        cLegs[2].group.rotation.x = -Math.sin(catReverseStride + 0.45) * 0.65;
+        cLegs[3].group.rotation.x = Math.sin(catReverseStride + 0.45) * 0.65;
+
+        // Airplane ears pinned back in pure fear
+        cEars[0].rotation.z = 0.78;
+        cEars[1].rotation.z = -0.78;
+
+        // Tail tucked tightly between hind legs
+        cTailSegments.forEach(seg => {
+          seg.rotation.x = -0.58;
+          seg.rotation.y = Math.sin(time * 22.0) * 0.12;
+        });
+
+        // Head trembling
+        cHead.rotation.z = Math.sin(time * 26.0) * 0.06;
 
         if (time - sound.lastAuraPulse > 1.4) {
           sound.playRagePowerUp();
           sound.lastAuraPulse = time;
         }
 
-        if (time > 18.0 && time < 18.4 && time - sound.lastBark > 2.0) {
+        if (time > 17.5 && time < 17.9 && time - sound.lastBark > 2.0) {
           sound.playFuriousRoar();
           sound.lastBark = time;
         }
@@ -2176,47 +2595,86 @@
       // -----------------------------------------------------------------
       else {
         scratchesVisible = true;
-        redEyesActive = (time < 27.0);
 
-        if (time < 25.5) {
-          // Supersonic Tackle Charge!
+        if (time < 25.4) {
+          // Supersonic Tackle Charge! Dog sprints from Z = 2.2 towards Cat at Z = -5.0
           auraActive = true;
-          const chargeP = (time - 22.0) / 3.5;
-          dogZ = 2.2 - chargeP * 7.5; // sprinting: 2.2 -> -5.3
-          dogY = Math.abs(Math.sin(time * 25.0)) * 0.4;
-          dogStride = time * 28.0;
-          dogPitch = 0.2;
+          groundFissureGroup.visible = false;
 
-          catZ = -5.0;
-          catY = 0;
-          catRotY = Math.PI;
+          const chargeP = (time - 22.0) / 3.4;
+          dogX = 0;
+          dogZ = 2.2 - chargeP * 7.2; // 2.2 -> -5.0 (charging in -Z direction)
+          // Dog faces -Z (Math.PI) so it runs HEAD-FIRST FORWARD, NOT WALKING BACKWARDS!
+          dogRotY = Math.PI;
+          dogY = Math.abs(Math.sin(time * 26.0)) * 0.45;
+          dogStride = time * 32.0; // High speed sprint legs!
+          dogPitch = 0.32; // Streamlined charge posture
+
+          // Menacing focused rage face charging at cat
+          leftPip.rotation.z = 0.42;
+          rightPip.rotation.z = -0.42;
+          leftPip.position.set(-0.42, 0.66, 0.88);
+          rightPip.position.set(0.42, 0.66, 0.88);
+          dEarPivots[0].rotation.set(0.68, 0.35, -0.68);
+          dEarPivots[1].rotation.set(0.68, -0.35, 0.68);
+          dogJawOpen = 0.65;
+
+          // Power aura forms a supersonic rocket comet trail trailing behind dog
+          auraGroup.position.set(0, 0, 1.2);
+          auraSphere.scale.set(1.1, 1.1, 2.4);
+          innerAura.scale.set(0.85, 0.85, 1.8);
+          auraCore.intensity = 12.0;
+
+          // Cat cornered at Z = -5.0, cowering in terror with defensive paws raised
+          catX = 0; catZ = -5.0; catY = 0; catRotY = 0;
+          cLegs[0].group.rotation.x = -Math.PI / 2.2 + Math.sin(time * 15.0) * 0.2;
+          cLegs[1].group.rotation.x = -Math.PI / 2.2 - Math.sin(time * 15.0) * 0.2;
+          cEars[0].rotation.z = 0.8;
+          cEars[1].rotation.z = -0.8;
 
           if (time > 25.0 && time < 25.4 && time - sound.lastTackle > 2.0) {
             sound.playTackleImpact();
             sound.lastTackle = time;
-            document.getElementById('impact-flash').style.opacity = '0.9';
-            setTimeout(() => { document.getElementById('impact-flash').style.opacity = '0'; }, 100);
+            document.getElementById('impact-flash').style.opacity = '1.0';
+            setTimeout(() => { document.getElementById('impact-flash').style.opacity = '0'; }, 110);
+            cameraShake = 0.24;
           }
         } else {
-          // 25.5s - 30.0s: CAT DEFEATED! DOG POSES VICTORIOUS!
+          // 25.4s - 30.0s: CAT DEFEATED! DOG POSES VICTORIOUS!
           auraActive = false;
+          groundFissureGroup.visible = false;
+          auraGroup.position.set(0, 0, 0);
 
-          // Cat pinned / submitting on its back with white paws up
-          catZ = -6.2;
-          catY = 0.3;
-          catRotY = Math.PI;
-          cTorso.rotation.x = Math.PI / 1.15; // on its back!
+          // Cat launched back, backflips, and submits on its back
+          const defeatProgress = Math.min(1.0, (time - 25.4) / 0.5);
+          catZ = -5.0 - defeatProgress * 1.4; // -5.0 -> -6.4
+          catY = 0.25;
+          catRotY = 0;
+          cTorso.rotation.x = Math.PI * 0.88; // Flat on back!
+          // Cat waving surrender paws gently, chest heaving in rapid panting
           cLegs.forEach((l, idx) => {
-            l.group.rotation.x = Math.PI / 2 + Math.sin(time * 8.0 + idx) * 0.3; // waving paws in surrender
+            l.group.rotation.x = Math.PI / 2 + Math.sin(time * 6.0 + idx) * 0.25;
           });
+          cTorso.scale.y = 1.0 + Math.sin(time * 12.0) * 0.06;
 
-          // Dog stands triumphant atop victor's spot!
-          dogX = 0; dogZ = -4.5; dogY = 0.6;
-          dogPitch = -0.3; // head high in victory
-          dogJawOpen = 0.4 + Math.sin(time * 5.0) * 0.2; // howling & barking in triumph!
+          // Dog stands triumphant atop the stone victory pedestal at (0, 0.85, -4.2)!
+          dogX = 0; dogZ = -4.2; dogY = 0.85;
+          // Dog turns proudly forward towards the camera!
+          dogRotY = 0.08 * Math.sin(time * 2.0);
+          dogPitch = -0.32; // Chest held high in pride
+          dogJawOpen = 0.48 + Math.sin(time * 7.0) * 0.2; // Howling and barking in victory!
+          dHead.rotation.x = -0.35 + Math.sin(time * 5.0) * 0.15; // Howling to the night sky
 
-          // Proud wagging tail
-          dTailGroup.rotation.z = Math.sin(time * 12.0) * 0.4;
+          // Proud happily wagging sickle tail
+          dTailGroup.rotation.z = Math.sin(time * 16.0) * 0.55;
+
+          // Happy relaxed ears and eyebrows (rage ended, pure triumph!)
+          dEarPivots[0].rotation.set(-0.2, 0, 0.15);
+          dEarPivots[1].rotation.set(-0.2, 0, -0.15);
+          leftPip.rotation.z = 0;
+          rightPip.rotation.z = 0;
+          leftPip.position.set(-0.45, 0.75, 0.82);
+          rightPip.position.set(0.45, 0.75, 0.82);
 
           if (time > 25.6 && time < 26.2 && time - sound.lastMeow > 3.0) {
             sound.playVictoryFanfare();
@@ -2237,10 +2695,10 @@
       dJaw.rotation.x = dogJawOpen;
 
       if (dogStride > 0) {
-        dLegs[0].rotation.x = Math.sin(dogStride) * 0.8;
-        dLegs[1].rotation.x = -Math.sin(dogStride) * 0.8;
-        dLegs[2].rotation.x = -Math.sin(dogStride + 0.3) * 0.85;
-        dLegs[3].rotation.x = Math.sin(dogStride + 0.3) * 0.85;
+        dLegs[0].rotation.x = Math.sin(dogStride) * 0.95;
+        dLegs[1].rotation.x = -Math.sin(dogStride) * 0.95;
+        dLegs[2].rotation.x = -Math.sin(dogStride + 0.3) * 1.0;
+        dLegs[3].rotation.x = Math.sin(dogStride + 0.3) * 1.0;
       } else {
         dLegs.forEach(l => l.rotation.x = 0);
       }
@@ -2249,20 +2707,20 @@
       auraGroup.visible = auraActive;
       slashVFXGroup.visible = slashesVisible;
 
-      // Eye Color Swap (Dark amber -> Crimson Rage)
+      // Authentic dark amber eyes remain at ALL times (NO RED EYES!)
       dEyes.forEach(eye => {
-        eye.material = redEyesActive ? shibaRageEyeMat : shibaEyeMat;
+        eye.material = shibaEyeMat;
       });
 
       // Apply Cat Animation Transforms
       catGroup.position.set(catX, catY, catZ);
       catGroup.rotation.y = catRotY;
-      if (time < 25.5) {
+      if (time < 25.4) {
         cTorso.rotation.x = catPitch;
       }
 
-      // Dynamic Camera Director Controller
-      updateCamera(time);
+      // Dynamic Camera Director Controller with Shake
+      updateCamera(time, cameraShake);
 
       renderer.render(scene, camera);
     }
@@ -2273,52 +2731,56 @@
     const targetCamPos = new THREE.Vector3();
     const targetCamLook = new THREE.Vector3();
 
-    function updateCamera(time) {
+    function updateCamera(time, shake = 0) {
       if (cameraMode === 'director') {
         if (time < 5.0) {
-          // Wide cinematic tracking angle of the initial stalk
-          targetCamPos.set(dogGroup.position.x - 5.5, 3.8, dogGroup.position.z + 7.5);
-          targetCamLook.set((dogGroup.position.x + catGroup.position.x) / 2, 1.8, (dogGroup.position.z + catGroup.position.z) / 2);
+          // Wide cinematic tracking angle of the initial stalk towards bench
+          targetCamPos.set(-2.0, 4.2, 9.5);
+          targetCamLook.set(1.5, 1.8, 1.0);
         } else if (time < 7.0) {
-          // Close-up on the tail bite!
-          targetCamPos.set(2.8, 1.8, 0.2);
-          targetCamLook.set(2.2, 1.4, -2.0);
+          // Close-up on the tail bite at the park bench!
+          targetCamPos.set(1.5, 2.8, 4.5);
+          targetCamLook.set(4.0, 1.8, -0.8);
         } else if (time < 12.5) {
-          // Low-angle face-scratch action cam
-          targetCamPos.set(-2.8, 2.2, 3.2);
-          targetCamLook.set(0, 1.8, 1.0);
+          // Low-angle face-scratch action cam in center arena (2.5D profile combat view)
+          targetCamPos.set(-7.5, 2.6, 1.15);
+          targetCamLook.set(0, 2.0, 1.15);
         } else if (time < 22.0) {
-          // Dramatic 360-degree orbit around the dog's Full Power Rage mode!
-          const orbitAngle = (time - 15.0) * 0.8;
-          targetCamPos.set(Math.sin(orbitAngle) * 5.5, 2.8, dogGroup.position.z + Math.cos(orbitAngle) * 5.5);
-          targetCamLook.set(dogGroup.position.x, 2.2, dogGroup.position.z);
-        } else if (time < 26.0) {
+          // Dramatic orbit showcasing the furious face snarl, bared fangs, and blazing battle aura!
+          const orbitAngle = Math.PI + (time - 15.0) * 0.45;
+          targetCamPos.set(Math.sin(orbitAngle) * 9.5, 3.2, 1.0 + Math.cos(orbitAngle) * 9.5);
+          targetCamLook.set(0, 2.5, 1.0);
+        } else if (time < 25.4) {
           // High-speed tracking shot alongside the supersonic tackle!
-          targetCamPos.set(4.5, 2.0, dogGroup.position.z + 2.0);
-          targetCamLook.set(dogGroup.position.x, 1.5, dogGroup.position.z - 2.5);
+          targetCamPos.set(7.5, 3.2, dogGroup.position.z + 2.5);
+          targetCamLook.set(0, 1.8, dogGroup.position.z - 2.0);
         } else {
-          // Heroic low-angle victory pedestal view!
-          targetCamPos.set(0, 1.4, -1.2);
-          targetCamLook.set(0, 2.5, -4.5);
+          // Heroic wide view of the victory pedestal and champion pose!
+          targetCamPos.set(0, 4.5, 7.8);
+          targetCamLook.set(0, 4.0, -4.2);
         }
       } else if (cameraMode === 'combat') {
-        targetCamPos.set(5.5, 4.2, 5.5);
-        targetCamLook.set(0, 1.8, 0);
+        targetCamPos.set(9.5, 6.5, 9.5);
+        targetCamLook.set(0, 2.0, -1.0);
       } else if (cameraMode === 'dog') {
-        targetCamPos.set(dogGroup.position.x + 2.2, dogGroup.position.y + 2.4, dogGroup.position.z + 4.2);
+        targetCamPos.set(dogGroup.position.x + 3.2, dogGroup.position.y + 3.2, dogGroup.position.z + 5.5);
         targetCamLook.set(catGroup.position.x, catGroup.position.y + 1.2, catGroup.position.z);
       } else if (cameraMode === 'cat') {
-        targetCamPos.set(catGroup.position.x - 2.2, catGroup.position.y + 2.4, catGroup.position.z + 3.8);
+        targetCamPos.set(catGroup.position.x - 3.2, catGroup.position.y + 3.2, catGroup.position.z + 5.5);
         targetCamLook.set(dogGroup.position.x, dogGroup.position.y + 1.2, dogGroup.position.z);
       } else if (cameraMode === 'clash') {
-        targetCamPos.set(0, 2.2, 3.4);
-        targetCamLook.set(0, 1.8, 0.5);
+        targetCamPos.set(0, 2.8, 4.8);
+        targetCamLook.set(0, 2.0, 0.5);
       }
 
       if (cameraMode !== 'orbit') {
         camera.position.lerp(targetCamPos, 0.08);
         controls.target.lerp(targetCamLook, 0.08);
         camera.lookAt(controls.target);
+        if (shake > 0) {
+          camera.position.x += (Math.random() - 0.5) * shake;
+          camera.position.y += (Math.random() - 0.5) * shake;
+        }
       } else {
         controls.update();
       }
@@ -2389,10 +2851,20 @@
       }, 1600);
     }
 
+    function snapCameraToTime(t) {
+      updateCamera(t, 0);
+      if (cameraMode !== 'orbit') {
+        camera.position.copy(targetCamPos);
+        controls.target.copy(targetCamLook);
+        camera.lookAt(controls.target);
+      }
+    }
+
     function seekToTime(t) {
       sound.ensureRunning();
       sound.resetTimers();
       currentTime = THREE.MathUtils.clamp(t, 0, TOTAL_DURATION);
+      snapCameraToTime(currentTime);
       updateUI();
     }
 
@@ -2403,6 +2875,7 @@
       currentTime = 0;
       isPlaying = true;
       document.getElementById('play-pause-btn').innerText = '⏸ PAUSE';
+      snapCameraToTime(0);
       updateUI();
       showToastNotification("SHOWDOWN REPLAYING WITH FULL AUDIO!", "🔄");
     }
@@ -2430,6 +2903,7 @@
         sound.playEventAct4();
         showToastNotification("ACT 4: SUPERSONIC TACKLE & DOG VICTORY!", "🏆");
       }
+      snapCameraToTime(currentTime);
       updateUI();
     }
 
