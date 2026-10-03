@@ -3,18 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>THE SEA EATER (Trevor Henderson) — 30-Second Oceanic Horror Scene</title>
-  <meta name="description" content="Cinematic 30-Second Trevor Henderson Sea Eater encounter: A 25km long, 5km tall moving mountain monster with 5km skeletal arms, iconic abyssal roar, violent ocean waves, and ship swallowing sequence.">
+  <title>THE SEA EATER vs THE BLOOP — 3D Oceanic Fight Scene to the Death (60s)</title>
+  <meta name="description" content="A real-time WebGL 3D fight scene between Trevor Henderson's The Sea Eater and The Bloop, battling to the death across a 60-second oceanic clash with procedural audio, dynamic camera views, and Sketchfab 3D model integration.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Inter:wght@300;400;600;700&family=Orbitron:wght@600;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <!-- Three.js 3D WebGL Engine & OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
 
-  <!-- MAIN CANVAS ENGINE CONTAINER -->
+  <!-- MAIN 3D VIEWPORT CONTAINER -->
   <div class="canvas-viewport" id="viewport-container">
     <canvas id="fightCanvas"></canvas>
+
+    <!-- 3D ENGINE WATERMARK BADGE -->
+    <div class="engine-badge">
+      <span class="engine-dot"></span>
+      <span>3D WEBGL ENGINE &bull; DYNAMIC LIGHTING &bull; 60 FPS</span>
+    </div>
 
     <!-- CINEMATIC OVERLAYS & VHS EFFECTS -->
     <div class="vignette-overlay"></div>
@@ -23,23 +32,39 @@
       <div class="vhs-scanlines"></div>
       <div class="vhs-noise"></div>
       <div class="vhs-hud">
-        <span class="vhs-rec"><span class="rec-dot"></span>REC [SP]</span>
-        <span class="vhs-timestamp" id="vhs-timestamp">AUG. 14 1998 - 03:41:22 AM</span>
-        <span class="vhs-coords">PACIFIC TRENCH // 14°12'N 142°18'E // DEPTH: 10,920M</span>
+        <span class="vhs-rec"><span class="rec-dot"></span>REC [SP] 60FPS</span>
+        <span class="vhs-timestamp" id="vhs-timestamp">AUG. 14 1998 - 03:41:00 AM</span>
+        <span class="vhs-coords">MARIANA ABYSS // 14°12'N 142°18'E // DEPTH: 10,920M</span>
       </div>
+    </div>
+
+    <!-- DEATH FLATLINE OVERLAY -->
+    <div class="death-overlay" id="death-overlay">
+      <div class="death-title">MUTUAL FATAL CASUALTY</div>
+      <div class="death-subtitle">BOTH TITANS PERISHED IN THE MARIANA VOID &bull; 00:60.00</div>
     </div>
 
     <!-- HUD TOP BAR -->
     <header class="hud-header">
       <div class="hud-brand">
-        <span class="hud-badge">TREVOR HENDERSON MYTHOS // CLASSIFIED TITAN</span>
-        <h1 class="hud-title">THE SEA EATER <span class="titan-scale-tag">5 KM TALL &bull; 25 KM LONG</span></h1>
+        <span class="hud-badge">TREVOR HENDERSON MYTHOS vs DEEP SEA LEVIATHAN &bull; FIGHT TO THE DEATH</span>
+        <h1 class="hud-title">THE SEA EATER <span class="vs-badge">VS</span> THE BLOOP <span class="death-match-pill">FATAL DUEL</span></h1>
       </div>
       <div class="hud-status">
-        <div class="hud-timer" id="hud-timer">00:00.00 / 00:30.00</div>
-        <div class="hud-scene-name" id="hud-scene-name">ACT 1: THE MOUNTAIN AWAKENS</div>
+        <div class="hud-timer" id="hud-timer">00:00.00 / 01:00.00</div>
+        <div class="hud-scene-name" id="hud-scene-name">ACT 1: ABYSSAL CONTACT & SONAR AWAKENING</div>
       </div>
       <div class="hud-actions">
+        <!-- Sketchfab 3D Models Modal Button -->
+        <button class="hud-btn highlight-btn" id="btn-sketchfab-modal" title="Inspect Original Sketchfab 3D Models">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+          <span>Sketchfab 3D Models</span>
+        </button>
+
         <button class="hud-btn" id="btn-sound-toggle" title="Toggle Sound FX">
           <svg id="icon-sound" class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
@@ -47,95 +72,155 @@
           </svg>
           <span id="sound-label">Audio ON</span>
         </button>
-        <button class="hud-btn highlight-btn" id="btn-trigger-roar" title="Trigger Sea Eater Iconic Roar">
+        <button class="hud-btn se-btn" id="btn-trigger-roar" title="Trigger Sea Eater Iconic Roar">
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
             <line x1="12" y1="19" x2="12" y2="23"></line>
             <line x1="8" y1="23" x2="16" y2="23"></line>
           </svg>
-          <span>Iconic Roar</span>
+          <span>Sea Eater Roar</span>
         </button>
-        <button class="hud-btn" id="btn-camera-toggle" title="Switch Camera Angle">
+        <button class="hud-btn bloop-btn" id="btn-trigger-bloop" title="Trigger The Bloop Infrasonic Scream">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M2 12h2a8 8 0 0 1 8-8v2a6 6 0 0 0-6 6H2z"></path>
+            <path d="M2 12h2a8 8 0 0 0 8 8v-2a6 6 0 0 1-6-6H2z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M15 9l6-6M15 15l6 6"></path>
+          </svg>
+          <span>Bloop Scream</span>
+        </button>
+        <button class="hud-btn camera-btn" id="btn-camera-toggle" title="Switch 3D Camera View">
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
             <circle cx="12" cy="13" r="4"></circle>
           </svg>
           <span id="camera-label">Cinematic Cam</span>
         </button>
-        <button class="hud-btn" id="btn-vhs-toggle" title="Toggle Analog Found-Footage Filter">
+        <button class="hud-btn" id="btn-vhs-toggle" title="Toggle Analog VHS Grain & Filter">
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
             <line x1="7" y1="2" x2="7" y2="22"></line>
             <line x1="17" y1="2" x2="17" y2="22"></line>
             <line x1="2" y1="12" x2="22" y2="12"></line>
           </svg>
-          <span id="vhs-label">VHS Style: ON</span>
+          <span id="vhs-label">VHS: ON</span>
         </button>
-        <button class="hud-btn" id="btn-info-modal" title="Creature Lore & Specifications">
+        <button class="hud-btn record-btn" id="btn-record-video" title="Record and Download 1-Minute 3D Fight Video File">
+          <span class="record-dot-icon"></span>
+          <span id="record-label">Export Video (60s)</span>
+        </button>
+        <button class="hud-btn" id="btn-info-modal" title="Creature Specs & Fight Lore">
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="16" x2="12" y2="12"></line>
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
           </svg>
-          <span>Lore Specs</span>
+          <span>Combat Specs</span>
         </button>
       </div>
     </header>
+
+    <!-- COMBATANTS HEALTH & VITALITY HUD BAR -->
+    <div class="combatants-bar">
+      <!-- SEA EATER GAUGE -->
+      <div class="combatant-card sea-eater-card">
+        <div class="combatant-info">
+          <span class="combatant-name">THE SEA EATER</span>
+          <span class="combatant-spec">5 KM TALL &bull; 25 KM MOUNTAIN BODY &bull; TREVOR HENDERSON</span>
+        </div>
+        <div class="combatant-meter">
+          <div class="meter-fill sea-eater-fill" id="sea-eater-health"></div>
+        </div>
+        <div class="combatant-sub">
+          <span>STILT INTEGRITY: <b id="se-status">OPTIMAL (100%)</b></span>
+          <span class="move-flag" id="se-move-tag">STANDBY</span>
+        </div>
+      </div>
+
+      <!-- MOVE ANNOUNCER BADGE -->
+      <div class="move-announcer-center" id="move-announcer">
+        <span class="active-move-pill" id="active-move-pill">ABYSSAL ENGAGEMENT IMMINENT</span>
+      </div>
+
+      <!-- THE BLOOP GAUGE -->
+      <div class="combatant-card bloop-card">
+        <div class="combatant-info">
+          <span class="combatant-name">THE BLOOP</span>
+          <span class="combatant-spec">12 BUSES LONG (~150M) &bull; 140° UNHINGED JAW &bull; NOAA 1997</span>
+        </div>
+        <div class="combatant-meter">
+          <div class="meter-fill bloop-fill" id="bloop-health"></div>
+        </div>
+        <div class="combatant-sub">
+          <span>JAW GAPE: <b id="bloop-jaw-status">READY (100%)</b></span>
+          <span class="move-flag" id="bloop-move-tag">APPROACHING</span>
+        </div>
+      </div>
+    </div>
 
     <!-- SUBTITLE CAPTION BANNER -->
     <div class="subtitle-container">
       <div class="subtitle-card" id="subtitle-box">
         <span class="subtitle-time" id="subtitle-time">00:00</span>
-        <p class="subtitle-text" id="subtitle-text">PACIFIC OCEAN TRENCH: A colossal 25 km moving mountain awakens from the deep, water churning with hydrodynamic fury...</p>
+        <p class="subtitle-text" id="subtitle-text">PACIFIC OCEAN TRENCH // 14°N 142°E: The 25-kilometer mountain titan "The Sea Eater" heaves through heavy ocean mist as hydrophones detect the approach of "The Bloop"...</p>
       </div>
     </div>
 
     <!-- SEISMIC & HYDRODYNAMIC TELEMETRY BAR -->
     <div class="telemetry-bar">
       <div class="telemetry-item">
-        <span class="t-label">ESTIMATED MASS:</span>
-        <span class="t-val">8.4 &times; 10<sup>11</sup> TONS</span>
+        <span class="t-label">ACTIVE MOVE:</span>
+        <span class="t-val highlight-gold" id="telemetry-move">ENCOUNTER SCAN</span>
       </div>
       <div class="telemetry-item">
-        <span class="t-label">SURFACE DISPLACEMENT:</span>
-        <span class="t-val" id="telemetry-displacement">5,200 M HEIGHT</span>
+        <span class="t-label">IMPACT FORCE:</span>
+        <span class="t-val" id="telemetry-force">0.0 GIGANEWTONS</span>
       </div>
       <div class="telemetry-item">
         <span class="t-label">SEISMIC FREQUENCY:</span>
         <span class="t-val" id="telemetry-hz">14.2 HZ (INFRASOUND)</span>
       </div>
       <div class="telemetry-item">
-        <span class="t-label">TARGET VESSEL:</span>
-        <span class="t-val warning-text" id="telemetry-target">CARGO CARRIER (IN DANGER)</span>
+        <span class="t-label">BEAST PROXIMITY:</span>
+        <span class="t-val warning-text" id="telemetry-distance">480 METERS</span>
+      </div>
+      <div class="telemetry-item hint-item">
+        <span class="t-label">3D VIEW:</span>
+        <span class="t-val highlight-cyan" id="telemetry-hint">DRAG TO ORBIT IN FREE CAM</span>
       </div>
     </div>
 
     <!-- IMPACT FLASH & SHAKE OVERLAYS -->
     <div class="impact-flash" id="impact-flash"></div>
     <div class="roar-shockwave" id="roar-shockwave"></div>
+    <div class="claw-slash-overlay" id="claw-slash-overlay"></div>
 
-    <!-- BOTTOM CINEMATIC CONTROLLER -->
+    <!-- BOTTOM CINEMATIC CONTROLLER (60 SECONDS TIMELINE) -->
     <footer class="hud-controller">
-      <!-- TIMELINE SCRUBBER & MARKS (30 SECONDS TOTAL) -->
+      <!-- TIMELINE SCRUBBER & MARKS (60 SECONDS TOTAL DURATION) -->
       <div class="timeline-container">
         <div class="timeline-markers-labels">
-          <span class="t-mark" style="left: 0%" data-time="0">0s Mountain Awakens</span>
-          <span class="t-mark" style="left: 20%" data-time="6">6s 5km Bone Arms</span>
-          <span class="t-mark" style="left: 43.3%" data-time="13">13s Iconic Roar</span>
-          <span class="t-mark" style="left: 66.6%" data-time="20">20s Ship Sighted</span>
-          <span class="t-mark" style="left: 83.3%" data-time="25">25s Swallowing Whole</span>
-          <span class="t-mark" style="left: 100%" data-time="30">30s Abyssal Depths</span>
+          <span class="t-mark" style="left: 0%" data-time="0">0s Intro</span>
+          <span class="t-mark" style="left: 13.3%" data-time="8">8s Torpedo Charge</span>
+          <span class="t-mark" style="left: 28.3%" data-time="17">17s Claw Slash</span>
+          <span class="t-mark" style="left: 43.3%" data-time="26">26s 140° Jaw Bite</span>
+          <span class="t-mark" style="left: 58.3%" data-time="35">35s Fluke Tsunami</span>
+          <span class="t-mark" style="left: 71.6%" data-time="43">43s Mountain Ram</span>
+          <span class="t-mark highlight-red-mark" style="left: 86.6%" data-time="52">52s FIGHT TO THE DEATH</span>
+          <span class="t-mark" style="left: 100%" data-time="60">60s Abyss Void</span>
         </div>
         <div class="timeline-track-wrapper" id="timeline-track">
           <div class="timeline-progress" id="timeline-progress"></div>
           <div class="timeline-handle" id="timeline-handle"></div>
-          <!-- Scene Highlight segments -->
-          <div class="timeline-segment seg-1" style="left: 0%; width: 20%;" title="Act 1: The Mountain Awakens"></div>
-          <div class="timeline-segment seg-2" style="left: 20%; width: 23.3%;" title="Act 2: 5km Bone Arms"></div>
-          <div class="timeline-segment seg-3" style="left: 43.3%; width: 23.3%;" title="Act 3: The Iconic Roar"></div>
-          <div class="timeline-segment seg-4" style="left: 66.6%; width: 16.7%;" title="Act 4: Ship Stalked"></div>
-          <div class="timeline-segment seg-5" style="left: 83.3%; width: 16.7%;" title="Act 5: Swallowed Whole"></div>
+          <!-- 7 Scene Highlight segments for 60 seconds -->
+          <div class="timeline-segment seg-1" style="left: 0%; width: 13.3%;" title="Act 1: Abyssal Encounter (0-8s)"></div>
+          <div class="timeline-segment seg-2" style="left: 13.3%; width: 15.0%;" title="Act 2: Bloop Torpedo Charge vs Stilt Dodge (8-17s)"></div>
+          <div class="timeline-segment seg-3" style="left: 28.3%; width: 15.0%;" title="Act 3: Sea Eater 5km Claw Swipe vs Dive Dodge (17-26s)"></div>
+          <div class="timeline-segment seg-4" style="left: 43.3%; width: 15.0%;" title="Act 4: Bloop 140° Snake Jaw Clamp on Stilt (26-35s)"></div>
+          <div class="timeline-segment seg-5" style="left: 58.3%; width: 13.3%;" title="Act 5: Bloop Whale Fluke Tsunami Detonation (35-43s)"></div>
+          <div class="timeline-segment seg-6" style="left: 71.6%; width: 15.0%;" title="Act 6: Sea Eater Mountain Ramming Charge (43-52s)"></div>
+          <div class="timeline-segment seg-7 death-segment" style="left: 86.6%; width: 13.4%;" title="Act 7: MUTUAL DEATH CLIMAX (Fight to the Death 52-60s)"></div>
         </div>
       </div>
 
@@ -157,7 +242,7 @@
               <rect x="14" y="4" width="4" height="16"></rect>
             </svg>
           </button>
-          <button class="ctrl-btn" id="btn-next-scene" title="Next Scene Marker (N)">
+          <button class="ctrl-btn" id="btn-next-scene" title="Next Fight Act (Key: N)">
             <svg class="ctrl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="5 4 15 12 5 20 5 4"></polygon>
               <line x1="19" y1="5" x2="19" y2="19"></line>
@@ -165,13 +250,15 @@
           </button>
         </div>
 
-        <!-- QUICK SCENE SELECTOR -->
+        <!-- QUICK MOVE SELECTOR CHIPS -->
         <div class="scene-quick-picker">
-          <button class="scene-chip active" data-scene="1" data-time="0">1. Mountain Rises (0s)</button>
-          <button class="scene-chip" data-scene="2" data-time="6">2. 5km Bone Arms (6s)</button>
-          <button class="scene-chip" data-scene="3" data-time="13">3. Iconic Roar (13s)</button>
-          <button class="scene-chip" data-scene="4" data-time="20">4. Ship Sighted (20s)</button>
-          <button class="scene-chip" data-scene="5" data-time="25">5. Swallowed Whole (25s)</button>
+          <button class="scene-chip active" data-scene="1" data-time="0">1. Encounter (0s)</button>
+          <button class="scene-chip" data-scene="2" data-time="8">2. Torpedo Charge (8s)</button>
+          <button class="scene-chip" data-scene="3" data-time="17">3. Claw Swipe (17s)</button>
+          <button class="scene-chip" data-scene="4" data-time="26">4. Snake Jaw Bite (26s)</button>
+          <button class="scene-chip" data-scene="5" data-time="35">5. Tail Tsunami (35s)</button>
+          <button class="scene-chip" data-scene="6" data-time="43">6. Mountain Ram (43s)</button>
+          <button class="scene-chip death-chip" data-scene="7" data-time="52">7. FIGHT TO THE DEATH (52s)</button>
         </div>
 
         <div class="speed-selector">
@@ -185,62 +272,242 @@
     </footer>
   </div>
 
-  <!-- CREATURE SPECIFICATIONS MODAL (TREVOR HENDERSON LORE) -->
+  <!-- SKETCHFAB 3D MODELS INSPECTOR MODAL -->
+  <div class="modal-backdrop hidden" id="modal-sketchfab">
+    <div class="modal-card modal-large">
+      <button class="modal-close" id="btn-sketchfab-close">&times;</button>
+      <div class="modal-badge">SKETCHFAB 3D SOURCE MODELS // INTERACTIVE INSPECTION</div>
+      <h2 class="modal-title">OFFICIAL 3D MODELS & ARCHITECTURE</h2>
+      
+      <!-- Tabs header -->
+      <div class="modal-tabs">
+        <button class="tab-btn active" data-tab="tab-bloop">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+          The Bloop 3D (Object)
+        </button>
+        <button class="tab-btn" data-tab="tab-seaeater">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+          The Sea Eater 3D (Photon)
+        </button>
+        <button class="tab-btn" data-tab="tab-dual">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="18"></rect><rect x="13" y="3" width="8" height="18"></rect></svg>
+          Side-by-Side Dual 3D View
+        </button>
+      </div>
+
+      <!-- Tab 1: The Bloop -->
+      <div class="tab-panel active" id="tab-bloop">
+        <div class="sketchfab-panel-layout">
+          <div class="sketchfab-frame-container">
+            <iframe 
+              title="The Bloop 3D Model by object" 
+              class="sketchfab-iframe" 
+              src="https://sketchfab.com/models/857501773f1b4f8d936abf517dd33b5a/embed?autostart=1&ui_controls=1&ui_infos=1&ui_inspector=1&ui_watermark=0" 
+              allow="autoplay; fullscreen; xr-spatial-tracking" 
+              allowfullscreen>
+            </iframe>
+          </div>
+          <div class="sketchfab-info-sidebar">
+            <div class="model-meta-header">
+              <h3>THE BLOOP</h3>
+              <span class="source-tag">Sketchfab UID: 857501773f1b4f8d936abf517dd33b5a</span>
+            </div>
+            <p class="model-meta-desc">
+              Authentic deep-sea whale leviathan modeled with high-definition custom hand-drawn textures, realistic cetacean swimming animations, soulless black eyes, and an articulated snake jaw unhinging to 140° with concentric needle teeth rows.
+            </p>
+            <div class="model-stats-grid">
+              <div class="stat-box">
+                <span class="sb-label">Triangles / Faces</span>
+                <span class="sb-val">413,464</span>
+              </div>
+              <div class="stat-box">
+                <span class="sb-label">Vertices</span>
+                <span class="sb-val">207,758</span>
+              </div>
+              <div class="stat-box">
+                <span class="sb-label">Textures</span>
+                <span class="sb-val">4 Custom PBR</span>
+              </div>
+              <div class="stat-box">
+                <span class="sb-label">Rigging</span>
+                <span class="sb-val">Multi-Bone Spine & Jaw</span>
+              </div>
+              <div class="stat-box">
+                <span class="sb-label">Creator</span>
+                <span class="sb-val">@titaniumammas69</span>
+              </div>
+              <div class="stat-box">
+                <span class="sb-label">License</span>
+                <span class="sb-val">CC Attribution</span>
+              </div>
+            </div>
+            <a href="https://sketchfab.com/3d-models/bloop-857501773f1b4f8d936abf517dd33b5a" target="_blank" rel="noopener noreferrer" class="sketchfab-ext-link">
+              View on Sketchfab &rarr;
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: The Sea Eater -->
+      <div class="tab-panel" id="tab-seaeater">
+        <div class="sketchfab-panel-layout">
+          <div class="sketchfab-frame-container">
+            <iframe 
+              title="The Sea Eater 3D Model by photon" 
+              class="sketchfab-iframe" 
+              src="https://sketchfab.com/models/ed3dc1df2a974ee4a3a0a7fccd191484/embed?autostart=1&ui_controls=1&ui_infos=1&ui_inspector=1&ui_watermark=0" 
+              allow="autoplay; fullscreen; xr-spatial-tracking" 
+              allowfullscreen>
+            </iframe>
+          </div>
+          <div class="sketchfab-info-sidebar">
+            <div class="model-meta-header">
+              <h3>THE SEA EATER</h3>
+              <span class="source-tag">Sketchfab UID: ed3dc1df2a974ee4a3a0a7fccd191484</span>
+            </div>
+            <p class="model-meta-desc">
+              Colossal 25 km mountain entity created by photon (that one larry) based on the world of Trevor Henderson. Features a towering pitch-black cavernous archway body and two massive bent stilt limbs with sharp elbow joints reaching 5 km high into the clouds.
+            </p>
+            <div class="model-stats-grid">
+              <div class="stat-box">
+                <span class="sb-label">Triangles / Faces</span>
+                <span class="sb-val">10,620</span>
+              </div>
+              <div class="stat-box">
+                <span class="sb-label">Vertices</span>
+                <span class="sb-val">5,312</span>
+              </div>
+              <div class="stat-box">
+                <span class="sb-label">Materials</span>
+                <span class="sb-val">Wet Metallic PBR</span>
+              </div>
+              <div class="stat-box">
+                <span class="sb-label">Scale</span>
+                <span class="sb-val">5 km Height / 25 km Length</span>
+              </div>
+              <div class="stat-box">
+                <span class="sb-label">Creator</span>
+                <span class="sb-val">@Professor_E12</span>
+              </div>
+              <div class="stat-box">
+                <span class="sb-label">License</span>
+                <span class="sb-val">CC Attribution</span>
+              </div>
+            </div>
+            <a href="https://sketchfab.com/3d-models/sea-eater-ed3dc1df2a974ee4a3a0a7fccd191484" target="_blank" rel="noopener noreferrer" class="sketchfab-ext-link">
+              View on Sketchfab &rarr;
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Dual View -->
+      <div class="tab-panel" id="tab-dual">
+        <div class="sketchfab-dual-grid">
+          <div class="dual-viewer-card">
+            <h4>THE BLOOP (12 BUSES LONG)</h4>
+            <div class="sketchfab-dual-container">
+              <iframe 
+                title="Bloop 3D Preview" 
+                class="sketchfab-iframe" 
+                src="https://sketchfab.com/models/857501773f1b4f8d936abf517dd33b5a/embed?autostart=1&ui_controls=0&ui_watermark=0" 
+                allow="autoplay; fullscreen" 
+                allowfullscreen>
+              </iframe>
+            </div>
+          </div>
+          <div class="dual-viewer-card">
+            <h4>THE SEA EATER (5 KM HIGH MOUNTAIN)</h4>
+            <div class="sketchfab-dual-container">
+              <iframe 
+                title="Sea Eater 3D Preview" 
+                class="sketchfab-iframe" 
+                src="https://sketchfab.com/models/ed3dc1df2a974ee4a3a0a7fccd191484/embed?autostart=1&ui_controls=0&ui_watermark=0" 
+                allow="autoplay; fullscreen" 
+                allowfullscreen>
+              </iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATURE SPECIFICATIONS & MOVE BREAKDOWN MODAL -->
   <div class="modal-backdrop hidden" id="modal-lore">
     <div class="modal-card">
       <button class="modal-close" id="btn-modal-close">&times;</button>
-      <div class="modal-badge">MYTHOS ARCHIVE // FILE #TH-092</div>
-      <h2 class="modal-title">THE SEA EATER &mdash; OFFICIAL SPECIFICATIONS & SCALE</h2>
+      <div class="modal-badge">TITAN COMBAT ARCHIVE // CLASSIFIED OCEANIC INCIDENT</div>
+      <h2 class="modal-title">THE SEA EATER vs THE BLOOP &mdash; 60s FIGHT TO THE DEATH</h2>
       
       <div class="modal-grid">
         <!-- THE SEA EATER CARD -->
         <div class="lore-card titan-theme">
           <div class="lore-header">
             <h3>THE SEA EATER</h3>
-            <span class="lore-tag">STAGGERINGLY MASSIVE LEVIATHAN</span>
+            <span class="lore-tag">TREVOR HENDERSON MYTHOS</span>
           </div>
           <p class="lore-desc">
-            Created by horror artist <strong>Trevor Henderson</strong>. The Sea Eater is a cosmic-scale ocean terror resembling a titanic moving mountain churning through the world's deepest abysses.
+            A titanic cosmic ocean terror resembling a 25 km moving mountain with two 5 km bent stilt limbs composed of calcified skeletons of slain marine leviathans.
           </p>
           <ul class="lore-stats">
             <li><strong>Height:</strong> ~5 km (3 miles) tall</li>
-            <li><strong>Width:</strong> ~4.5 km (4 miles) wide</li>
-            <li><strong>Length:</strong> &ge; 25 km (15 miles) long &mdash; resembling a living mountain</li>
-            <li><strong>Hide & Biology:</strong> Thick blubbery black and cyan hide with continuous hydro-channels letting ocean water flow straight through, giving it astounding hydrodynamic agility.</li>
-            <li><strong>Habitat:</strong> Roams the deep abyss of the Pacific and Indian Oceans.</li>
+            <li><strong>Length:</strong> &ge; 25 km (15 miles) mountain ridge</li>
+            <li><strong>Anatomy:</strong> Iconic central pitch-black arched cavern maw, 5km bent stilt limbs with acute elbow joints, and webbed skeletal claw hands.</li>
+            <li><strong>Combat Moves:</strong>
+              <ul>
+                <li>&bull; <strong>Stilt Dodge:</strong> Lifts 5km limb high into clouds to evade high-speed charges.</li>
+                <li>&bull; <strong>5km Claw Swipe:</strong> Supersonic talon slash carving sea spray and wind shears.</li>
+                <li>&bull; <strong>Mountain Ram:</strong> Surges 8.4&times;10<sup>11</sup> tons of mass forward like a battering ram.</li>
+                <li>&bull; <strong>Guillotine Maw Bite:</strong> Clamps cavernous arch down with tectonic crushing force.</li>
+              </ul>
+            </li>
           </ul>
         </div>
 
-        <!-- THE ARMS & HANDS -->
-        <div class="lore-card bone-theme">
+        <!-- THE BLOOP CARD -->
+        <div class="lore-card bloop-theme">
           <div class="lore-header">
-            <h3>THE 5 KM BONE ARMS</h3>
-            <span class="lore-tag">AMALGAMATION OF SLAIN GIANTS</span>
+            <h3>THE BLOOP</h3>
+            <span class="lore-tag">ABYSSAL WHALE LEVIATHAN</span>
           </div>
           <p class="lore-desc">
-            Its two giant arms extend over 5 kilometers into the sky. They are composed entirely of dead marine animals (megalodons, blue whales, colossal squids) and the calcified skeletal remains of defeated ocean giants.
+            A pale gray/ice-blue whale-like creature measuring up to 12 school buses in length (~150m), featuring massive soulless black eyes and a giant jaw that unhinges wide like a python.
           </p>
           <ul class="lore-stats">
-            <li><strong>Limbs:</strong> 2 colossal arms, each &gt; 5,000 meters in length</li>
-            <li><strong>Hands:</strong> Humanoid bone hands with abnormal amounts of stretchy skin webbing between elongated fingers</li>
-            <li><strong>Grip:</strong> Capable of trapping supertankers, battleships, or entire fleets like crumbs</li>
-            <li><strong>Auditory Signature:</strong> Iconic subterranean roar accompanied by bone clattering and crushing vortex whirlpools</li>
+            <li><strong>Length:</strong> 12 school buses long (~144–155 meters)</li>
+            <li><strong>Skin:</strong> Pale blue-gray ribbed scaly whale hide with deep segmented neck grooves.</li>
+            <li><strong>Maw & Head:</strong> Massive circular unhinging snake jaw lined with hundreds of razor needle teeth and an endless black throat abyss.</li>
+            <li><strong>Combat Moves:</strong>
+              <ul>
+                <li>&bull; <strong>Torpedo Charge:</strong> Surges at 90 knots with foaming cavitation wake.</li>
+                <li>&bull; <strong>Snake Jaw Bite:</strong> Unhinges jaw 140° and clamps needle teeth onto targets.</li>
+                <li>&bull; <strong>Dive Dodge:</strong> Submerges beneath swells to dodge overhead claw strikes.</li>
+                <li>&bull; <strong>Fluke Tsunami:</strong> Whips its massive whale fluke down, creating a 100m tsunami impact.</li>
+                <li>&bull; <strong>Fatal Throat Lunge:</strong> Suicidal final bite clamping into the titan's core.</li>
+              </ul>
+            </li>
           </ul>
         </div>
 
-        <!-- THE VICTIM VESSEL -->
-        <div class="lore-card ship-theme">
+        <!-- FIGHT CHOREOGRAPHY MATRIX -->
+        <div class="lore-card moves-theme">
           <div class="lore-header">
-            <h3>CONTAINER VESSEL</h3>
-            <span class="lore-tag">HUMAN CIVILIAN SHIP</span>
+            <h3>60-SECOND FIGHT TO THE DEATH</h3>
+            <span class="lore-tag">7 ACTS &bull; FATAL CASUALTY ENDING</span>
           </div>
           <p class="lore-desc">
-            A 200-meter commercial freight ship caught in the violent tempest generated by the beast's displacement. Swallowed entirely in a single gulp.
+            Precise 1-minute battle timeline featuring dynamic 3D physical interactions, sound synthesis, and mutual death:
           </p>
           <ul class="lore-stats">
-            <li><strong>Vessel Length:</strong> 200 meters (~0.8% of the Sea Eater's length)</li>
-            <li><strong>Tonnage:</strong> 120,000 DWT</li>
-            <li><strong>Fate:</strong> Pulled into the abyssal maw; zero survivors</li>
+            <li><strong>00:08s [CHARGING]:</strong> The Bloop torpedo-charges at 90 knots with cavitation wakes.</li>
+            <li><strong>00:14s [DODGING]:</strong> The Sea Eater heaves its 5km stilt limb into the sky, dodging cleanly.</li>
+            <li><strong>00:20s [CLAW SWIPE]:</strong> The Sea Eater slashes with its 5km webbed bone claws.</li>
+            <li><strong>00:23s [DODGING]:</strong> The Bloop performs an evasive dive dodge beneath the surface.</li>
+            <li><strong>00:28s [BITING]:</strong> The Bloop unhinges its snake jaws 140° and clamps onto the stilt limb!</li>
+            <li><strong>00:37s [TAIL SMACK]:</strong> The Bloop lashes its whale fluke in a 100m tsunami blast.</li>
+            <li><strong>00:45s [RAMMING]:</strong> The Sea Eater rams forward with mountain mass, fracturing bone.</li>
+            <li><strong>00:54s [MUTUAL DEATH]:</strong> Bloop lunges into Sea Eater's core as Sea Eater snaps its arched maw shut; both sink to the 11,000m abyss bottom!</li>
           </ul>
         </div>
       </div>
@@ -255,12 +522,17 @@
             <span class="scale-num">1.8 m</span>
           </div>
           <div class="scale-item">
-            <span>Blue Whale (30 m)</span>
-            <div class="bar bar-whale"></div>
-            <span class="scale-num">30 m</span>
+            <span>School Bus (12 m)</span>
+            <div class="bar bar-bus"></div>
+            <span class="scale-num">12 m</span>
           </div>
           <div class="scale-item">
-            <span>Container Ship (200 m)</span>
+            <span><strong>The Bloop &mdash; 12 School Buses Long (144 m)</strong></span>
+            <div class="bar bar-bloop"></div>
+            <span class="scale-num highlight-bloop">144 m</span>
+          </div>
+          <div class="scale-item">
+            <span>Cargo Ship (200 m)</span>
             <div class="bar bar-ship"></div>
             <span class="scale-num">200 m</span>
           </div>
@@ -268,11 +540,6 @@
             <span>Burj Khalifa (828 m)</span>
             <div class="bar bar-burj"></div>
             <span class="scale-num">828 m</span>
-          </div>
-          <div class="scale-item">
-            <span>Mount Everest (8,848 m)</span>
-            <div class="bar bar-everest"></div>
-            <span class="scale-num">8.8 km</span>
           </div>
           <div class="scale-item">
             <span><strong>The Sea Eater (Height: 5,000 m / Length: 25,000 m)</strong></span>
