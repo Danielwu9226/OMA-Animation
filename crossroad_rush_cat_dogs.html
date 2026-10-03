@@ -609,9 +609,10 @@
     }
   </style>
 
-  <!-- Three.js and OrbitControls via CDN -->
+  <!-- Three.js, OrbitControls, and GLTFLoader via CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
   <div class="cinema-bars cinema-top"></div>
@@ -646,13 +647,19 @@
         <div class="status-badges">
           <div class="badge cat">🐱 TARGET: GOLDEN CAT CROSSING</div>
           <div class="badge traffic">🚗 TRAFFIC: 4-WAY ACTIVE HIGHWAY</div>
-          <div class="badge dog">🐕 PACK: 3 DOGS IN PURSUIT</div>
+          <label class="badge dog" style="cursor:pointer; display:inline-flex; align-items:center; gap:5px;" title="Click to load external .GLB file or drag & drop .glb anywhere on canvas">
+            <span>🐕</span>
+            <span>PACK: 3 DOBERMANS (SKETCHFAB STANCE)</span>
+            <span style="font-size:9px; background:rgba(239,68,68,0.25); border:1px solid rgba(239,68,68,0.5); padding:1px 5px; border-radius:4px; margin-left:4px;">📁 LOAD .GLB</span>
+            <input type="file" id="glb-file-input" accept=".glb,.gltf" style="display:none;" onchange="handleGLBFileSelect(event)" />
+          </label>
         </div>
       </div>
 
       <div class="top-right">
         <div style="display:flex; gap:8px; align-items:center;">
           <a href="alley_chase_cat_dogs.html" class="scene-nav-btn">❮ Scene 1: Alley</a>
+          <a href="dog_vs_cat_showdown.html" class="scene-nav-btn" style="border-color:rgba(239,68,68,0.5); color:#fca5a5;">Scene 3: 30s Dog vs Cat ⚔️</a>
           <div class="audio-controls">
             <button class="audio-btn" id="audio-btn" onclick="toggleAudioEngine()">
               <span id="audio-icon">🔊</span>
@@ -1512,86 +1519,260 @@
     catGroup.add(catGlowLight);
 
     /* =========================================================================
-       6. THE 3 BAD DOGS (ONE GETS HIT BY A CAR IN ACT 3)
+       6. THE 3 DOBERMAN PINSCHERS (SKETCHFAB STANCE MODEL)
+          Modeled directly after: Sketchfab "Doberman Stance agresive dogs" (1ccfff9a26a44c18a6e07095057d2e89)
+          - Sleek raven black coat with specular shine
+          - Rich mahogany rust markings on muzzle, cheeks, chest, eyebrows & legs
+          - Signature tall erect cropped pointed ears with tan interior
+          - Lean athletic tucked flank, deep muscular chest, arched neck
+          - Short docked alert tail
+          - Snarling articulated jaw with sharp canines & predator amber eyes
        ========================================================================= */
     const dogs = [];
     const DOG_COUNT = 3;
 
-    const dogCoatMat = new THREE.MeshStandardMaterial({ color: 0x221c19, roughness: 0.65 });
-    const teethMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const dogEyeMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
-    const collarMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.8 });
+    const dobermanBlackMat = new THREE.MeshStandardMaterial({
+      color: 0x121418, // sleek obsidian black
+      roughness: 0.32,
+      metalness: 0.16
+    });
+
+    const dobermanRustMat = new THREE.MeshStandardMaterial({
+      color: 0xba591d, // iconic Doberman rust tan
+      roughness: 0.44,
+      metalness: 0.08
+    });
+
+    const dobermanInnerEarMat = new THREE.MeshStandardMaterial({
+      color: 0xc87560, // pinkish-tan inner ear skin
+      roughness: 0.55,
+      metalness: 0.04
+    });
+
+    const dobermanNoseMat = new THREE.MeshStandardMaterial({
+      color: 0x07080a, // black leather nose pad
+      roughness: 0.88,
+      metalness: 0.05
+    });
+
+    const mouthInsideMat = new THREE.MeshBasicMaterial({ color: 0x881337 }); // deep vascular red mouth interior
+    const tongueMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.3 }); // vivid pink-red tongue
+    const teethMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.15, metalness: 0.08 }); // sharp ivory enamel fangs
+    const dogEyeMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b }); // fierce amber predator iris
+    const dogPupilMat = new THREE.MeshBasicMaterial({ color: 0x050505 }); // slit black pupil
+    const collarMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.55, metalness: 0.4 }); // tactical dark leather collar
+    const spikeMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.15, metalness: 0.95 }); // chrome metal spikes
 
     function buildDog(idx) {
       const dog = new THREE.Group();
 
       const dTorso = new THREE.Group();
-      dTorso.position.set(0, 2.8, 0);
+      dTorso.position.set(0, 3.0, 0);
       dog.add(dTorso);
 
-      const dChest = new THREE.Mesh(new THREE.BoxGeometry(3.0, 3.4, 6.5), dogCoatMat);
+      // Deep powerful ribcage
+      const dChest = new THREE.Mesh(new THREE.BoxGeometry(2.9, 3.8, 4.6), dobermanBlackMat);
+      dChest.position.set(0, 0.1, 1.2);
       dTorso.add(dChest);
 
-      const collar = new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.6, 0.8), collarMat);
-      collar.position.set(0, 0.2, 3.0);
-      dTorso.add(collar);
+      // Withers muscular ridge
+      const withers = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.7, 3.2), dobermanBlackMat);
+      withers.position.set(0, 2.1, 1.0);
+      dTorso.add(withers);
 
+      // Dual Rust Chest Markings
+      const chestPlateGeo = new THREE.BoxGeometry(0.95, 1.6, 0.25);
+      const leftRustChest = new THREE.Mesh(chestPlateGeo, dobermanRustMat);
+      leftRustChest.position.set(-0.72, -0.35, 3.52);
+      leftRustChest.rotation.set(-0.15, 0.12, 0.22);
+      dTorso.add(leftRustChest);
+
+      const rightRustChest = new THREE.Mesh(chestPlateGeo, dobermanRustMat);
+      rightRustChest.position.set(0.72, -0.35, 3.52);
+      rightRustChest.rotation.set(-0.15, -0.12, -0.22);
+      dTorso.add(rightRustChest);
+
+      // Lean tucked-up loin & pelvis
+      const dLoin = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.7, 3.6), dobermanBlackMat);
+      dLoin.position.set(0, 0.45, -2.2);
+      dTorso.add(dLoin);
+
+      // Tactical Studded Collar
+      const collarBand = new THREE.Mesh(new THREE.BoxGeometry(3.1, 3.3, 0.75), collarMat);
+      collarBand.position.set(0, 0.9, 3.0);
+      collarBand.rotation.x = -0.35;
+      dTorso.add(collarBand);
+
+      for (let s = 0; s < 6; s++) {
+        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.45, 5), spikeMat);
+        const ang = (s / 6) * Math.PI * 2;
+        spike.position.set(Math.cos(ang) * 1.65, 0.9 + Math.sin(ang) * 1.7, 3.0);
+        spike.rotation.set(0, 0, ang - Math.PI / 2);
+        dTorso.add(spike);
+      }
+
+      // Arched Muscular Neck
+      const dNeckGroup = new THREE.Group();
+      dNeckGroup.position.set(0, 1.6, 2.4);
+      dTorso.add(dNeckGroup);
+
+      const dNeck = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.2, 2.5), dobermanBlackMat);
+      dNeck.position.set(0, 1.0, 0.6);
+      dNeck.rotation.x = -0.32;
+      dNeckGroup.add(dNeck);
+
+      const throatRust = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 0.2), dobermanRustMat);
+      throatRust.position.set(0, 0.7, 1.8);
+      throatRust.rotation.x = -0.32;
+      dNeckGroup.add(throatRust);
+
+      // Chiseled Doberman Head
       const dHead = new THREE.Group();
-      dHead.position.set(0, 1.8, 4.0);
-      dTorso.add(dHead);
+      dHead.position.set(0, 2.7, 1.3);
+      dNeckGroup.add(dHead);
 
-      const dSkull = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.4, 3.2), dogCoatMat);
+      const dSkull = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.0, 2.8), dobermanBlackMat);
+      dSkull.position.set(0, 0.35, 0);
       dHead.add(dSkull);
 
-      const snout = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.4, 2.8), dogCoatMat);
-      snout.position.set(0, -0.4, 2.4);
+      const brow = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.8, 1.4), dobermanBlackMat);
+      brow.position.set(0, 0.65, 1.2);
+      dHead.add(brow);
+
+      const snout = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.15, 2.9), dobermanBlackMat);
+      snout.position.set(0, 0.1, 2.3);
       dHead.add(snout);
 
-      const dJaw = new THREE.Group();
-      dJaw.position.set(0, -1.0, 1.2);
-      const jaw = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.8, 2.6), dogCoatMat);
-      jaw.position.set(0, 0, 1.2);
-      dJaw.add(jaw);
+      // Rust cheek patches
+      const leftCheek = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.95, 2.4), dobermanRustMat);
+      leftCheek.position.set(-0.82, -0.05, 2.1);
+      dHead.add(leftCheek);
 
-      for (let t = -1; t <= 1; t++) {
-        const uFang = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.6, 4), teethMat);
-        uFang.rotateX(Math.PI);
-        uFang.position.set(t * 0.65, -0.65, 3.2);
-        dHead.add(uFang);
+      const rightCheek = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.95, 2.4), dobermanRustMat);
+      rightCheek.position.set(0.82, -0.05, 2.1);
+      dHead.add(rightCheek);
 
-        const lFang = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.6, 4), teethMat);
-        lFang.position.set(t * 0.55, 0.35, 2.2);
-        dJaw.add(lFang);
+      // Black Leather Nose pad
+      const noseMesh = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.7, 0.55), dobermanNoseMat);
+      noseMesh.position.set(0, 0.38, 3.8);
+      dHead.add(noseMesh);
+
+      // Signature Doberman Eyebrow Spots ("Pips")
+      const pipGeo = new THREE.BoxGeometry(0.36, 0.22, 0.22);
+      const leftPip = new THREE.Mesh(pipGeo, dobermanRustMat);
+      leftPip.position.set(-0.62, 0.98, 1.1);
+      leftPip.rotation.set(-0.25, 0.15, 0.2);
+      dHead.add(leftPip);
+
+      const rightPip = new THREE.Mesh(pipGeo, dobermanRustMat);
+      rightPip.position.set(0.62, 0.98, 1.1);
+      rightPip.rotation.set(-0.25, -0.15, -0.2);
+      dHead.add(rightPip);
+
+      // Amber Eyes with Glow
+      for (let s of [-0.85, 0.85]) {
+        const eyeBase = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), dogEyeMat);
+        eyeBase.position.set(s, 0.52, 1.35);
+        eyeBase.scale.set(0.7, 1.0, 1.2);
+        dHead.add(eyeBase);
+
+        const pupil = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.3, 0.2), dogPupilMat);
+        pupil.position.set(s * 1.05, 0.52, 1.5);
+        dHead.add(pupil);
       }
+
+      // Tall Erect Cropped Ears
+      const earHeight = 2.9;
+      const earOuterGeo = new THREE.ConeGeometry(0.55, earHeight, 4);
+      earOuterGeo.scale(1.0, 1.0, 0.35);
+      const earInnerGeo = new THREE.ConeGeometry(0.42, earHeight * 0.85, 4);
+      earInnerGeo.scale(0.9, 0.9, 0.25);
+
+      for (let s of [-0.92, 0.92]) {
+        const earGroup = new THREE.Group();
+        earGroup.position.set(s, 1.4, -0.2);
+        earGroup.rotation.set(-0.15, 0, (s < 0 ? 1 : -1) * 0.12);
+
+        const earOuter = new THREE.Mesh(earOuterGeo, dobermanBlackMat);
+        earOuter.position.set(0, earHeight * 0.45, 0);
+        earGroup.add(earOuter);
+
+        const earInner = new THREE.Mesh(earInnerGeo, dobermanInnerEarMat);
+        earInner.position.set(0, earHeight * 0.42, 0.08);
+        earGroup.add(earInner);
+
+        dHead.add(earGroup);
+      }
+
+      // Snarling Articulated Jaw
+      const mouthCavity = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.6, 2.5), mouthInsideMat);
+      mouthCavity.position.set(0, -0.4, 2.2);
+      dHead.add(mouthCavity);
+
+      const dJaw = new THREE.Group();
+      dJaw.position.set(0, -0.65, 1.1);
       dHead.add(dJaw);
 
-      for (let s of [-0.8, 0.8]) {
-        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), dogEyeMat);
-        eye.position.set(s, 0.5, 1.6);
-        dHead.add(eye);
+      const jawBase = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.65, 2.6), dobermanBlackMat);
+      jawBase.position.set(0, -0.15, 1.3);
+      dJaw.add(jawBase);
 
-        const ear = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.5, 4), dogCoatMat);
-        ear.position.set(s, 1.5, -0.4);
-        ear.rotateZ(s * -0.2);
-        dHead.add(ear);
+      const chinRust = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.25, 2.0), dobermanRustMat);
+      chinRust.position.set(0, -0.45, 1.4);
+      dJaw.add(chinRust);
+
+      const tongue = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.2, 1.9), tongueMat);
+      tongue.position.set(0, 0.22, 1.25);
+      dJaw.add(tongue);
+
+      // Upper Fangs
+      for (let t of [-0.62, 0.62]) {
+        const uFang = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.95, 5), teethMat);
+        uFang.rotateX(Math.PI);
+        uFang.position.set(t, -0.55, 3.3);
+        dHead.add(uFang);
+      }
+      // Lower Fangs
+      for (let t of [-0.55, 0.55]) {
+        const lFang = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.85, 5), teethMat);
+        lFang.position.set(t, 0.4, 2.2);
+        dJaw.add(lFang);
       }
 
+      // 4 Athletic Legs with Rust Stockings
       const dLegs = [];
       const dLegOffsets = [
-        { x: -1.2, z: 2.2 },
-        { x: 1.2, z: 2.2 },
-        { x: -1.2, z: -2.2 },
-        { x: 1.2, z: -2.2 }
+        { x: -1.25, z: 2.2, isFront: true },
+        { x: 1.25, z: 2.2, isFront: true },
+        { x: -1.2, z: -2.3, isFront: false },
+        { x: 1.2, z: -2.3, isFront: false }
       ];
+
       dLegOffsets.forEach(o => {
-        const lp = new THREE.Group();
-        lp.position.set(o.x, -1.2, o.z);
-        const lMesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.8, 0.9), dogCoatMat);
-        lMesh.position.set(0, -1.1, 0);
-        lp.add(lMesh);
-        dTorso.add(lp);
-        dLegs.push(lp);
+        const legGroup = new THREE.Group();
+        legGroup.position.set(o.x, -1.1, o.z);
+
+        const upperLeg = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.1, 1.2), dobermanBlackMat);
+        upperLeg.position.set(0, -0.9, 0);
+        legGroup.add(upperLeg);
+
+        const lowerLeg = new THREE.Mesh(new THREE.BoxGeometry(0.75, 2.0, 0.8), dobermanRustMat);
+        lowerLeg.position.set(0, -2.5, o.isFront ? 0.05 : -0.15);
+        legGroup.add(lowerLeg);
+
+        const paw = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.55, 1.15), dobermanRustMat);
+        paw.position.set(0, -3.3, 0.2);
+        legGroup.add(paw);
+
+        dTorso.add(legGroup);
+        dLegs.push(legGroup);
       });
+
+      // Short Docked Upright Tail
+      const dTail = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.42, 1.8, 6), dobermanBlackMat);
+      dTail.position.set(0, 1.45, -3.8);
+      dTail.rotation.x = -Math.PI / 2.7;
+      dTorso.add(dTail);
 
       scene.add(dog);
 
@@ -1610,6 +1791,98 @@
     for (let i = 0; i < DOG_COUNT; i++) {
       dogs.push(buildDog(i));
     }
+
+    /* =========================================================================
+       6A. EXTERNAL GLB / GLTF MODEL SUPPORT (SKETCHFAB MODEL INTEGRATION)
+       ========================================================================= */
+    const gltfLoader = new THREE.GLTFLoader();
+
+    function applyCustomDobermanToDogs(loadedScene) {
+      console.log("Applying custom Doberman GLB model to pack...");
+      dogs.forEach((d, idx) => {
+        const clone = loadedScene.clone(true);
+        const box = new THREE.Box3().setFromObject(clone);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const targetSize = 7.6;
+        const scaleFactor = targetSize / (maxDim || 1);
+        clone.scale.set(scaleFactor, scaleFactor, scaleFactor);
+        
+        const center = box.getCenter(new THREE.Vector3());
+        clone.position.set(-center.x * scaleFactor, (-box.min.y * scaleFactor) - 0.2, -center.z * scaleFactor);
+        
+        d.torso.visible = false;
+        if (d.customGLB) {
+          d.group.remove(d.customGLB);
+        }
+        d.customGLB = clone;
+        d.group.add(clone);
+      });
+
+      const badge = document.querySelector('.badge.dog');
+      if (badge) {
+        badge.innerHTML = '🐕 PACK: 3 DOBERMANS (CUSTOM GLB 3D MODEL ACTIVE)';
+        badge.style.borderColor = 'rgba(34, 197, 94, 0.8)';
+        badge.style.color = '#4ade80';
+      }
+    }
+
+    function loadCustomDobermanGLB(sourceUrlOrFile) {
+      if (typeof sourceUrlOrFile === 'string') {
+        gltfLoader.load(
+          sourceUrlOrFile,
+          (gltf) => {
+            applyCustomDobermanToDogs(gltf.scene);
+          },
+          undefined,
+          (err) => {
+            console.log("Using procedural Sketchfab-matched Doberman model (" + err + ")");
+          }
+        );
+      } else {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const buffer = e.target.result;
+          gltfLoader.parse(
+            buffer,
+            '',
+            (gltf) => {
+              applyCustomDobermanToDogs(gltf.scene);
+            },
+            (err) => {
+              console.error("Error parsing GLB file:", err);
+            }
+          );
+        };
+        reader.readAsArrayBuffer(sourceUrlOrFile);
+      }
+    }
+
+    // Auto-check if doberman.glb is available in directory
+    loadCustomDobermanGLB('doberman.glb');
+
+    // Drag-and-drop support for .glb files
+    window.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    });
+
+    window.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const file = e.dataTransfer.files[0];
+        if (file.name.toLowerCase().endsWith('.glb') || file.name.toLowerCase().endsWith('.gltf')) {
+          loadCustomDobermanGLB(file);
+        }
+      }
+    });
+
+    window.handleGLBFileSelect = function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        loadCustomDobermanGLB(file);
+      }
+    };
 
     /* =========================================================================
        6B. THE "NOT THERE" COMIC POOF & SMOKE PUFF EFFECT
@@ -2182,8 +2455,8 @@
         targetCamPos.set(catX, 5.5, catZ - 16);
         targetCamLook.set(catX, 3.0, catZ + 12);
       } else if (cameraMode === 'dogs') {
-        targetCamPos.set(0, 6.0, dogBaseZ - 15);
-        targetCamLook.set(catX, 3.0, catZ);
+        targetCamPos.set(6.5, 4.5, dogBaseZ + 8);
+        targetCamLook.set(0, 3.2, dogBaseZ - 5);
       } else if (cameraMode === 'human') {
         targetCamPos.set(12, 11, humanZ - 16);
         targetCamLook.set(0, 6, humanZ + 12);

@@ -1,0 +1,2142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLASH OF CHAMPIONS // Playful Dog vs Office Cat (30s Showdown)</title>
+  <style>
+    :root {
+      --dog-gold: #f59e0b;
+      --dog-rage: #ef4444;
+      --cat-blue: #38bdf8;
+      --cat-tabby: #94a3b8;
+      --arena-dark: #07090e;
+      --panel-bg: rgba(11, 15, 25, 0.85);
+      --panel-border: rgba(245, 158, 11, 0.35);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--arena-dark);
+      color: #f1f5f9;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Cinematic Letterbox */
+    .cinema-bars {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 42px;
+      background: #000000;
+      z-index: 8;
+      pointer-events: none;
+      transition: transform 0.4s ease;
+    }
+    .cinema-top { top: 0; }
+    .cinema-bottom { bottom: 0; }
+    body.hide-bars .cinema-top { transform: translateY(-100%); }
+    body.hide-bars .cinema-bottom { transform: translateY(100%); }
+
+    /* Screen Vibe Overlays */
+    #vignette {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+      box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.85), inset 0 0 45px rgba(239, 68, 68, 0.15);
+    }
+
+    #impact-flash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(239, 68, 68, 0.45);
+      z-index: 7;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.08s ease-out;
+    }
+
+    /* UI Layout */
+    #ui-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 48px 36px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: auto;
+    }
+
+    .brand-title {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #ffffff 0%, var(--dog-gold) 50%, var(--dog-rage) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-shadow: 0 0 30px rgba(245, 158, 11, 0.4);
+    }
+
+    .live-pulse {
+      width: 10px;
+      height: 10px;
+      background: #ef4444;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #ef4444;
+      animation: pulse 1.4s infinite;
+      display: inline-block;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.6; }
+    }
+
+    .scene-desc {
+      font-size: 11px;
+      color: #94a3b8;
+      letter-spacing: 1px;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    .status-badges {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      backdrop-filter: blur(8px);
+      letter-spacing: 0.6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      border: 1px solid transparent;
+      cursor: default;
+    }
+
+    .badge.dog {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+    .badge.cat {
+      background: rgba(56, 189, 248, 0.15);
+      color: #7dd3fc;
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+    .badge.vs {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+
+    /* Top Right Telemetry & Controls */
+    .top-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .scene-nav-btn {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      letter-spacing: 0.8px;
+    }
+    .scene-nav-btn:hover {
+      background: var(--dog-gold);
+      color: #000;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+    }
+
+    .audio-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      padding: 4px 10px;
+      border-radius: 6px;
+      backdrop-filter: blur(10px);
+    }
+
+    .audio-btn {
+      background: transparent;
+      border: none;
+      color: #f1f5f9;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .volume-slider {
+      width: 60px;
+      height: 4px;
+      accent-color: var(--dog-gold);
+      cursor: pointer;
+    }
+
+    /* Battle Telemetry Card */
+    .battle-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      min-width: 220px;
+    }
+
+    .timer-display {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--dog-gold);
+      letter-spacing: 1.5px;
+      text-align: right;
+    }
+
+    .combat-stat {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    .bar-bg {
+      width: 100%;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      margin-top: 2px;
+      overflow: hidden;
+    }
+    .bar-dog {
+      height: 100%;
+      background: linear-gradient(90deg, #f59e0b, #ef4444);
+      width: 30%;
+      transition: width 0.1s linear;
+    }
+    .bar-cat {
+      height: 100%;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      width: 100%;
+      transition: width 0.1s linear;
+    }
+
+    /* Camera Bar */
+    .camera-bar {
+      position: absolute;
+      top: 150px;
+      left: 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      padding: 10px;
+      border-radius: 10px;
+      backdrop-filter: blur(12px);
+      pointer-events: auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      z-index: 10;
+    }
+
+    .camera-bar-header {
+      font-size: 10px;
+      font-weight: 800;
+      color: #94a3b8;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      padding-left: 4px;
+    }
+
+    .cam-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #e2e8f0;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 7px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cam-btn:hover {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: rgba(245, 158, 11, 0.5);
+      color: #fff;
+    }
+    .cam-btn.active {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(239, 68, 68, 0.35));
+      border-color: var(--dog-gold);
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+    }
+
+    /* Dramatic Action Banner */
+    #action-banner {
+      position: absolute;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid var(--dog-gold);
+      padding: 8px 24px;
+      border-radius: 8px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+      text-align: center;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.3s ease;
+      z-index: 10;
+    }
+
+    #narrative-cue {
+      position: absolute;
+      bottom: 125px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #f1f5f9;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 6px 18px;
+      border-radius: 6px;
+      border-left: 3px solid var(--dog-gold);
+      pointer-events: none;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+      z-index: 10;
+    }
+
+    /* Timeline Controller */
+    .timeline-container {
+      width: 100%;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 12px 18px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .current-chapter-title {
+      color: var(--dog-gold);
+      text-transform: uppercase;
+    }
+
+    .scrubber-track {
+      position: relative;
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .scrubber-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #38bdf8 0%, #f59e0b 50%, #ef4444 100%);
+      border-radius: 4px;
+      width: 0%;
+      position: relative;
+    }
+
+    .scrubber-handle {
+      position: absolute;
+      right: -6px;
+      top: -4px;
+      width: 16px;
+      height: 16px;
+      background: #ffffff;
+      border: 3px solid var(--dog-gold);
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
+    }
+
+    .timeline-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chapter-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    .chap-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      letter-spacing: 0.5px;
+    }
+    .chap-btn:hover {
+      background: rgba(245, 158, 11, 0.25);
+      color: #fff;
+    }
+    .chap-btn.active {
+      background: var(--dog-gold);
+      color: #000;
+      border-color: var(--dog-gold);
+    }
+
+    .playback-btns {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ctrl-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #f1f5f9;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .ctrl-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    .speed-btn {
+      font-size: 10px;
+      padding: 4px 8px;
+    }
+    .speed-btn.active {
+      background: var(--dog-gold);
+      color: #000;
+      border-color: var(--dog-gold);
+    }
+
+    /* Start Splash Overlay */
+    #start-splash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 7, 12, 0.88);
+      backdrop-filter: blur(10px);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.5s ease;
+    }
+
+    .splash-box {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--dog-gold);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(245, 158, 11, 0.2);
+      border-radius: 16px;
+      padding: 36px 42px;
+      max-width: 540px;
+      text-align: center;
+    }
+
+    .splash-title {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #ffffff, var(--dog-gold), var(--dog-rage));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    .splash-sub {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 22px;
+      letter-spacing: 0.8px;
+    }
+
+    .splash-features {
+      text-align: left;
+      font-size: 12px;
+      color: #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 26px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .splash-features div {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .start-btn {
+      background: linear-gradient(135deg, var(--dog-gold), #ea580c);
+      color: #000;
+      font-weight: 900;
+      font-size: 14px;
+      letter-spacing: 1.5px;
+      border: none;
+      padding: 14px 34px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      box-shadow: 0 10px 25px rgba(234, 88, 12, 0.4);
+    }
+    .start-btn:hover {
+      transform: scale(1.04);
+      box-shadow: 0 12px 30px rgba(245, 158, 11, 0.6);
+    }
+  </style>
+
+  <!-- Three.js and Loaders via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+<body>
+  <div class="cinema-bars cinema-top"></div>
+  <div class="cinema-bars cinema-bottom"></div>
+  <div id="vignette"></div>
+  <div id="impact-flash"></div>
+
+  <div id="canvas-container"></div>
+
+  <!-- Dramatic Action Banner -->
+  <div id="action-banner">
+    <span id="banner-icon" style="font-size: 24px;">🐕</span>
+    <div>
+      <div id="banner-title" style="color: var(--dog-gold); font-size: 13px; font-weight: 900; letter-spacing: 1px;">ROUND 1: THE PLAYFUL CHOMP</div>
+      <div id="banner-desc" style="font-size: 11px; color: #cbd5e1;">DOG BITES THE CAT'S TAIL // CAT LEAPS IN SHOCK</div>
+    </div>
+  </div>
+
+  <!-- Narrative Subtitle Cue -->
+  <div id="narrative-cue">THE DOG SNEAKS UP AND BITES THE CAT'S TAIL!</div>
+
+  <!-- Main UI Overlay -->
+  <div id="ui-overlay">
+    <!-- Top Header -->
+    <div class="header">
+      <div>
+        <div class="brand-title">
+          <span class="live-pulse"></span>
+          CLASH OF CHAMPIONS
+        </div>
+        <div class="scene-desc">Playful Dog vs Office Cat • 30-Second Showdown • High-Octane Canine Victory</div>
+        <div class="status-badges">
+          <label class="badge dog" style="cursor:pointer;" title="Click or Drag & Drop .GLB file to load custom Dog model">
+            <span>🐕</span>
+            <span>DOG: PLAYFUL SHIBA INU</span>
+            <span style="font-size:9px; background:rgba(245,158,11,0.25); border:1px solid rgba(245,158,11,0.5); padding:1px 5px; border-radius:4px; margin-left:4px;">📁 LOAD .GLB</span>
+            <input type="file" id="dog-glb-input" accept=".glb,.gltf" style="display:none;" onchange="handleDogGLBSelect(event)" />
+          </label>
+          <span class="badge vs">⚡ VS</span>
+          <label class="badge cat" style="cursor:pointer;" title="Click or Drag & Drop .GLB file to load custom Cat model">
+            <span>🐱</span>
+            <span>CAT: OFFICE GREY TABBY</span>
+            <span style="font-size:9px; background:rgba(56,189,248,0.25); border:1px solid rgba(56,189,248,0.5); padding:1px 5px; border-radius:4px; margin-left:4px;">📁 LOAD .GLB</span>
+            <input type="file" id="cat-glb-input" accept=".glb,.gltf" style="display:none;" onchange="handleCatGLBSelect(event)" />
+          </label>
+        </div>
+      </div>
+
+      <div class="top-right">
+        <div style="display:flex; gap:8px; align-items:center;">
+          <a href="alley_chase_cat_dogs.html" class="scene-nav-btn">❮ Scene 1: Alley Pursuit</a>
+          <a href="crossroad_rush_cat_dogs.html" class="scene-nav-btn">Scene 2: Crossing ❯</a>
+          <div class="audio-controls">
+            <button class="audio-btn" id="audio-btn" onclick="toggleAudioEngine()">
+              <span id="audio-icon">🔊</span>
+              <span id="audio-label">SOUND: ON</span>
+            </button>
+            <input type="range" class="volume-slider" id="vol-slider" min="0" max="1" step="0.05" value="0.85" oninput="setMasterVolume(this.value)" />
+          </div>
+        </div>
+
+        <div class="battle-card">
+          <div class="timer-display" id="time-display">00:00.00 / 00:30.00</div>
+          
+          <div class="combat-stat">
+            <span style="color:var(--dog-gold);">🐕 DOG RAGE POWER</span>
+            <span id="dog-rage-text" style="color:#f59e0b;">20%</span>
+          </div>
+          <div class="bar-bg"><div class="bar-dog" id="dog-rage-bar"></div></div>
+
+          <div class="combat-stat" style="margin-top:6px;">
+            <span style="color:var(--cat-blue);">🐱 CAT STAMINA</span>
+            <span id="cat-hp-text" style="color:#7dd3fc;">100%</span>
+          </div>
+          <div class="bar-bg"><div class="bar-cat" id="cat-hp-bar"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Camera Viewing Angle Bar -->
+    <div class="camera-bar" id="camera-bar">
+      <div class="camera-bar-header">📹 BATTLE CAMERAS</div>
+      <button class="cam-btn active" id="cam-director" onclick="setCameraMode('director')">🎬 Director's Cut</button>
+      <button class="cam-btn" id="cam-combat" onclick="setCameraMode('combat')">⚔️ Combat Orbit</button>
+      <button class="cam-btn" id="cam-dog" onclick="setCameraMode('dog')">🐕 Dog Hero Cam</button>
+      <button class="cam-btn" id="cam-cat" onclick="setCameraMode('cat')">🐱 Cat Focus Cam</button>
+      <button class="cam-btn" id="cam-clash" onclick="setCameraMode('clash')">💥 Face Scratch Cam</button>
+      <button class="cam-btn" id="cam-orbit" onclick="setCameraMode('orbit')">🎮 Free Orbit</button>
+    </div>
+
+    <!-- Timeline Controller Bar -->
+    <div class="timeline-container">
+      <div class="timeline-header">
+        <span class="current-chapter-title" id="chapter-title">ACT 1: THE TAIL BITE (0s - 7s)</span>
+        <span id="speed-label" style="color: #94a3b8;">SPEED: 1.0X</span>
+      </div>
+
+      <div class="scrubber-track" id="scrubber-track" onclick="handleScrubClick(event)">
+        <div class="scrubber-fill" id="scrubber-fill">
+          <div class="scrubber-handle"></div>
+        </div>
+      </div>
+
+      <div class="timeline-controls">
+        <div class="chapter-btns">
+          <button class="chap-btn active" onclick="seekToTime(0)">1. Tail Bite</button>
+          <button class="chap-btn" onclick="seekToTime(7)">2. Cat Scratch</button>
+          <button class="chap-btn" onclick="seekToTime(15)">3. Dog Rage Full Power</button>
+          <button class="chap-btn" onclick="seekToTime(22)">4. Dog Victory!</button>
+        </div>
+
+        <div class="playback-btns">
+          <button class="ctrl-btn" id="play-pause-btn" onclick="togglePlayPause()">⏸ PAUSE</button>
+          <button class="ctrl-btn" onclick="seekToTime(0)">🔄 REPLAY</button>
+          <button class="ctrl-btn" onclick="toggleCinemaBars()">📺 BARS</button>
+          <button class="ctrl-btn speed-btn" onclick="setPlaybackSpeed(0.5)">0.5x</button>
+          <button class="ctrl-btn speed-btn active" id="spd-1" onclick="setPlaybackSpeed(1.0)">1.0x</button>
+          <button class="ctrl-btn speed-btn" onclick="setPlaybackSpeed(2.0)">2.0x</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Start Experience Splash Overlay -->
+  <div id="start-splash">
+    <div class="splash-box">
+      <div class="splash-title">CLASH OF CHAMPIONS</div>
+      <div class="splash-sub">A 30-Second Epic 3D Duel: Playful Dog vs Office Cat</div>
+      
+      <div class="splash-features">
+        <div><span>🐕</span> <b>Dog Model:</b> Playful Shiba Inu (Fawn & Cream Urajiro, Curled Tail, Prick Ears)</div>
+        <div><span>🐱</span> <b>Cat Model:</b> Sculpted Office Cat (Grey Tabby Stripes, Pink Nose, Blue Collar)</div>
+        <div><span>🦷</span> <b>Act 1 (0s-7s):</b> Playful Dog sneaks up & chomps the Cat's tail!</div>
+        <div><span>⚡</span> <b>Act 2 (7s-15s):</b> Cat counters with furious face scratches! Dog grows angrier!</div>
+        <div><span>🔥</span> <b>Act 3 (15s-22s):</b> Dog unleashes Full Power Rage Mode with flaming battle aura!</div>
+        <div><span>🏆</span> <b>Act 4 (22s-30s):</b> Unstoppable sonic tackle & Dog emerges as Champion!</div>
+      </div>
+
+      <button class="start-btn" onclick="startExperience()">WATCH THE 30S SHOWDOWN ❯</button>
+      <div style="font-size: 10px; color:#64748b; margin-top: 12px; letter-spacing: 1px;">HEADPHONES RECOMMENDED // INTERACTIVE TIMELINE & 3D CAMERAS</div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       1. TIMELINE & STORYBOARD DEFINITIONS (30.00 SECONDS TOTAL)
+       ========================================================================= */
+    const TOTAL_DURATION = 30.0;
+    let currentTime = 0.0;
+    let isPlaying = true;
+    let playbackSpeed = 1.0;
+    let cameraMode = 'director';
+
+    const CHAPTERS = [
+      {
+        startTime: 0,
+        endTime: 7,
+        title: "ACT 1: THE TAIL BITE",
+        cue: "THE DOG SNEAKS UP AND BITES THE CAT'S TAIL!",
+        bannerTitle: "ROUND 1: THE TAIL CHOMP",
+        bannerDesc: "DOG BITES CAT'S TAIL // CAT LEAPS IN SHOCK",
+        icon: "🦷",
+        cam: "combat"
+      },
+      {
+        startTime: 7,
+        endTime: 15,
+        title: "ACT 2: CAT'S VICIOUS COUNTER-SCRATCH",
+        cue: "CAT RETALIATES WITH RAZOR CLAWS ACROSS THE DOG'S FACE!",
+        bannerTitle: "ROUND 2: CLAW FURY",
+        bannerDesc: "CAT SCRATCHES DOG'S FACE // DOG BECOMES ENRAGED",
+        icon: "⚡",
+        cam: "clash"
+      },
+      {
+        startTime: 15,
+        endTime: 22,
+        title: "ACT 3: DOG UNLEASHES FULL POWER!",
+        cue: "DOG'S EYES GLOW CRIMSON // FULL POWER BATTLE AURA ACTIVATED!",
+        bannerTitle: "ROUND 3: MAXIMUM OVERDRIVE",
+        bannerDesc: "SUPERCHARGED RAGE MODE // GROUND-SHATTERING AURA",
+        icon: "🔥",
+        cam: "dog"
+      },
+      {
+        startTime: 22,
+        endTime: 30,
+        title: "ACT 4: THE ULTIMATE TACKLE & DOG VICTORY!",
+        cue: "DOG EXECUTES UNSTOPPABLE TACKLE! THE DOG IS VICTORIOUS!",
+        bannerTitle: "FINAL ROUND: DOG WINS!",
+        bannerDesc: "CAT SUBMITS IN DEFEAT // DOG STANDS AS CHAMPION!",
+        icon: "🏆",
+        cam: "director"
+      }
+    ];
+
+    /* =========================================================================
+       2. REAL-TIME PROCEDURAL SOUND SYNTHESIS ENGINE (WEB AUDIO API)
+       ========================================================================= */
+    class ProceduralBattleSoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.masterGain = null;
+        this.isMuted = false;
+        this.lastBark = -10;
+        this.lastMeow = -10;
+        this.lastScratch = -10;
+        this.lastAuraPulse = -10;
+      }
+
+      init() {
+        if (this.ctx) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContext();
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.setValueAtTime(0.85, this.ctx.currentTime);
+        this.masterGain.connect(this.ctx.destination);
+      }
+
+      setVolume(val) {
+        if (!this.masterGain || !this.ctx) return;
+        this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : val, this.ctx.currentTime);
+      }
+
+      playPlayfulBark() {
+        if (!this.ctx || this.isMuted) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(140, this.ctx.currentTime + 0.14);
+        gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.16);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.18);
+      }
+
+      playFuriousRoar() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const sub = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        sub.type = 'triangle';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.linearRampToValueAtTime(95, now + 0.35);
+        sub.frequency.setValueAtTime(80, now);
+        sub.frequency.linearRampToValueAtTime(45, now + 0.35);
+        gain.gain.setValueAtTime(0.65, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        osc.connect(gain);
+        sub.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start();
+        sub.start();
+        osc.stop(now + 0.42);
+        sub.stop(now + 0.42);
+      }
+
+      playCatYowl() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(750, now);
+        osc.frequency.linearRampToValueAtTime(1100, now + 0.15);
+        osc.frequency.exponentialRampToValueAtTime(450, now + 0.4);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start();
+        osc.stop(now + 0.48);
+      }
+
+      playClawSlash() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        // White noise slash
+        const bufferSize = this.ctx.sampleRate * 0.15;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(2800, now);
+        filter.frequency.exponentialRampToValueAtTime(800, now + 0.12);
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.7, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
+        noise.start();
+        noise.stop(now + 0.15);
+      }
+
+      playTailChomp() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(60, now + 0.08);
+        gain.gain.setValueAtTime(0.6, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start();
+        osc.stop(now + 0.12);
+      }
+
+      playRagePowerUp() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(65, now);
+        osc.frequency.exponentialRampToValueAtTime(320, now + 0.8);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.55, now + 0.5);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.9);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start();
+        osc.stop(now + 0.95);
+      }
+
+      playTackleImpact() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(35, now + 0.3);
+        gain.gain.setValueAtTime(0.9, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start();
+        osc.stop(now + 0.38);
+      }
+    }
+
+    const sound = new ProceduralBattleSoundEngine();
+
+    /* =========================================================================
+       3. THREE.JS SCENE SETUP & CINEMATIC LIGHTING
+       ========================================================================= */
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x080b12);
+    scene.fog = new THREE.FogExp2(0x080b12, 0.022);
+
+    const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 500);
+    camera.position.set(0, 4.5, 14);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2 - 0.02; // Don't go below floor
+    controls.enabled = false;
+
+    // Atmospheric Lights
+    const ambientLight = new THREE.AmbientLight(0x1e293b, 1.4);
+    scene.add(ambientLight);
+
+    const moonLight = new THREE.DirectionalLight(0x93c5fd, 1.8);
+    moonLight.position.set(-15, 25, 20);
+    moonLight.castShadow = true;
+    moonLight.shadow.mapSize.width = 2048;
+    moonLight.shadow.mapSize.height = 2048;
+    moonLight.shadow.bias = -0.0005;
+    scene.add(moonLight);
+
+    const warmFillLight = new THREE.DirectionalLight(0xf59e0b, 1.2);
+    warmFillLight.position.set(18, 12, -15);
+    scene.add(warmFillLight);
+
+    // Dynamic Battle Arena Ring Spotlight
+    const battleSpot = new THREE.SpotLight(0xffedd5, 2.8, 45, Math.PI / 3.5, 0.4);
+    battleSpot.position.set(0, 18, 0);
+    battleSpot.castShadow = true;
+    scene.add(battleSpot);
+
+    // Ground Arena: Dark wet cobblestone courtyard
+    const floorGeo = new THREE.PlaneGeometry(120, 120);
+    const floorMat = new THREE.MeshStandardMaterial({
+      color: 0x0f172a,
+      roughness: 0.28,
+      metalness: 0.15
+    });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    // Decorative Battle Arena: Stone curbs, lantern pillars, and cat observation bench
+    const ringGeo = new THREE.RingGeometry(13.8, 14.5, 32);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.02;
+    scene.add(ring);
+
+    // Stone Bench / Cat Pedestal (where the cat swishes its tail in Act 1)
+    const benchGroup = new THREE.Group();
+    benchGroup.position.set(2.5, 0, -2.5);
+    scene.add(benchGroup);
+
+    const benchTop = new THREE.Mesh(
+      new THREE.BoxGeometry(3.8, 0.4, 1.6),
+      new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 })
+    );
+    benchTop.position.set(0, 1.2, 0);
+    benchTop.castShadow = true;
+    benchTop.receiveShadow = true;
+    benchGroup.add(benchTop);
+
+    for (let bx of [-1.5, 1.5]) {
+      const leg = new THREE.Mesh(
+        new THREE.BoxGeometry(0.5, 1.2, 1.4),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 })
+      );
+      leg.position.set(bx, 0.6, 0);
+      leg.castShadow = true;
+      benchGroup.add(leg);
+    }
+
+    // Street Lantern Pillars with Warm Glowing Bulbs
+    for (let lp of [{x: -8, z: -8}, {x: 8, z: 8}, {x: -8, z: 8}, {x: 8, z: -8}]) {
+      const pillar = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.18, 0.25, 7.5, 8),
+        new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6, metalness: 0.6 })
+      );
+      pillar.position.set(lp.x, 3.75, lp.z);
+      pillar.castShadow = true;
+      scene.add(pillar);
+
+      const bulb = new THREE.Mesh(
+        new THREE.SphereGeometry(0.35, 12, 12),
+        new THREE.MeshBasicMaterial({ color: 0xfef08a })
+      );
+      bulb.position.set(lp.x, 7.5, lp.z);
+      scene.add(bulb);
+
+      const lampLight = new THREE.PointLight(0xfef08a, 1.2, 18);
+      lampLight.position.set(lp.x, 7.5, lp.z);
+      scene.add(lampLight);
+    }
+
+    /* =========================================================================
+       4. THE PLAYFUL SHIBA INU DOG MODEL
+          Direct match to Sketchfab: "Playful Dog" (3d4b542bd27144ccba382e2825ecd8b5)
+          - Fawn / red-gold coat with creamy white Urajiro markings
+          - Curled sickle tail arching high over the back
+          - Triangular prick ears with white inner fuzz
+          - Expressive almond eyes with white eyebrow pips
+          - Articulated snout & jaw capable of chomping, snarling, and howling
+          - Supercharged Full Power Aura & glowing crimson battle eyes
+       ========================================================================= */
+    const shibaFawnMat = new THREE.MeshStandardMaterial({
+      color: 0xc87a3e, // rich warm golden-fawn
+      roughness: 0.52,
+      metalness: 0.05
+    });
+
+    const shibaUrajiroMat = new THREE.MeshStandardMaterial({
+      color: 0xf6f2ea, // creamy white underbelly/cheeks
+      roughness: 0.62,
+      metalness: 0.02
+    });
+
+    const shibaDarkSpineMat = new THREE.MeshStandardMaterial({
+      color: 0x8a4d22, // darker saddle wash
+      roughness: 0.55
+    });
+
+    const shibaInnerEarMat = new THREE.MeshStandardMaterial({
+      color: 0xebd2c4, // soft pinkish fuzz
+      roughness: 0.65
+    });
+
+    const shibaNoseMat = new THREE.MeshStandardMaterial({
+      color: 0x0f1115, // black wet leather
+      roughness: 0.25,
+      metalness: 0.1
+    });
+
+    const shibaEyeMat = new THREE.MeshBasicMaterial({ color: 0x451a03 }); // dark amber-brown
+    const shibaRageEyeMat = new THREE.MeshBasicMaterial({ color: 0xff1e00 }); // glowing furious crimson
+
+    const shibaTongueMat = new THREE.MeshStandardMaterial({
+      color: 0xf43f5e,
+      roughness: 0.3
+    });
+
+    const shibaTeethMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.12,
+      metalness: 0.1
+    });
+
+    // Dog Root Group
+    const dogGroup = new THREE.Group();
+    scene.add(dogGroup);
+
+    const dTorso = new THREE.Group();
+    dTorso.position.set(0, 1.8, 0);
+    dogGroup.add(dTorso);
+
+    // Torso: Muscular Barrel Body
+    const dBodyMesh = new THREE.Mesh(new THREE.BoxGeometry(1.9, 1.8, 3.2), shibaFawnMat);
+    dBodyMesh.position.set(0, 0, 0);
+    dBodyMesh.castShadow = true;
+    dTorso.add(dBodyMesh);
+
+    // Spine dark tone
+    const dSpineMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.25, 2.8), shibaDarkSpineMat);
+    dSpineMesh.position.set(0, 0.95, 0);
+    dTorso.add(dSpineMesh);
+
+    // Creamy White Urajiro Chest & Underbelly
+    const dChestBib = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.5, 0.3), shibaUrajiroMat);
+    dChestBib.position.set(0, -0.1, 1.62);
+    dChestBib.rotation.x = -0.15;
+    dTorso.add(dChestBib);
+
+    const dBellyBib = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.25, 2.6), shibaUrajiroMat);
+    dBellyBib.position.set(0, -0.92, 0);
+    dTorso.add(dBellyBib);
+
+    // Iconic Curled Shiba Sickle Tail
+    const dTailGroup = new THREE.Group();
+    dTailGroup.position.set(0, 0.7, -1.6);
+    dTorso.add(dTailGroup);
+
+    const tailCurve = new THREE.Mesh(
+      new THREE.TorusGeometry(0.7, 0.28, 8, 16, Math.PI * 1.35),
+      shibaFawnMat
+    );
+    tailCurve.rotation.y = Math.PI / 2;
+    tailCurve.rotation.x = 0.4;
+    tailCurve.castShadow = true;
+    dTailGroup.add(tailCurve);
+
+    // Neck: Thick, furry Shiba neck
+    const dNeck = new THREE.Group();
+    dNeck.position.set(0, 0.7, 1.4);
+    dTorso.add(dNeck);
+
+    const neckMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.5), shibaFawnMat);
+    neckMesh.position.set(0, 0.4, 0.3);
+    neckMesh.rotation.x = -0.3;
+    neckMesh.castShadow = true;
+    dNeck.add(neckMesh);
+
+    const neckThroat = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.3, 0.2), shibaUrajiroMat);
+    neckThroat.position.set(0, 0.2, 1.0);
+    neckThroat.rotation.x = -0.3;
+    dNeck.add(neckThroat);
+
+    // Head Group
+    const dHead = new THREE.Group();
+    dHead.position.set(0, 1.2, 0.8);
+    dNeck.add(dHead);
+
+    // Fox-like Shiba Cranium
+    const dSkull = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.5, 1.7), shibaFawnMat);
+    dSkull.position.set(0, 0.2, 0);
+    dSkull.castShadow = true;
+    dHead.add(dSkull);
+
+    // White Urajiro Cheeks & Brows
+    const leftCheek = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.9, 1.2), shibaUrajiroMat);
+    leftCheek.position.set(-0.9, -0.1, 0.2);
+    dHead.add(leftCheek);
+
+    const rightCheek = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.9, 1.2), shibaUrajiroMat);
+    rightCheek.position.set(0.9, -0.1, 0.2);
+    dHead.add(rightCheek);
+
+    // Distinct White Eyebrow Pips ("Maro" spots)
+    const leftPip = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.18, 0.15), shibaUrajiroMat);
+    leftPip.position.set(-0.45, 0.75, 0.82);
+    dHead.add(leftPip);
+
+    const rightPip = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.18, 0.15), shibaUrajiroMat);
+    rightPip.position.set(0.45, 0.75, 0.82);
+    dHead.add(rightPip);
+
+    // Muzzle / Snout Top
+    const dSnout = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.8, 1.4), shibaFawnMat);
+    dSnout.position.set(0, 0.05, 1.25);
+    dHead.add(dSnout);
+
+    const dSnoutWhite = new THREE.Mesh(new THREE.BoxGeometry(1.12, 0.45, 1.35), shibaUrajiroMat);
+    dSnoutWhite.position.set(0, -0.22, 1.26);
+    dHead.add(dSnoutWhite);
+
+    // Wet Black Nose
+    const dNose = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.4, 0.35), shibaNoseMat);
+    dNose.position.set(0, 0.28, 1.95);
+    dHead.add(dNose);
+
+    // Scratch Marks Mesh (Initially hidden, revealed after Act 2!)
+    const scratchGroup = new THREE.Group();
+    scratchGroup.position.set(0, 0.2, 1.3);
+    scratchGroup.visible = false;
+    dHead.add(scratchGroup);
+
+    for (let sc = -1; sc <= 1; sc++) {
+      const slashStreak = new THREE.Mesh(
+        new THREE.BoxGeometry(0.08, 0.35, 0.8),
+        new THREE.MeshBasicMaterial({ color: 0xef4444 })
+      );
+      slashStreak.position.set(sc * 0.28, 0.18, 0.1);
+      slashStreak.rotation.set(0.2, sc * 0.25, 0.4);
+      scratchGroup.add(slashStreak);
+    }
+
+    // Eyes
+    const dEyes = [];
+    for (let s of [-0.62, 0.62]) {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), shibaEyeMat);
+      eye.position.set(s, 0.42, 0.82);
+      eye.scale.set(0.8, 1.0, 1.2);
+      dHead.add(eye);
+      dEyes.push(eye);
+    }
+
+    // Triangular Prick Ears (Upright, slight forward tilt)
+    const earGeo = new THREE.ConeGeometry(0.42, 1.1, 4);
+    earGeo.scale(1.0, 1.0, 0.5);
+    for (let s of [-0.7, 0.7]) {
+      const earGroup = new THREE.Group();
+      earGroup.position.set(s, 0.95, -0.15);
+      earGroup.rotation.set(-0.2, 0, (s < 0 ? 1 : -1) * 0.15);
+
+      const earOuter = new THREE.Mesh(earGeo, shibaFawnMat);
+      earOuter.position.set(0, 0.5, 0);
+      earGroup.add(earOuter);
+
+      const earInner = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.85, 4), shibaInnerEarMat);
+      earInner.scale.set(0.9, 1.0, 0.4);
+      earInner.position.set(0, 0.45, 0.08);
+      earGroup.add(earInner);
+
+      dHead.add(earGroup);
+    }
+
+    // Articulated Lower Jaw
+    const dJaw = new THREE.Group();
+    dJaw.position.set(0, -0.35, 0.8);
+    dHead.add(dJaw);
+
+    const jawMesh = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.4, 1.3), shibaUrajiroMat);
+    jawMesh.position.set(0, -0.1, 0.6);
+    dJaw.add(jawMesh);
+
+    const tongue = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.15, 0.9), shibaTongueMat);
+    tongue.position.set(0, 0.1, 0.6);
+    dJaw.add(tongue);
+
+    // Canines
+    for (let s of [-0.38, 0.38]) {
+      const uFang = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.45, 4), shibaTeethMat);
+      uFang.rotateX(Math.PI);
+      uFang.position.set(s, -0.18, 1.7);
+      dHead.add(uFang);
+
+      const lFang = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.4, 4), shibaTeethMat);
+      lFang.position.set(s * 0.9, 0.22, 1.05);
+      dJaw.add(lFang);
+    }
+
+    // 4 Straight Athletic Legs with White Socks
+    const dLegs = [];
+    const dLegOffsets = [
+      { x: -0.75, z: 1.1, isFront: true },
+      { x: 0.75, z: 1.1, isFront: true },
+      { x: -0.75, z: -1.1, isFront: false },
+      { x: 0.75, z: -1.1, isFront: false }
+    ];
+
+    dLegOffsets.forEach(o => {
+      const legGroup = new THREE.Group();
+      legGroup.position.set(o.x, -0.6, o.z);
+
+      const upperLeg = new THREE.Mesh(new THREE.BoxGeometry(0.65, 1.1, 0.8), shibaFawnMat);
+      upperLeg.position.set(0, -0.5, 0);
+      upperLeg.castShadow = true;
+      legGroup.add(upperLeg);
+
+      // White socks
+      const sock = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.8, 0.65), shibaUrajiroMat);
+      sock.position.set(0, -1.2, 0);
+      sock.castShadow = true;
+      legGroup.add(sock);
+
+      const paw = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.35, 0.8), shibaUrajiroMat);
+      paw.position.set(0, -1.55, 0.12);
+      legGroup.add(paw);
+
+      // Black claws
+      for (let c of [-0.16, 0.16]) {
+        const claw = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.2), shibaNoseMat);
+        claw.position.set(c, -1.6, 0.52);
+        legGroup.add(claw);
+      }
+
+      dTorso.add(legGroup);
+      dLegs.push(legGroup);
+    });
+
+    // Full Power Flaming Battle Aura (Appears in Act 3 & 4!)
+    const auraGroup = new THREE.Group();
+    auraGroup.position.set(0, 0, 0);
+    auraGroup.visible = false;
+    dTorso.add(auraGroup);
+
+    const auraGeo = new THREE.SphereGeometry(3.2, 16, 16);
+    const auraMat = new THREE.MeshBasicMaterial({
+      color: 0xff3b30,
+      transparent: true,
+      opacity: 0.35,
+      wireframe: true
+    });
+    const auraSphere = new THREE.Mesh(auraGeo, auraMat);
+    auraGroup.add(auraSphere);
+
+    const auraCore = new THREE.PointLight(0xff4500, 3.5, 15);
+    auraGroup.add(auraCore);
+
+    /* =========================================================================
+       5. THE OFFICE CAT MODEL
+          Direct match to Sketchfab: "cat" (72802b97cf2f4caa917c2c0525c61d2e)
+          - Warm grey tabby coat with charcoal stripes
+          - White muzzle blaze, chin & chest
+          - Sky-blue collar with gold bell
+          - Luminous olive-green feline eyes
+          - Multi-joint flexible tail that gets bitten!
+          - Razor scratch claw swipe combo with glowing slash VFX
+       ========================================================================= */
+    const catTabbyMat = new THREE.MeshStandardMaterial({
+      color: 0x9e9589, // sculpted warm grey tabby
+      roughness: 0.58
+    });
+
+    const catStripeMat = new THREE.MeshStandardMaterial({
+      color: 0x3e3630, // charcoal tabby stripe bands
+      roughness: 0.65
+    });
+
+    const catWhiteBlazeMat = new THREE.MeshStandardMaterial({
+      color: 0xfdfaf6, // crisp white blaze & chin
+      roughness: 0.65
+    });
+
+    const catPinkNoseMat = new THREE.MeshStandardMaterial({
+      color: 0xf472b6, // delicate soft pink nose
+      roughness: 0.35
+    });
+
+    const catEarInnerMat = new THREE.MeshStandardMaterial({
+      color: 0xf9a8d4, // pink inner ear skin
+      roughness: 0.5
+    });
+
+    const catEyeMat = new THREE.MeshBasicMaterial({ color: 0x84cc16 }); // luminous chartreuse-green
+    const catPupilMat = new THREE.MeshBasicMaterial({ color: 0x050505 }); // vertical slit pupil
+    const catCollarMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.35 }); // sky blue collar
+    const catBellMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.9, roughness: 0.15 }); // gold bell
+
+    // Cat Root Group
+    const catGroup = new THREE.Group();
+    scene.add(catGroup);
+
+    const cTorso = new THREE.Group();
+    cTorso.position.set(0, 1.5, 0);
+    catGroup.add(cTorso);
+
+    // Torso: Sleek arched feline body
+    const cBodyMesh = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.5, 2.8), catTabbyMat);
+    cBodyMesh.position.set(0, 0, 0);
+    cBodyMesh.castShadow = true;
+    cTorso.add(cBodyMesh);
+
+    // Charcoal Tabby Stripes across body
+    for (let st = -3; st <= 3; st++) {
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.44, 0.22, 0.25), catStripeMat);
+      stripe.position.set(0, 0.65, st * 0.35);
+      cTorso.add(stripe);
+    }
+
+    // White Chest Bib & Underbelly
+    const cChestBib = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.2, 0.25), catWhiteBlazeMat);
+    cChestBib.position.set(0, -0.15, 1.42);
+    cChestBib.rotation.x = -0.15;
+    cTorso.add(cChestBib);
+
+    // Sky-Blue Collar with Golden Bell (Key feature from model!)
+    const cCollar = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.3, 0.35), catCollarMat);
+    cCollar.position.set(0, 0.75, 1.35);
+    cCollar.rotation.x = -0.3;
+    cTorso.add(cCollar);
+
+    const cBell = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), catBellMat);
+    cBell.position.set(0, 0.55, 1.58);
+    cTorso.add(cBell);
+
+    // Cat Neck
+    const cNeck = new THREE.Group();
+    cNeck.position.set(0, 0.65, 1.2);
+    cTorso.add(cNeck);
+
+    const cNeckMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.3, 1.2), catTabbyMat);
+    cNeckMesh.position.set(0, 0.35, 0.25);
+    cNeckMesh.rotation.x = -0.3;
+    cNeckMesh.castShadow = true;
+    cNeck.add(cNeckMesh);
+
+    // Sculpted Cat Head
+    const cHead = new THREE.Group();
+    cHead.position.set(0, 1.0, 0.6);
+    cNeck.add(cHead);
+
+    const cSkull = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.4, 1.5), catTabbyMat);
+    cSkull.position.set(0, 0.15, 0);
+    cSkull.castShadow = true;
+    cHead.add(cSkull);
+
+    // Forehead stripes
+    for (let fst = -1; fst <= 1; fst++) {
+      const fstripe = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.7, 0.15), catStripeMat);
+      fstripe.position.set(fst * 0.32, 0.6, 0.68);
+      cHead.add(fstripe);
+    }
+
+    // White Muzzle Blaze & Chin Pads
+    const cMuzzle = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.65, 0.9), catWhiteBlazeMat);
+    cMuzzle.position.set(0, -0.15, 0.95);
+    cHead.add(cMuzzle);
+
+    // Soft Pink Leather Nose Pad
+    const cNose = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.28, 0.25), catPinkNoseMat);
+    cNose.position.set(0, 0.05, 1.42);
+    cHead.add(cNose);
+
+    // Luminous Olive-Green Eyes
+    for (let s of [-0.48, 0.48]) {
+      const eyeSphere = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8), catEyeMat);
+      eyeSphere.position.set(s, 0.32, 0.72);
+      eyeSphere.scale.set(1.0, 1.0, 0.7);
+      cHead.add(eyeSphere);
+
+      const pupil = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.32, 0.1), catPupilMat);
+      pupil.position.set(s, 0.32, 0.88);
+      cHead.add(pupil);
+    }
+
+    // Tall Expressive Feline Ears
+    const cEars = [];
+    for (let s of [-0.62, 0.62]) {
+      const earPivot = new THREE.Group();
+      earPivot.position.set(s, 0.95, -0.1);
+
+      const earMesh = new THREE.Mesh(new THREE.ConeGeometry(0.38, 1.2, 4), catTabbyMat);
+      earMesh.scale.set(1.0, 1.0, 0.4);
+      earMesh.position.set(0, 0.55, 0);
+      earMesh.rotation.y = s < 0 ? -0.2 : 0.2;
+      earPivot.add(earMesh);
+
+      const earInner = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.95, 4), catEarInnerMat);
+      earInner.scale.set(0.9, 0.9, 0.3);
+      earInner.position.set(0, 0.5, 0.06);
+      earPivot.add(earInner);
+
+      cHead.add(earPivot);
+      cEars.push(earPivot);
+    }
+
+    // Multi-Joint Flexible Cat Tail (The Target that gets bitten in Act 1!)
+    const cTailSegments = [];
+    let prevSegment = cTorso;
+    for (let t = 0; t < 6; t++) {
+      const segGroup = new THREE.Group();
+      if (t === 0) {
+        segGroup.position.set(0, 0.4, -1.4);
+      } else {
+        segGroup.position.set(0, 0.15, -0.6);
+      }
+
+      const isStriped = (t % 2 === 0);
+      const segMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.18 - t * 0.015, 0.2 - t * 0.015, 0.65, 6),
+        isStriped ? catStripeMat : catTabbyMat
+      );
+      segMesh.rotation.x = Math.PI / 2.4;
+      segMesh.castShadow = true;
+      segGroup.add(segMesh);
+
+      prevSegment.add(segGroup);
+      cTailSegments.push(segGroup);
+      prevSegment = segGroup;
+    }
+
+    // 4 Flexible Legs with Retractable Claws
+    const cLegs = [];
+    const cLegOffsets = [
+      { x: -0.55, z: 0.9, isFront: true },
+      { x: 0.55, z: 0.9, isFront: true },
+      { x: -0.55, z: -0.9, isFront: false },
+      { x: 0.55, z: -0.9, isFront: false }
+    ];
+
+    cLegOffsets.forEach((o, lidx) => {
+      const legGroup = new THREE.Group();
+      legGroup.position.set(o.x, -0.55, o.z);
+
+      const upperLeg = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.0, 0.6), catTabbyMat);
+      upperLeg.position.set(0, -0.45, 0);
+      upperLeg.castShadow = true;
+      legGroup.add(upperLeg);
+
+      const lowerLeg = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.8, 0.45), catWhiteBlazeMat);
+      lowerLeg.position.set(0, -1.1, 0);
+      lowerLeg.castShadow = true;
+      legGroup.add(lowerLeg);
+
+      const paw = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.28, 0.65), catWhiteBlazeMat);
+      paw.position.set(0, -1.45, 0.1);
+      legGroup.add(paw);
+
+      // Razor sharp claws (extended during Act 2 swipe!)
+      const clawGroup = new THREE.Group();
+      clawGroup.position.set(0, -1.45, 0.4);
+      paw.add(clawGroup);
+
+      for (let c of [-0.14, 0, 0.14]) {
+        const claw = new THREE.Mesh(
+          new THREE.ConeGeometry(0.06, 0.35, 4),
+          new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.4, roughness: 0.2 })
+        );
+        claw.rotation.x = Math.PI / 2.2;
+        claw.position.set(c, 0, 0);
+        clawGroup.add(claw);
+      }
+
+      cTorso.add(legGroup);
+      cLegs.push({ group: legGroup, claws: clawGroup });
+    });
+
+    // Claw Slash Arcs / Sparks VFX (Triggered during Act 2!)
+    const slashVFXGroup = new THREE.Group();
+    scene.add(slashVFXGroup);
+    slashVFXGroup.visible = false;
+
+    for (let sl = 0; sl < 3; sl++) {
+      const slashArc = new THREE.Mesh(
+        new THREE.RingGeometry(1.2, 1.45, 16, 1, 0, Math.PI * 0.7),
+        new THREE.MeshBasicMaterial({ color: 0xff3b30, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
+      );
+      slashArc.position.set(0, 2.2, 0);
+      slashArc.rotation.set(0.3, sl * 0.4, sl * 0.6);
+      slashVFXGroup.add(slashArc);
+    }
+
+    /* =========================================================================
+       6. EXTERNAL GLB LOADER & DRAG-AND-DROP INTEGRATION
+       ========================================================================= */
+    const gltfLoader = new THREE.GLTFLoader();
+
+    function showToast(msg) {
+      let toast = document.getElementById('scene-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'scene-toast';
+        toast.style.cssText = 'position:fixed; bottom:72px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.95); border:1px solid var(--dog-gold); color:#f8fafc; padding:10px 22px; border-radius:8px; font-size:13px; font-weight:700; z-index:9999; box-shadow:0 10px 30px rgba(0,0,0,0.7); pointer-events:none; transition:opacity 0.3s;';
+        document.body.appendChild(toast);
+      }
+      toast.innerText = msg;
+      toast.style.opacity = '1';
+      clearTimeout(toast.timer);
+      toast.timer = setTimeout(() => { toast.style.opacity = '0'; }, 3800);
+    }
+
+    function applyCustomModel(loadedScene, targetGroup, targetTorso, targetScale, badgeSelector, badgeActiveText) {
+      const box = new THREE.Box3().setFromObject(loadedScene);
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const scaleFactor = targetScale / (maxDim || 1);
+      loadedScene.scale.set(scaleFactor, scaleFactor, scaleFactor);
+      const center = box.getCenter(new THREE.Vector3());
+      loadedScene.position.set(-center.x * scaleFactor, (-box.min.y * scaleFactor), -center.z * scaleFactor);
+
+      targetTorso.visible = false;
+      targetGroup.add(loadedScene);
+
+      const badge = document.querySelector(badgeSelector);
+      if (badge) {
+        badge.innerHTML = badgeActiveText;
+        badge.style.borderColor = '#22c55e';
+        badge.style.color = '#4ade80';
+      }
+      showToast('✨ Custom Model Loaded Successfully!');
+    }
+
+    function loadCustomDogGLB(source) {
+      if (typeof source === 'string') {
+        gltfLoader.load(source, gltf => {
+          applyCustomModel(gltf.scene, dogGroup, dTorso, 4.2, '.badge.dog', '🐕 DOG: SKETCHFAB 3D MODEL ACTIVE');
+        }, undefined, () => console.log('Using procedural Playful Dog model.'));
+      } else {
+        const reader = new FileReader();
+        reader.onload = e => {
+          gltfLoader.parse(e.target.result, '', gltf => {
+            applyCustomModel(gltf.scene, dogGroup, dTorso, 4.2, '.badge.dog', '🐕 DOG: CUSTOM GLB MODEL ACTIVE');
+          }, err => showToast('⚠️ Error parsing dog GLB: ' + err.message));
+        };
+        reader.readAsArrayBuffer(source);
+      }
+    }
+
+    function loadCustomCatGLB(source) {
+      if (typeof source === 'string') {
+        gltfLoader.load(source, gltf => {
+          applyCustomModel(gltf.scene, catGroup, cTorso, 3.6, '.badge.cat', '🐱 CAT: SKETCHFAB 3D MODEL ACTIVE');
+        }, undefined, () => console.log('Using procedural Office Cat model.'));
+      } else {
+        const reader = new FileReader();
+        reader.onload = e => {
+          gltfLoader.parse(e.target.result, '', gltf => {
+            applyCustomModel(gltf.scene, catGroup, cTorso, 3.6, '.badge.cat', '🐱 CAT: CUSTOM GLB MODEL ACTIVE');
+          }, err => showToast('⚠️ Error parsing cat GLB: ' + err.message));
+        };
+        reader.readAsArrayBuffer(source);
+      }
+    }
+
+    // Auto-check for local GLBs if present
+    loadCustomDogGLB('playful_dog.glb');
+    loadCustomCatGLB('cat.glb');
+
+    // Drag-and-drop listener
+    window.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+    window.addEventListener('drop', e => {
+      e.preventDefault();
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const file = e.dataTransfer.files[0];
+        const lower = file.name.toLowerCase();
+        if (lower.includes('dog') || lower.includes('shiba')) {
+          loadCustomDogGLB(file);
+        } else if (lower.includes('cat') || lower.includes('feline')) {
+          loadCustomCatGLB(file);
+        } else {
+          loadCustomDogGLB(file);
+        }
+      }
+    });
+
+    window.handleDogGLBSelect = function(e) {
+      if (e.target.files[0]) loadCustomDogGLB(e.target.files[0]);
+    };
+    window.handleCatGLBSelect = function(e) {
+      if (e.target.files[0]) loadCustomCatGLB(e.target.files[0]);
+    };
+
+    /* =========================================================================
+       7. THE 30-SECOND DYNAMIC BATTLE ANIMATION LOOP
+          Choreography breakdown:
+          - 0s - 7s: Stalking & The Tail Bite!
+          - 7s - 15s: Cat's Counter-Attack (Face Scratching & Dog Anger Surge)!
+          - 15s - 22s: Dog Rage Mode Unleashed (Fiery Aura, Red Glowing Eyes)!
+          - 22s - 30s: Dog charges full power, tackles cat, and wins!
+       ========================================================================= */
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const dt = clock.getDelta();
+      if (isPlaying) {
+        currentTime += dt * playbackSpeed;
+        if (currentTime > TOTAL_DURATION) {
+          currentTime = 0;
+        }
+      }
+
+      updateUI();
+
+      const time = currentTime;
+
+      // Positions and Poses
+      let dogX = 0, dogY = 0, dogZ = 0, dogRotY = 0, dogPitch = 0, dogJawOpen = 0;
+      let catX = 0, catY = 0, catZ = 0, catRotY = 0, catPitch = 0, catArch = 0;
+      let dogStride = 0, catStride = 0;
+      let auraActive = false;
+      let scratchesVisible = false;
+      let redEyesActive = false;
+      let slashesVisible = false;
+
+      // -----------------------------------------------------------------
+      // ACT 1: THE TAIL BITE (0.0s - 7.0s)
+      // -----------------------------------------------------------------
+      if (time < 7.0) {
+        catX = 2.5; catZ = -2.5; catY = 1.4; catRotY = -Math.PI / 4; // Cat resting atop bench
+        dogRotY = Math.atan2(catX - dogX, catZ - dogZ);
+
+        if (time < 3.5) {
+          // Dog stalking playfully towards the bench
+          const p = time / 3.5;
+          dogX = -4.0 + p * 4.5;
+          dogZ = 3.5 - p * 4.5;
+          dogStride = time * 12.0;
+          dogJawOpen = 0.15 + Math.sin(time * 6.0) * 0.1;
+
+          // Cat flicking tail playfully
+          const tailWag = Math.sin(time * 5.0) * 0.45;
+          cTailSegments[0].rotation.y = tailWag;
+          cTailSegments[1].rotation.x = 0.3 + Math.sin(time * 6.0) * 0.2;
+
+          if (time - sound.lastBark > 2.0) {
+            sound.playPlayfulBark();
+            sound.lastBark = time;
+          }
+        } else if (time < 5.2) {
+          // Dog sneaks in close, crouches, and lunges for the tail tip!
+          const p = (time - 3.5) / 1.7;
+          dogX = 0.5 + p * 1.5;
+          dogZ = -1.0 - p * 1.0;
+          dogY = Math.sin(p * Math.PI) * 0.8;
+          dogPitch = 0.25;
+          dogJawOpen = 0.65; // Mouth wide open preparing to chomp!
+
+          // Cat tail hanging down near dog's reach
+          cTailSegments[0].rotation.x = 0.7;
+          cTailSegments[1].rotation.z = Math.sin(time * 8.0) * 0.3;
+        } else {
+          // 5.2s - 7.0s: CHOMP! Dog bites cat's tail! Cat screams and leaps!
+          dogX = 2.0; dogZ = -2.0;
+          dogJawOpen = 0.05; // Clamped firmly on tail!
+
+          const leapProgress = (time - 5.2) / 1.8;
+          catY = 1.4 + Math.sin(leapProgress * Math.PI) * 2.8;
+          catZ = -2.5 + leapProgress * 2.2;
+          catPitch = -0.6; // Tail clamped, arching backward in shock
+          catArch = 0.8;
+
+          // Tail flailing wildly
+          cTailSegments.forEach((seg, i) => {
+            seg.rotation.x = Math.sin(time * 25.0 + i) * 0.6;
+          });
+
+          if (time - sound.lastMeow > 1.8) {
+            sound.playTailChomp();
+            sound.playCatYowl();
+            sound.lastMeow = time;
+          }
+        }
+      }
+
+      // -----------------------------------------------------------------
+      // ACT 2: CAT'S VICIOUS FACE SCRATCH COUNTER (7.0s - 15.0s)
+      // -----------------------------------------------------------------
+      else if (time < 15.0) {
+        scratchesVisible = (time >= 10.5);
+
+        if (time < 9.2) {
+          // Cat lands in front of dog, hissing with back arched & ears pinned
+          catX = 0; catZ = -0.5; catY = 0;
+          catRotY = Math.PI; // facing dog
+          catArch = 0.5;
+          dogX = 0; dogZ = 2.0; dogRotY = 0; // facing cat
+
+          cEars[0].rotation.z = 0.6; // airplane ears pinned back!
+          cEars[1].rotation.z = -0.6;
+        } else if (time < 12.2) {
+          // Furious multi-swipe scratch combo!
+          catX = 0; catZ = 0.4; catY = 0.2;
+          dogX = 0; dogZ = 1.5;
+
+          const swipeProg = (time - 9.2) * 14.0;
+          cLegs[0].group.rotation.x = -Math.PI / 2 + Math.sin(swipeProg) * 1.2;
+          cLegs[1].group.rotation.x = -Math.PI / 2 - Math.cos(swipeProg) * 1.2;
+
+          dogPitch = -0.4; // Dog recoiling head back in shock
+          dogJawOpen = 0.4;
+
+          slashesVisible = true;
+          slashVFXGroup.position.set(0, 2.0, 1.4);
+          slashVFXGroup.rotation.z = time * 15.0;
+
+          if (time - sound.lastScratch > 0.28) {
+            sound.playClawSlash();
+            sound.lastScratch = time;
+            // Impact flash
+            const flash = document.getElementById('impact-flash');
+            flash.style.opacity = '0.6';
+            setTimeout(() => { flash.style.opacity = '0'; }, 80);
+          }
+        } else {
+          // 12.2s - 15.0s: Dog recoils, head shaking, rage begins to boil!
+          dogX = 0;
+          dogZ = 2.4;
+          dogPitch = Math.sin(time * 20.0) * 0.15; // Shaking head
+          dogRotY = Math.sin(time * 18.0) * 0.25;
+
+          catX = 0; catZ = -1.2; catY = 0; catRotY = Math.PI;
+
+          // Dog bares teeth, snarl deepens
+          dogJawOpen = 0.35 + Math.sin(time * 8.0) * 0.15;
+
+          if (time - sound.lastBark > 1.2) {
+            sound.playFuriousRoar();
+            sound.lastBark = time;
+          }
+        }
+      }
+
+      // -----------------------------------------------------------------
+      // ACT 3: DOG FULL POWER RAGE MODE UNLEASHED (15.0s - 22.0s)
+      // -----------------------------------------------------------------
+      else if (time < 22.0) {
+        scratchesVisible = true;
+        auraActive = true;
+        redEyesActive = true;
+
+        dogX = 0; dogZ = 2.2; dogRotY = 0;
+        dogPitch = 0.1;
+
+        // Pulsing Battle Aura
+        const pulse = Math.sin(time * 15.0);
+        auraSphere.scale.set(1.0 + pulse * 0.15, 1.0 + pulse * 0.15, 1.0 + pulse * 0.15);
+        auraMat.opacity = 0.4 + Math.abs(pulse) * 0.3;
+
+        // Dog snarling fiercely, chest heaving
+        dTorso.scale.y = 1.0 + Math.sin(time * 10.0) * 0.08;
+        dogJawOpen = 0.55;
+
+        // Cat trembles in fear, stepping back
+        const catBackP = (time - 15.0) / 7.0;
+        catX = 0;
+        catZ = -1.5 - catBackP * 3.5;
+        catY = 0;
+        catRotY = Math.PI;
+        cTorso.position.y = 1.3 + Math.sin(time * 25.0) * 0.05; // trembling!
+
+        if (time - sound.lastAuraPulse > 1.5) {
+          sound.playRagePowerUp();
+          sound.lastAuraPulse = time;
+        }
+      }
+
+      // -----------------------------------------------------------------
+      // ACT 4: THE ULTIMATE TACKLE & DOG VICTORY! (22.0s - 30.0s)
+      // -----------------------------------------------------------------
+      else {
+        scratchesVisible = true;
+        redEyesActive = (time < 27.0);
+
+        if (time < 25.5) {
+          // Supersonic Tackle Charge!
+          auraActive = true;
+          const chargeP = (time - 22.0) / 3.5;
+          dogZ = 2.2 - chargeP * 7.5; // sprinting: 2.2 -> -5.3
+          dogY = Math.abs(Math.sin(time * 25.0)) * 0.4;
+          dogStride = time * 28.0;
+          dogPitch = 0.2;
+
+          catZ = -5.0;
+          catY = 0;
+          catRotY = Math.PI;
+
+          if (time > 25.0 && time < 25.4 && time - sound.lastBark > 0.5) {
+            sound.playTackleImpact();
+            sound.lastBark = time;
+            document.getElementById('impact-flash').style.opacity = '0.9';
+            setTimeout(() => { document.getElementById('impact-flash').style.opacity = '0'; }, 100);
+          }
+        } else {
+          // 25.5s - 30.0s: CAT DEFEATED! DOG POSES VICTORIOUS!
+          auraActive = false;
+
+          // Cat pinned / submitting on its back with white paws up
+          catZ = -6.2;
+          catY = 0.3;
+          catRotY = Math.PI;
+          cTorso.rotation.x = Math.PI / 1.15; // on its back!
+          cLegs.forEach((l, idx) => {
+            l.group.rotation.x = Math.PI / 2 + Math.sin(time * 8.0 + idx) * 0.3; // waving paws in surrender
+          });
+
+          // Dog stands triumphant atop victor's spot!
+          dogX = 0; dogZ = -4.5; dogY = 0.6;
+          dogPitch = -0.3; // head high in victory
+          dogJawOpen = 0.4 + Math.sin(time * 5.0) * 0.2; // howling & barking in triumph!
+
+          // Proud wagging tail
+          dTailGroup.rotation.z = Math.sin(time * 12.0) * 0.4;
+
+          if (time - sound.lastBark > 1.4) {
+            sound.playPlayfulBark();
+            sound.lastBark = time;
+          }
+        }
+      }
+
+      // Apply Dog Animation Transforms
+      dogGroup.position.set(dogX, dogY, dogZ);
+      dogGroup.rotation.y = dogRotY;
+      dTorso.rotation.x = dogPitch;
+      dJaw.rotation.x = dogJawOpen;
+
+      if (dogStride > 0) {
+        dLegs[0].rotation.x = Math.sin(dogStride) * 0.8;
+        dLegs[1].rotation.x = -Math.sin(dogStride) * 0.8;
+        dLegs[2].rotation.x = -Math.sin(dogStride + 0.3) * 0.85;
+        dLegs[3].rotation.x = Math.sin(dogStride + 0.3) * 0.85;
+      } else {
+        dLegs.forEach(l => l.rotation.x = 0);
+      }
+
+      scratchGroup.visible = scratchesVisible;
+      auraGroup.visible = auraActive;
+      slashVFXGroup.visible = slashesVisible;
+
+      // Eye Color Swap (Dark amber -> Crimson Rage)
+      dEyes.forEach(eye => {
+        eye.material = redEyesActive ? shibaRageEyeMat : shibaEyeMat;
+      });
+
+      // Apply Cat Animation Transforms
+      catGroup.position.set(catX, catY, catZ);
+      catGroup.rotation.y = catRotY;
+      if (time < 25.5) {
+        cTorso.rotation.x = catPitch;
+      }
+
+      // Dynamic Camera Director Controller
+      updateCamera(time);
+
+      renderer.render(scene, camera);
+    }
+
+    /* =========================================================================
+       8. CINEMATIC CAMERA DIRECTOR SYSTEM
+       ========================================================================= */
+    const targetCamPos = new THREE.Vector3();
+    const targetCamLook = new THREE.Vector3();
+
+    function updateCamera(time) {
+      if (cameraMode === 'director') {
+        if (time < 5.0) {
+          // Wide cinematic tracking angle of the initial stalk
+          targetCamPos.set(dogGroup.position.x - 5.5, 3.8, dogGroup.position.z + 7.5);
+          targetCamLook.set((dogGroup.position.x + catGroup.position.x) / 2, 1.8, (dogGroup.position.z + catGroup.position.z) / 2);
+        } else if (time < 7.0) {
+          // Close-up on the tail bite!
+          targetCamPos.set(2.8, 1.8, 0.2);
+          targetCamLook.set(2.2, 1.4, -2.0);
+        } else if (time < 12.5) {
+          // Low-angle face-scratch action cam
+          targetCamPos.set(-2.8, 2.2, 3.2);
+          targetCamLook.set(0, 1.8, 1.0);
+        } else if (time < 22.0) {
+          // Dramatic 360-degree orbit around the dog's Full Power Rage mode!
+          const orbitAngle = (time - 15.0) * 0.8;
+          targetCamPos.set(Math.sin(orbitAngle) * 5.5, 2.8, dogGroup.position.z + Math.cos(orbitAngle) * 5.5);
+          targetCamLook.set(dogGroup.position.x, 2.2, dogGroup.position.z);
+        } else if (time < 26.0) {
+          // High-speed tracking shot alongside the supersonic tackle!
+          targetCamPos.set(4.5, 2.0, dogGroup.position.z + 2.0);
+          targetCamLook.set(dogGroup.position.x, 1.5, dogGroup.position.z - 2.5);
+        } else {
+          // Heroic low-angle victory pedestal view!
+          targetCamPos.set(0, 1.4, -1.2);
+          targetCamLook.set(0, 2.5, -4.5);
+        }
+      } else if (cameraMode === 'combat') {
+        targetCamPos.set(5.5, 4.2, 5.5);
+        targetCamLook.set(0, 1.8, 0);
+      } else if (cameraMode === 'dog') {
+        targetCamPos.set(dogGroup.position.x + 2.2, dogGroup.position.y + 2.4, dogGroup.position.z + 4.2);
+        targetCamLook.set(catGroup.position.x, catGroup.position.y + 1.2, catGroup.position.z);
+      } else if (cameraMode === 'cat') {
+        targetCamPos.set(catGroup.position.x - 2.2, catGroup.position.y + 2.4, catGroup.position.z + 3.8);
+        targetCamLook.set(dogGroup.position.x, dogGroup.position.y + 1.2, dogGroup.position.z);
+      } else if (cameraMode === 'clash') {
+        targetCamPos.set(0, 2.2, 3.4);
+        targetCamLook.set(0, 1.8, 0.5);
+      }
+
+      if (cameraMode !== 'orbit') {
+        camera.position.lerp(targetCamPos, 0.08);
+        controls.target.lerp(targetCamLook, 0.08);
+        camera.lookAt(controls.target);
+      } else {
+        controls.update();
+      }
+    }
+
+    /* =========================================================================
+       9. UI & CHAPTER NAVIGATION CONTROLLER
+       ========================================================================= */
+    function updateUI() {
+      // Time string format 00:XX.XX
+      const mins = Math.floor(currentTime / 60);
+      const secs = Math.floor(currentTime % 60);
+      const ms = Math.floor((currentTime % 1) * 100);
+      document.getElementById('time-display').innerText = 
+        `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(ms).padStart(2, '0')} / 00:30.00`;
+
+      // Scrubber fill
+      const progress = (currentTime / TOTAL_DURATION) * 100;
+      document.getElementById('scrubber-fill').style.width = `${progress}%`;
+
+      // Telemetry Bars
+      let dogRage = 15;
+      let catHp = 100;
+      if (currentTime < 7.0) {
+        dogRage = 20 + (currentTime / 7.0) * 15;
+        catHp = 95;
+      } else if (currentTime < 15.0) {
+        dogRage = 45 + ((currentTime - 7.0) / 8.0) * 35; // anger surging!
+        catHp = 85;
+      } else if (currentTime < 22.0) {
+        dogRage = 80 + ((currentTime - 15.0) / 7.0) * 20; // 100% MAXIMUM POWER!
+        catHp = 60;
+      } else {
+        dogRage = 100;
+        const defeatP = Math.min((currentTime - 22.0) / 4.0, 1.0);
+        catHp = Math.max(10, Math.floor(60 - defeatP * 50));
+      }
+
+      document.getElementById('dog-rage-text').innerText = `${Math.floor(dogRage)}%`;
+      document.getElementById('dog-rage-bar').style.width = `${dogRage}%`;
+      document.getElementById('cat-hp-text').innerText = `${catHp}%`;
+      document.getElementById('cat-hp-bar').style.width = `${catHp}%`;
+
+      // Active Chapter sync
+      const activeChap = CHAPTERS.find(c => currentTime >= c.startTime && currentTime < c.endTime) || CHAPTERS[CHAPTERS.length - 1];
+      document.getElementById('chapter-title').innerText = activeChap.title;
+      document.getElementById('narrative-cue').innerText = activeChap.cue;
+      document.getElementById('banner-title').innerText = activeChap.bannerTitle;
+      document.getElementById('banner-desc').innerText = activeChap.bannerDesc;
+      document.getElementById('banner-icon').innerText = activeChap.icon;
+
+      // Update chapter buttons
+      const chapBtns = document.querySelectorAll('.chap-btn');
+      chapBtns.forEach((btn, idx) => {
+        btn.classList.toggle('active', CHAPTERS[idx] === activeChap);
+      });
+    }
+
+    function seekToTime(t) {
+      currentTime = THREE.MathUtils.clamp(t, 0, TOTAL_DURATION);
+      updateUI();
+    }
+
+    function handleScrubClick(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const pct = Math.max(0, Math.min(1, clickX / rect.width));
+      seekToTime(pct * TOTAL_DURATION);
+    }
+
+    function togglePlayPause() {
+      isPlaying = !isPlaying;
+      document.getElementById('play-pause-btn').innerText = isPlaying ? '⏸ PAUSE' : '▶ PLAY';
+    }
+
+    function setPlaybackSpeed(spd) {
+      playbackSpeed = spd;
+      document.getElementById('speed-label').innerText = `SPEED: ${spd.toFixed(1)}X`;
+      document.querySelectorAll('.speed-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.innerText.includes(`${spd}x`));
+      });
+    }
+
+    function setCameraMode(mode) {
+      cameraMode = mode;
+      controls.enabled = (mode === 'orbit');
+      document.querySelectorAll('.cam-btn').forEach(b => {
+        b.classList.toggle('active', b.id === `cam-${mode}`);
+      });
+    }
+
+    function toggleCinemaBars() {
+      document.body.classList.toggle('hide-bars');
+    }
+
+    function toggleAudioEngine() {
+      sound.isMuted = !sound.isMuted;
+      document.getElementById('audio-icon').innerText = sound.isMuted ? '🔇' : '🔊';
+      document.getElementById('audio-label').innerText = sound.isMuted ? 'SOUND: OFF' : 'SOUND: ON';
+      sound.setVolume(parseFloat(document.getElementById('vol-slider').value));
+    }
+
+    function setMasterVolume(val) {
+      sound.setVolume(parseFloat(val));
+    }
+
+    function startExperience() {
+      sound.init();
+      const splash = document.getElementById('start-splash');
+      splash.style.opacity = '0';
+      setTimeout(() => { splash.style.display = 'none'; }, 500);
+      currentTime = 0;
+      isPlaying = true;
+    }
+
+    // Resize Handler
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Start Rendering Loop
+    animate();
+  </script>
+</body>
+</html>
