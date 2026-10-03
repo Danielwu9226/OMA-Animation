@@ -441,6 +441,51 @@
       box-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
     }
 
+    .scrub-marker {
+      position: absolute;
+      top: -3px;
+      width: 4px;
+      height: 14px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      z-index: 5;
+    }
+    .scrub-marker:hover {
+      background: var(--dog-gold);
+      transform: scaleY(1.4);
+      box-shadow: 0 0 10px var(--dog-gold);
+    }
+
+    #sound-toast {
+      position: absolute;
+      top: 96px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(11, 15, 25, 0.95);
+      border: 1px solid var(--dog-gold);
+      color: #f8fafc;
+      padding: 9px 20px;
+      border-radius: 24px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      pointer-events: none;
+      opacity: 0;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 100;
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.8), 0 0 16px rgba(245, 158, 11, 0.45);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+    }
+    #sound-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
     .timeline-controls {
       display: flex;
       justify-content: space-between;
@@ -466,15 +511,32 @@
       cursor: pointer;
       transition: all 0.15s ease;
       letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
     .chap-btn:hover {
       background: rgba(245, 158, 11, 0.25);
+      border-color: rgba(245, 158, 11, 0.6);
       color: #fff;
     }
     .chap-btn.active {
       background: var(--dog-gold);
       color: #000;
       border-color: var(--dog-gold);
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+
+    .replay-pulse-btn {
+      border-color: rgba(245, 158, 11, 0.5) !important;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(239, 68, 68, 0.2)) !important;
+      color: #fbbf24 !important;
+    }
+    .replay-pulse-btn:hover {
+      border-color: var(--dog-gold) !important;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.4), rgba(239, 68, 68, 0.4)) !important;
+      color: #fff !important;
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.6);
     }
 
     .playback-btns {
@@ -614,6 +676,9 @@
     </div>
   </div>
 
+  <!-- Real-Time Audio Event Toast Notification -->
+  <div id="sound-toast"></div>
+
   <!-- Narrative Subtitle Cue -->
   <div id="narrative-cue">THE DOG SNEAKS UP AND BITES THE CAT'S TAIL!</div>
 
@@ -697,19 +762,23 @@
         <div class="scrubber-fill" id="scrubber-fill">
           <div class="scrubber-handle"></div>
         </div>
+        <div class="scrub-marker" style="left: 0%;" title="Act 1: Tail Bite" onclick="event.stopPropagation(); clickEvent(0)"></div>
+        <div class="scrub-marker" style="left: 23.33%;" title="Act 2: Cat Scratch" onclick="event.stopPropagation(); clickEvent(1)"></div>
+        <div class="scrub-marker" style="left: 50.0%;" title="Act 3: Dog Rage Full Power" onclick="event.stopPropagation(); clickEvent(2)"></div>
+        <div class="scrub-marker" style="left: 73.33%;" title="Act 4: Dog Victory" onclick="event.stopPropagation(); clickEvent(3)"></div>
       </div>
 
       <div class="timeline-controls">
         <div class="chapter-btns">
-          <button class="chap-btn active" onclick="seekToTime(0)">1. Tail Bite</button>
-          <button class="chap-btn" onclick="seekToTime(7)">2. Cat Scratch</button>
-          <button class="chap-btn" onclick="seekToTime(15)">3. Dog Rage Full Power</button>
-          <button class="chap-btn" onclick="seekToTime(22)">4. Dog Victory!</button>
+          <button class="chap-btn active" id="chap-btn-0" onclick="clickEvent(0)"><span>🦷</span> 1. Tail Bite</button>
+          <button class="chap-btn" id="chap-btn-1" onclick="clickEvent(1)"><span>⚡</span> 2. Cat Scratch</button>
+          <button class="chap-btn" id="chap-btn-2" onclick="clickEvent(2)"><span>🔥</span> 3. Dog Rage Full Power</button>
+          <button class="chap-btn" id="chap-btn-3" onclick="clickEvent(3)"><span>🏆</span> 4. Dog Victory!</button>
         </div>
 
         <div class="playback-btns">
           <button class="ctrl-btn" id="play-pause-btn" onclick="togglePlayPause()">⏸ PAUSE</button>
-          <button class="ctrl-btn" onclick="seekToTime(0)">🔄 REPLAY</button>
+          <button class="ctrl-btn replay-pulse-btn" id="replay-btn" onclick="replayShowdown()">🔄 REPLAY</button>
           <button class="ctrl-btn" onclick="toggleCinemaBars()">📺 BARS</button>
           <button class="ctrl-btn speed-btn" onclick="setPlaybackSpeed(0.5)">0.5x</button>
           <button class="ctrl-btn speed-btn active" id="spd-1" onclick="setPlaybackSpeed(1.0)">1.0x</button>
@@ -804,38 +873,182 @@
         this.lastMeow = -10;
         this.lastScratch = -10;
         this.lastAuraPulse = -10;
+        this.lastTackle = -10;
       }
 
       init() {
-        if (this.ctx) return;
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        this.ctx = new AudioContext();
-        this.masterGain = this.ctx.createGain();
-        this.masterGain.gain.setValueAtTime(0.85, this.ctx.currentTime);
-        this.masterGain.connect(this.ctx.destination);
+        if (!this.ctx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) return;
+          this.ctx = new AudioContextClass();
+          this.masterGain = this.ctx.createGain();
+          this.masterGain.gain.setValueAtTime(0.85, this.ctx.currentTime);
+          this.masterGain.connect(this.ctx.destination);
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      ensureRunning() {
+        this.init();
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      resetTimers() {
+        this.lastBark = -10;
+        this.lastMeow = -10;
+        this.lastScratch = -10;
+        this.lastAuraPulse = -10;
+        this.lastTackle = -10;
       }
 
       setVolume(val) {
+        this.ensureRunning();
         if (!this.masterGain || !this.ctx) return;
         this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : val, this.ctx.currentTime);
       }
 
-      playPlayfulBark() {
+      // UI Click Feedback Blip
+      playClickBeep() {
+        this.ensureRunning();
         if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.exponentialRampToValueAtTime(1760, now + 0.05);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start(now);
+        osc.stop(now + 0.07);
+      }
+
+      // Camera Angle Shutter / Whoosh
+      playCameraSwoosh() {
+        this.ensureRunning();
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(640, now + 0.08);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start(now);
+        osc.stop(now + 0.11);
+      }
+
+      // Replay Battle Gong / Bell
+      playReplayGong() {
+        this.ensureRunning();
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        // Deep bass gong
+        const bass = this.ctx.createOscillator();
+        const bassGain = this.ctx.createGain();
+        bass.type = 'sine';
+        bass.frequency.setValueAtTime(130, now);
+        bass.frequency.exponentialRampToValueAtTime(55, now + 0.6);
+        bassGain.gain.setValueAtTime(0.85, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+        bass.connect(bassGain);
+        bassGain.connect(this.masterGain);
+        bass.start(now);
+        bass.stop(now + 0.95);
+
+        // Metallic bell harmonic overtone
+        const chime = this.ctx.createOscillator();
+        const chimeGain = this.ctx.createGain();
+        chime.type = 'triangle';
+        chime.frequency.setValueAtTime(587.33, now);
+        chime.frequency.exponentialRampToValueAtTime(293.66, now + 0.8);
+        chimeGain.gain.setValueAtTime(0.4, now);
+        chimeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+        chime.connect(chimeGain);
+        chimeGain.connect(this.masterGain);
+        chime.start(now);
+        chime.stop(now + 0.9);
+      }
+
+      // EVENT 1 STINGER: Tail Bite Launch
+      playEventAct1() {
+        this.ensureRunning();
+        this.playPlayfulBark();
+        setTimeout(() => {
+          this.playTailChomp();
+          setTimeout(() => {
+            this.playCatYowl();
+          }, 80);
+        }, 120);
+      }
+
+      // EVENT 2 STINGER: Cat Scratch Strike
+      playEventAct2() {
+        this.ensureRunning();
+        this.playCatHiss();
+        setTimeout(() => {
+          this.playClawSlash();
+          setTimeout(() => {
+            this.playClawSlash();
+            setTimeout(() => {
+              this.playClawSlash();
+              this.playFuriousRoar();
+            }, 100);
+          }, 100);
+        }, 80);
+      }
+
+      // EVENT 3 STINGER: Dog Unleashes Full Power Rage
+      playEventAct3() {
+        this.ensureRunning();
+        this.playRagePowerUp();
+        setTimeout(() => {
+          this.playFuriousRoar();
+        }, 160);
+      }
+
+      // EVENT 4 STINGER: Dog Supersonic Tackle & Victory
+      playEventAct4() {
+        this.ensureRunning();
+        this.playTackleImpact();
+        setTimeout(() => {
+          this.playCatYowl();
+          setTimeout(() => {
+            this.playVictoryFanfare();
+          }, 260);
+        }, 160);
+      }
+
+      // Realistic Shiba Playful Bark
+      playPlayfulBark() {
+        this.ensureRunning();
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(320, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(140, this.ctx.currentTime + 0.14);
-        gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.16);
+        osc.frequency.setValueAtTime(360, now);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.14);
+        gain.gain.setValueAtTime(0.55, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
         osc.connect(gain);
         gain.connect(this.masterGain);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.18);
+        osc.start(now);
+        osc.stop(now + 0.18);
       }
 
+      // Angry Dog Deep Growl / Roar
       playFuriousRoar() {
+        this.ensureRunning();
         if (!this.ctx || this.isMuted) return;
         const now = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
@@ -843,43 +1056,72 @@
         const gain = this.ctx.createGain();
         osc.type = 'sawtooth';
         sub.type = 'triangle';
-        osc.frequency.setValueAtTime(180, now);
-        osc.frequency.linearRampToValueAtTime(95, now + 0.35);
-        sub.frequency.setValueAtTime(80, now);
-        sub.frequency.linearRampToValueAtTime(45, now + 0.35);
-        gain.gain.setValueAtTime(0.65, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        osc.frequency.setValueAtTime(210, now);
+        osc.frequency.linearRampToValueAtTime(105, now + 0.35);
+        sub.frequency.setValueAtTime(90, now);
+        sub.frequency.linearRampToValueAtTime(50, now + 0.35);
+        gain.gain.setValueAtTime(0.75, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.42);
         osc.connect(gain);
         sub.connect(gain);
         gain.connect(this.masterGain);
-        osc.start();
-        sub.start();
-        osc.stop(now + 0.42);
-        sub.stop(now + 0.42);
+        osc.start(now);
+        sub.start(now);
+        osc.stop(now + 0.45);
+        sub.stop(now + 0.45);
       }
 
+      // Cat Surprised Screech / Yowl
       playCatYowl() {
+        this.ensureRunning();
         if (!this.ctx || this.isMuted) return;
         const now = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(750, now);
-        osc.frequency.linearRampToValueAtTime(1100, now + 0.15);
-        osc.frequency.exponentialRampToValueAtTime(450, now + 0.4);
-        gain.gain.setValueAtTime(0.5, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+        osc.frequency.setValueAtTime(820, now);
+        osc.frequency.linearRampToValueAtTime(1260, now + 0.14);
+        osc.frequency.exponentialRampToValueAtTime(480, now + 0.38);
+        gain.gain.setValueAtTime(0.65, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.42);
         osc.connect(gain);
         gain.connect(this.masterGain);
-        osc.start();
-        osc.stop(now + 0.48);
+        osc.start(now);
+        osc.stop(now + 0.45);
       }
 
-      playClawSlash() {
+      // Cat Aggressive Hiss
+      playCatHiss() {
+        this.ensureRunning();
         if (!this.ctx || this.isMuted) return;
         const now = this.ctx.currentTime;
-        // White noise slash
-        const bufferSize = this.ctx.sampleRate * 0.15;
+        const bufferSize = Math.floor(this.ctx.sampleRate * 0.22);
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.setValueAtTime(3200, now);
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
+        noise.start(now);
+        noise.stop(now + 0.22);
+      }
+
+      // Razor Claw Slash Swoosh
+      playClawSlash() {
+        this.ensureRunning();
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const bufferSize = Math.floor(this.ctx.sampleRate * 0.14);
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
         for (let i = 0; i < bufferSize; i++) {
@@ -889,65 +1131,105 @@
         noise.buffer = buffer;
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(2800, now);
-        filter.frequency.exponentialRampToValueAtTime(800, now + 0.12);
+        filter.frequency.setValueAtTime(3400, now);
+        filter.frequency.exponentialRampToValueAtTime(950, now + 0.12);
         const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(0.7, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
+        gain.gain.setValueAtTime(0.85, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.13);
         noise.connect(filter);
         filter.connect(gain);
         gain.connect(this.masterGain);
-        noise.start();
-        noise.stop(now + 0.15);
+        noise.start(now);
+        noise.stop(now + 0.14);
       }
 
+      // Tail Chomp / Snap
       playTailChomp() {
+        this.ensureRunning();
         if (!this.ctx || this.isMuted) return;
         const now = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(220, now);
-        osc.frequency.exponentialRampToValueAtTime(60, now + 0.08);
-        gain.gain.setValueAtTime(0.6, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(70, now + 0.07);
+        gain.gain.setValueAtTime(0.75, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
         osc.connect(gain);
         gain.connect(this.masterGain);
-        osc.start();
-        osc.stop(now + 0.12);
+        osc.start(now);
+        osc.stop(now + 0.1);
       }
 
+      // Full Power Supercharged Rage Aura Pulse
       playRagePowerUp() {
+        this.ensureRunning();
         if (!this.ctx || this.isMuted) return;
         const now = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
+        const sub = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(65, now);
-        osc.frequency.exponentialRampToValueAtTime(320, now + 0.8);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.linearRampToValueAtTime(0.55, now + 0.5);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.9);
+        sub.type = 'sine';
+        osc.frequency.setValueAtTime(70, now);
+        osc.frequency.exponentialRampToValueAtTime(380, now + 0.7);
+        sub.frequency.setValueAtTime(50, now);
+        sub.frequency.linearRampToValueAtTime(110, now + 0.7);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.linearRampToValueAtTime(0.7, now + 0.4);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.85);
         osc.connect(gain);
+        sub.connect(gain);
         gain.connect(this.masterGain);
-        osc.start();
-        osc.stop(now + 0.95);
+        osc.start(now);
+        sub.start(now);
+        osc.stop(now + 0.9);
+        sub.stop(now + 0.9);
       }
 
+      // Supersonic Tackle Impact
       playTackleImpact() {
+        this.ensureRunning();
         if (!this.ctx || this.isMuted) return;
         const now = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
+        const sub = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(140, now);
-        osc.frequency.exponentialRampToValueAtTime(35, now + 0.3);
-        gain.gain.setValueAtTime(0.9, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+        sub.type = 'sine';
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(30, now + 0.32);
+        sub.frequency.setValueAtTime(80, now);
+        sub.frequency.exponentialRampToValueAtTime(25, now + 0.4);
+        gain.gain.setValueAtTime(0.95, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.42);
         osc.connect(gain);
+        sub.connect(gain);
         gain.connect(this.masterGain);
-        osc.start();
-        osc.stop(now + 0.38);
+        osc.start(now);
+        sub.start(now);
+        osc.stop(now + 0.45);
+        sub.stop(now + 0.45);
+      }
+
+      // Triumphant Fanfare Chords + Victory Howl
+      playVictoryFanfare() {
+        this.ensureRunning();
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const notes = [261.63, 329.63, 392.00, 523.25]; // C - E - G - C
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+          gain.gain.setValueAtTime(0.24, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.6);
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.65);
+        });
       }
     }
 
@@ -1693,6 +1975,7 @@
           - 22s - 30s: Dog charges full power, tackles cat, and wins!
        ========================================================================= */
     const clock = new THREE.Clock();
+    let lastFrameTime = 0;
 
     function animate() {
       requestAnimationFrame(animate);
@@ -1702,8 +1985,16 @@
         currentTime += dt * playbackSpeed;
         if (currentTime > TOTAL_DURATION) {
           currentTime = 0;
+          sound.resetTimers();
+          sound.playReplayGong();
         }
       }
+
+      // If user scrubbed or jumped backwards, reset sound cooldowns
+      if (currentTime < lastFrameTime - 0.25) {
+        sound.resetTimers();
+      }
+      lastFrameTime = currentTime;
 
       updateUI();
 
@@ -1793,6 +2084,11 @@
 
           cEars[0].rotation.z = 0.6; // airplane ears pinned back!
           cEars[1].rotation.z = -0.6;
+
+          if (time - sound.lastMeow > 1.5) {
+            sound.playCatHiss();
+            sound.lastMeow = time;
+          }
         } else if (time < 12.2) {
           // Furious multi-swipe scratch combo!
           catX = 0; catZ = 0.4; catY = 0.2;
@@ -1864,9 +2160,14 @@
         catRotY = Math.PI;
         cTorso.position.y = 1.3 + Math.sin(time * 25.0) * 0.05; // trembling!
 
-        if (time - sound.lastAuraPulse > 1.5) {
+        if (time - sound.lastAuraPulse > 1.4) {
           sound.playRagePowerUp();
           sound.lastAuraPulse = time;
+        }
+
+        if (time > 18.0 && time < 18.4 && time - sound.lastBark > 2.0) {
+          sound.playFuriousRoar();
+          sound.lastBark = time;
         }
       }
 
@@ -1890,9 +2191,9 @@
           catY = 0;
           catRotY = Math.PI;
 
-          if (time > 25.0 && time < 25.4 && time - sound.lastBark > 0.5) {
+          if (time > 25.0 && time < 25.4 && time - sound.lastTackle > 2.0) {
             sound.playTackleImpact();
-            sound.lastBark = time;
+            sound.lastTackle = time;
             document.getElementById('impact-flash').style.opacity = '0.9';
             setTimeout(() => { document.getElementById('impact-flash').style.opacity = '0'; }, 100);
           }
@@ -1916,6 +2217,11 @@
 
           // Proud wagging tail
           dTailGroup.rotation.z = Math.sin(time * 12.0) * 0.4;
+
+          if (time > 25.6 && time < 26.2 && time - sound.lastMeow > 3.0) {
+            sound.playVictoryFanfare();
+            sound.lastMeow = time;
+          }
 
           if (time - sound.lastBark > 1.4) {
             sound.playPlayfulBark();
@@ -2071,24 +2377,82 @@
       });
     }
 
+    let toastTimeout = null;
+    function showToastNotification(text, icon = '🔊') {
+      const toast = document.getElementById('sound-toast');
+      if (!toast) return;
+      toast.innerHTML = `<span>${icon}</span> ${text}`;
+      toast.classList.add('show');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 1600);
+    }
+
     function seekToTime(t) {
+      sound.ensureRunning();
+      sound.resetTimers();
       currentTime = THREE.MathUtils.clamp(t, 0, TOTAL_DURATION);
       updateUI();
     }
 
+    function replayShowdown() {
+      sound.ensureRunning();
+      sound.resetTimers();
+      sound.playReplayGong();
+      currentTime = 0;
+      isPlaying = true;
+      document.getElementById('play-pause-btn').innerText = '⏸ PAUSE';
+      updateUI();
+      showToastNotification("SHOWDOWN REPLAYING WITH FULL AUDIO!", "🔄");
+    }
+
+    function clickEvent(idx) {
+      sound.ensureRunning();
+      sound.resetTimers();
+      isPlaying = true;
+      document.getElementById('play-pause-btn').innerText = '⏸ PAUSE';
+
+      if (idx === 0) {
+        currentTime = 0.0;
+        sound.playEventAct1();
+        showToastNotification("ACT 1: SNEAK & TAIL BITE!", "🦷");
+      } else if (idx === 1) {
+        currentTime = 7.0;
+        sound.playEventAct2();
+        showToastNotification("ACT 2: CAT'S COUNTER FACE-SCRATCH!", "⚡");
+      } else if (idx === 2) {
+        currentTime = 15.0;
+        sound.playEventAct3();
+        showToastNotification("ACT 3: DOG UNLEASHES FULL POWER RAGE!", "🔥");
+      } else if (idx === 3) {
+        currentTime = 22.0;
+        sound.playEventAct4();
+        showToastNotification("ACT 4: SUPERSONIC TACKLE & DOG VICTORY!", "🏆");
+      }
+      updateUI();
+    }
+
     function handleScrubClick(e) {
+      sound.ensureRunning();
+      sound.resetTimers();
       const rect = e.currentTarget.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
       const pct = Math.max(0, Math.min(1, clickX / rect.width));
       seekToTime(pct * TOTAL_DURATION);
+      sound.playClickBeep();
     }
 
     function togglePlayPause() {
+      sound.ensureRunning();
+      sound.playClickBeep();
       isPlaying = !isPlaying;
       document.getElementById('play-pause-btn').innerText = isPlaying ? '⏸ PAUSE' : '▶ PLAY';
     }
 
     function setPlaybackSpeed(spd) {
+      sound.ensureRunning();
+      sound.playClickBeep();
       playbackSpeed = spd;
       document.getElementById('speed-label').innerText = `SPEED: ${spd.toFixed(1)}X`;
       document.querySelectorAll('.speed-btn').forEach(btn => {
@@ -2097,6 +2461,8 @@
     }
 
     function setCameraMode(mode) {
+      sound.ensureRunning();
+      sound.playCameraSwoosh();
       cameraMode = mode;
       controls.enabled = (mode === 'orbit');
       document.querySelectorAll('.cam-btn').forEach(b => {
@@ -2105,28 +2471,43 @@
     }
 
     function toggleCinemaBars() {
+      sound.ensureRunning();
+      sound.playClickBeep();
       document.body.classList.toggle('hide-bars');
     }
 
     function toggleAudioEngine() {
+      sound.ensureRunning();
       sound.isMuted = !sound.isMuted;
       document.getElementById('audio-icon').innerText = sound.isMuted ? '🔇' : '🔊';
       document.getElementById('audio-label').innerText = sound.isMuted ? 'SOUND: OFF' : 'SOUND: ON';
       sound.setVolume(parseFloat(document.getElementById('vol-slider').value));
+      if (!sound.isMuted) sound.playClickBeep();
     }
 
     function setMasterVolume(val) {
+      sound.ensureRunning();
       sound.setVolume(parseFloat(val));
     }
 
     function startExperience() {
-      sound.init();
+      sound.ensureRunning();
+      sound.resetTimers();
+      sound.playReplayGong();
       const splash = document.getElementById('start-splash');
       splash.style.opacity = '0';
       setTimeout(() => { splash.style.display = 'none'; }, 500);
       currentTime = 0;
       isPlaying = true;
+      showToastNotification("30S SHOWDOWN STARTED!", "⚔️");
     }
+
+    // Global listener to ensure audio context is unlocked on first user touch/click/keypress
+    ['click', 'touchstart', 'keydown'].forEach(evt => {
+      window.addEventListener(evt, () => {
+        sound.ensureRunning();
+      }, { passive: true });
+    });
 
     // Resize Handler
     window.addEventListener('resize', () => {
