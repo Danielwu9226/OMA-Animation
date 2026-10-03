@@ -1,0 +1,3386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Air Canada Boeing 777-300ER: Toronto (YYZ) to Tokyo (HND) Takeoff</title>
+  
+  <!-- Aviation Cockpit & Modern Flight Deck Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- Three.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    :root {
+      --ac-red: #e31837;
+      --ac-red-glow: rgba(227, 24, 55, 0.4);
+      --ac-black: #0c0d0e;
+      --panel-bg: rgba(12, 14, 18, 0.84);
+      --panel-border: rgba(255, 255, 255, 0.12);
+      --hud-green: #00ff66;
+      --hud-cyan: #00e5ff;
+      --hud-amber: #ffb700;
+      --hud-text: #e2e8f0;
+      --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-hud: 'Chakra Petch', 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #05070a;
+      font-family: var(--font-ui);
+      color: #fff;
+    }
+
+    #webgl-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Top Flight Header */
+    .top-header {
+      position: absolute;
+      top: 16px;
+      left: 20px;
+      right: 20px;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .brand-flight-badge {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      padding: 8px 18px 8px 12px;
+      border-radius: 40px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+      pointer-events: auto;
+    }
+
+    .roundel-logo {
+      width: 36px;
+      height: 36px;
+      background: #000;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid var(--ac-red);
+      box-shadow: 0 0 10px var(--ac-red-glow);
+    }
+
+    .roundel-logo svg {
+      width: 22px;
+      height: 22px;
+      fill: var(--ac-red);
+    }
+
+    .flight-text h1 {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flight-text h1 span.flight-no {
+      color: var(--ac-red);
+      font-family: var(--font-hud);
+      background: rgba(227, 24, 55, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .flight-route {
+      font-size: 11px;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 1px;
+      font-family: var(--font-hud);
+    }
+
+    .route-dest {
+      color: #38bdf8;
+      font-weight: 600;
+    }
+
+    .top-right-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .btn-pill {
+      background: var(--panel-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--panel-border);
+      color: #f1f5f9;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 9px 16px;
+      border-radius: 30px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn-pill:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-pill.active {
+      background: var(--ac-red);
+      border-color: #ff4d6a;
+      box-shadow: 0 0 16px var(--ac-red-glow);
+    }
+
+    .sound-pulse {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+      transition: all 0.3s ease;
+    }
+
+    .sound-pulse.muted {
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+    }
+
+    /* Camera Switcher Bar */
+    .cam-bar-container {
+      position: absolute;
+      top: 80px;
+      left: 20px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      pointer-events: auto;
+    }
+
+    .cam-bar-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      padding-left: 6px;
+      font-family: var(--font-hud);
+    }
+
+    .cam-btn-group {
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 5px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .cam-btn {
+      background: transparent;
+      border: none;
+      color: #cbd5e1;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.18s ease;
+      white-space: nowrap;
+    }
+
+    .cam-btn svg {
+      width: 15px;
+      height: 15px;
+      opacity: 0.8;
+      stroke-width: 2;
+    }
+
+    .cam-btn:hover {
+      background: rgba(255, 255, 255, 0.09);
+      color: #fff;
+    }
+
+    .cam-btn.active {
+      background: linear-gradient(135deg, rgba(227, 24, 55, 0.85), rgba(180, 10, 35, 0.95));
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(227, 24, 55, 0.4);
+    }
+
+    .cam-btn .key-hint {
+      margin-left: auto;
+      font-family: var(--font-hud);
+      font-size: 9.5px;
+      opacity: 0.6;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    /* Live Telemetry / PFD HUD */
+    .telemetry-card {
+      position: absolute;
+      top: 80px;
+      right: 20px;
+      z-index: 10;
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 14px 16px;
+      width: 240px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+      pointer-events: auto;
+      font-family: var(--font-hud);
+    }
+
+    .telem-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+
+    .telem-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--hud-cyan);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .telem-live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--hud-green);
+      animation: pulseGreen 1.5s infinite;
+    }
+
+    @keyframes pulseGreen {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .telem-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .telem-item {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 6px 10px;
+    }
+
+    .telem-label {
+      font-size: 9px;
+      color: #94a3b8;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .telem-val {
+      font-size: 16px;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-top: 2px;
+    }
+
+    .telem-val span.unit {
+      font-size: 10px;
+      font-weight: 400;
+      color: #94a3b8;
+      margin-left: 2px;
+    }
+
+    /* Engine Power Bars */
+    .engine-status-box {
+      margin-top: 10px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 8px;
+      padding: 8px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .engine-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: #cbd5e1;
+      margin-bottom: 4px;
+    }
+
+    .engine-bar-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 2px;
+      margin-bottom: 6px;
+    }
+
+    .engine-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);
+      border-radius: 3px;
+      transition: width 0.25s linear;
+    }
+
+    /* Status Badges */
+    .status-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .status-badge {
+      flex: 1;
+      text-align: center;
+      font-size: 9.5px;
+      padding: 4px 2px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #64748b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .status-badge.active {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #34d399;
+    }
+
+    .status-badge.alert {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+    }
+
+    /* ATC Radio Toast */
+    .atc-toast {
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: rgba(10, 15, 24, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 8px 18px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-hud);
+      font-size: 11.5px;
+      color: #e0f2fe;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+      pointer-events: none;
+      max-width: 90%;
+      transition: all 0.3s ease;
+    }
+
+    .atc-icon {
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Cockpit Procedures Checklist Card (Visible in Cockpit View) */
+    #cockpit-checklist-card {
+      position: absolute;
+      bottom: 125px;
+      left: 20px;
+      z-index: 15;
+      background: rgba(10, 15, 22, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1.5px solid rgba(56, 189, 248, 0.35);
+      border-radius: 14px;
+      padding: 12px 16px;
+      width: 320px;
+      box-shadow: 0 14px 35px rgba(0, 0, 0, 0.7);
+      display: none;
+      font-family: var(--font-hud);
+      pointer-events: auto;
+    }
+
+    .checklist-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+
+    .checklist-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #38bdf8;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .checklist-step {
+      font-size: 11px;
+      color: #e2e8f0;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chk-icon {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(0, 255, 102, 0.2);
+      border: 1px solid var(--hud-green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--hud-green);
+      font-size: 9px;
+      font-weight: bold;
+    }
+
+    .pilot-role {
+      font-size: 9.5px;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: rgba(227, 24, 55, 0.2);
+      color: #ff6b81;
+      font-weight: 600;
+    }
+
+    .checklist-callout {
+      font-size: 10px;
+      color: #94a3b8;
+      font-style: italic;
+      margin-left: 22px;
+      margin-bottom: 6px;
+    }
+
+    /* Bottom Control Bar & Timeline */
+    .bottom-bar {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      z-index: 10;
+      background: var(--panel-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 12px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+    }
+
+    .timeline-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .timeline-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #94a3b8;
+      font-family: var(--font-hud);
+    }
+
+    .phase-badge {
+      color: #fff;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .phase-badge span.phase-name {
+      color: #38bdf8;
+    }
+
+    .timeline-track-wrap {
+      position: relative;
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .timeline-progress {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #e31837, #f97316, #38bdf8);
+      border-radius: 4px;
+      transition: width 0.1s linear;
+    }
+
+    /* Phase Buttons Row */
+    .phases-nav {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+
+    .phases-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .phase-step-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      font-size: 11px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      font-family: var(--font-ui);
+    }
+
+    .phase-step-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+
+    .phase-step-btn.current {
+      background: rgba(227, 24, 55, 0.2);
+      border-color: var(--ac-red);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .bottom-playback-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 4px;
+    }
+
+    .playback-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-circle:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
+
+    .btn-circle.primary {
+      background: var(--ac-red);
+      border-color: #ff4d6a;
+      box-shadow: 0 0 14px var(--ac-red-glow);
+    }
+
+    .speed-pills {
+      display: flex;
+      gap: 4px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 3px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .speed-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 10.5px;
+      font-family: var(--font-hud);
+      padding: 4px 10px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .speed-btn.active {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .flight-note {
+      font-size: 11px;
+      color: #64748b;
+      font-family: var(--font-hud);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Cabin Window Frame Overlay */
+    #cabin-window-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+      display: none;
+      box-shadow: inset 0 0 100px 40px rgba(0, 0, 0, 0.8);
+    }
+
+    .window-oval {
+      position: absolute;
+      top: 50%;
+      left: 45%;
+      transform: translate(-50%, -50%);
+      width: 58vw;
+      height: 78vh;
+      border-radius: 200px;
+      box-shadow: 0 0 0 9999px rgba(10, 14, 20, 0.95), inset 0 0 30px rgba(255, 255, 255, 0.15);
+      border: 12px solid #222b35;
+    }
+
+    .window-tint {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 190px;
+      background: radial-gradient(circle at 40% 30%, rgba(200, 230, 255, 0.05) 0%, rgba(0, 0, 0, 0.2) 100%);
+    }
+
+    /* Audio Enable Prompt */
+    #audio-prompt {
+      position: absolute;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(227, 24, 55, 0.92);
+      backdrop-filter: blur(12px);
+      padding: 10px 22px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      z-index: 20;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 25px rgba(227, 24, 55, 0.5);
+      animation: bouncePrompt 2s infinite;
+      transition: opacity 0.4s ease;
+    }
+
+    @keyframes bouncePrompt {
+      0%, 100% { transform: translate(-50%, 0); }
+      50% { transform: translate(-50%, -6px); }
+    }
+
+    @media (max-width: 900px) {
+      .telemetry-card {
+        display: none;
+      }
+      #cockpit-checklist-card {
+        width: 260px;
+        bottom: 155px;
+      }
+      .cam-bar-container {
+        top: auto;
+        bottom: 160px;
+        left: 12px;
+      }
+      .bottom-bar {
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        padding: 10px 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- WebGL Three.js Canvas Container -->
+  <div id="webgl-container"></div>
+
+  <!-- Audio Prompt -->
+  <div id="audio-prompt" onclick="initAndEnableAudio()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+    Click to Enable GE90 Jet Engine Sound
+  </div>
+
+  <!-- Top Flight Header -->
+  <header class="top-header">
+    <div class="brand-flight-badge">
+      <div class="roundel-logo">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2L13.8 6.5L18.5 5.5L16.5 10L21 11.5L17.5 14.5L19.5 19L14.5 17L12 22L9.5 17L4.5 19L6.5 14.5L3 11.5L7.5 10L5.5 5.5L10.2 6.5L12 2Z" />
+        </svg>
+      </div>
+      <div class="flight-text">
+        <h1>Air Canada <span class="flight-no">AC 001</span></h1>
+        <div class="flight-route">
+          <span>TORONTO (YYZ)</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          <span class="route-dest">TOKYO (HND)</span>
+          <span style="opacity: 0.5">• B777-300ER (C-FITW)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATC Radio Toast -->
+    <div class="atc-toast" id="atcToast">
+      <span class="atc-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5M12 12h.01M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5M19.1 4.9C23 8.8 23 15.2 19.1 19.1"></path></svg>
+      </span>
+      <span id="atcText">YYZ Ramp Control: "Air Canada 1 Heavy, Gate 172 pushback approved, face North on Taxiway Alpha."</span>
+    </div>
+
+    <div class="top-right-controls">
+      <button class="btn-pill" id="soundToggleBtn" onclick="toggleAudio()">
+        <span class="sound-pulse" id="soundPulse"></span>
+        <span id="soundLabel">Sound ON</span>
+      </button>
+      <button class="btn-pill" id="dayNightBtn" onclick="toggleLighting()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        <span id="lightingLabel">Dusk / Sunset</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Camera Perspectives Menu -->
+  <div class="cam-bar-container">
+    <div class="cam-bar-title">Camera Perspectives</div>
+    <div class="cam-btn-group">
+      <button class="cam-btn active" data-cam="orbit" onclick="setCameraView('orbit')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+        Free Orbit Cam
+        <span class="key-hint">1</span>
+      </button>
+      <button class="cam-btn" data-cam="cockpit" onclick="setCameraView('cockpit')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        Cockpit Flight Deck
+        <span class="key-hint">2</span>
+      </button>
+      <button class="cam-btn" data-cam="cabin" onclick="setCameraView('cabin')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="4"></rect><circle cx="12" cy="12" r="3"></circle></svg>
+        Cabin Window (Wing)
+        <span class="key-hint">3</span>
+      </button>
+      <button class="cam-btn" data-cam="tower" onclick="setCameraView('tower')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 20V10M12 20V4M6 20v-6"></path></svg>
+        Toronto Tower View
+        <span class="key-hint">4</span>
+      </button>
+      <button class="cam-btn" data-cam="runway" onclick="setCameraView('runway')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19L12 5L20 19"></path><line x1="12" y1="9" x2="12" y2="11"></line><line x1="12" y1="14" x2="12" y2="16"></line></svg>
+        Runway 23 Track Cam
+        <span class="key-hint">5</span>
+      </button>
+      <button class="cam-btn" data-cam="chase" onclick="setCameraView('chase')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+        Cinematic Chase Cam
+        <span class="key-hint">6</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Live Telemetry / PFD HUD -->
+  <div class="telemetry-card">
+    <div class="telem-header">
+      <div class="telem-title">
+        <span class="telem-live-dot"></span>
+        B777-300ER EICAS
+      </div>
+      <span style="font-size: 10px; color: #94a3b8;" id="zuluTime">19:45:00 Z</span>
+    </div>
+
+    <div class="telem-grid">
+      <div class="telem-item">
+        <div class="telem-label">AIRSPEED</div>
+        <div class="telem-val" id="hudSpeed">0 <span class="unit">KIAS</span></div>
+      </div>
+      <div class="telem-item">
+        <div class="telem-label">ALTITUDE</div>
+        <div class="telem-val" id="hudAlt">569 <span class="unit">FT</span></div>
+      </div>
+      <div class="telem-item">
+        <div class="telem-label">HEADING</div>
+        <div class="telem-val" id="hudHdg">360 <span class="unit">°</span></div>
+      </div>
+      <div class="telem-item">
+        <div class="telem-label">PITCH / BANK</div>
+        <div class="telem-val" id="hudPitch">0.0 <span class="unit">°</span></div>
+      </div>
+    </div>
+
+    <!-- Engine GE90 Power Gauges -->
+    <div class="engine-status-box">
+      <div class="engine-row">
+        <span>ENG 1 (GE90)</span>
+        <span id="eng1Val">0% N1</span>
+      </div>
+      <div class="engine-bar-track">
+        <div class="engine-bar-fill" id="eng1Bar"></div>
+      </div>
+      <div class="engine-row">
+        <span>ENG 2 (GE90)</span>
+        <span id="eng2Val">0% N1</span>
+      </div>
+      <div class="engine-bar-track">
+        <div class="engine-bar-fill" id="eng2Bar"></div>
+      </div>
+    </div>
+
+    <!-- Flaps & Gear Badges -->
+    <div class="status-row">
+      <div class="status-badge" id="badgeFlaps">FLAPS UP</div>
+      <div class="status-badge active" id="badgeGear">GEAR DOWN</div>
+      <div class="status-badge" id="badgeSpoilers">ARMED</div>
+    </div>
+  </div>
+
+  <!-- Cockpit Procedures Checklist Card (Visible in Cockpit View) -->
+  <div id="cockpit-checklist-card">
+    <div class="checklist-header">
+      <div class="checklist-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        Air Canada SOP Procedures
+      </div>
+      <span style="font-size: 9.5px; color: #34d399;" id="chkPhaseTag">PHASE 1</span>
+    </div>
+
+    <div class="checklist-step">
+      <span class="chk-icon">✓</span>
+      <span id="chkLine1">Doors Armed & Crosschecked</span>
+      <span class="pilot-role">CAPT</span>
+    </div>
+    <div class="checklist-callout" id="chkCallout1">"APU generator online, parking brake release."</div>
+
+    <div class="checklist-step">
+      <span class="chk-icon">✓</span>
+      <span id="chkLine2">Pushback Clearance Received</span>
+      <span class="pilot-role">F/O</span>
+    </div>
+    <div class="checklist-callout" id="chkCallout2">"Beacon ON, facing North on Taxiway Alpha."</div>
+  </div>
+
+  <!-- Cabin Window Overlay -->
+  <div id="cabin-window-overlay">
+    <div class="window-oval">
+      <div class="window-tint"></div>
+    </div>
+  </div>
+
+  <!-- Bottom Interactive Timeline & Control Bar -->
+  <div class="bottom-bar">
+    <div class="timeline-container">
+      <div class="timeline-meta">
+        <div class="phase-badge">
+          <span>PHASE:</span>
+          <span class="phase-name" id="currentPhaseName">1. Gate Pushback</span>
+        </div>
+        <div id="flightTimeStr">00:00 / 02:20</div>
+      </div>
+
+      <div class="timeline-track-wrap" id="timelineTrack" onclick="scrubTimeline(event)">
+        <div class="timeline-progress" id="timelineProgress"></div>
+      </div>
+    </div>
+
+    <!-- Phase Quick-Nav Step Buttons -->
+    <div class="phases-nav">
+      <button class="phase-step-btn current" onclick="jumpToPhase(0)">1. Pushback</button>
+      <button class="phase-step-btn" onclick="jumpToPhase(1)">2. Engine Start</button>
+      <button class="phase-step-btn" onclick="jumpToPhase(2)">3. Flaps & Controls Check</button>
+      <button class="phase-step-btn" onclick="jumpToPhase(3)">4. Taxi to Runway 23</button>
+      <button class="phase-step-btn" onclick="jumpToPhase(4)">5. Runway Line-Up</button>
+      <button class="phase-step-btn" onclick="jumpToPhase(5)">6. Takeoff Roll (TOGA)</button>
+      <button class="phase-step-btn" onclick="jumpToPhase(6)">7. Liftoff / Rotate</button>
+      <button class="phase-step-btn" onclick="jumpToPhase(7)">8. Gear Up</button>
+      <button class="phase-step-btn" onclick="jumpToPhase(8)">9. Flaps Retract</button>
+      <button class="phase-step-btn" onclick="jumpToPhase(9)">10. Turn to Tokyo</button>
+    </div>
+
+    <div class="bottom-playback-row">
+      <div class="playback-actions">
+        <button class="btn-circle primary" id="playPauseBtn" onclick="togglePlayPause()">
+          <svg id="playIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:none;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          <svg id="pauseIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+        </button>
+        <button class="btn-circle" onclick="restartFlight()" title="Restart Flight">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+        </button>
+
+        <div class="speed-pills">
+          <button class="speed-btn active" onclick="setSpeed(1)">1x</button>
+          <button class="speed-btn" onclick="setSpeed(1.5)">1.5x</button>
+          <button class="speed-btn" onclick="setSpeed(2)">2x</button>
+        </div>
+      </div>
+
+      <div class="flight-note">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+        <span>Drag mouse to orbit • Scroll to zoom • Keys 1-6 for views • Space to pause</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       AIR CANADA BOEING 777-300ER TORONTO -> TOKYO FLIGHT SIMULATION
+       ========================================================================== */
+
+    const TOTAL_DURATION = 140;
+    let simTime = 0;
+    let isPlaying = true;
+    let timeScale = 1.0;
+
+    const PHASES = [
+      { 
+        id: 0, 
+        name: "Gate 172 Pushback", 
+        startTime: 0, 
+        endTime: 14, 
+        atc: "YYZ Ramp: 'Air Canada 1 Heavy, Gate 172 pushback approved, face North on Taxiway Alpha.'",
+        sopLine1: "Parking Brakes Released",
+        sopCallout1: "CAPT: 'Brakes released, cleared for pushback.'",
+        sopLine2: "Beacon Lights ON • Doors Armed",
+        sopCallout2: "F/O: 'Anti-collision beacons active, towbar locked.'"
+      },
+      { 
+        id: 1, 
+        name: "GE90 Engines Start", 
+        startTime: 14, 
+        endTime: 26, 
+        atc: "Flight Deck: 'Starting Engine 1... starter whine rising... ignition... Starting Engine 2.'",
+        sopLine1: "Starting Engine 1 & 2 Sequence",
+        sopCallout1: "CAPT: 'Start switch Eng 1 engage, oil pressure rising.'",
+        sopLine2: "N2 > 25% • Fuel Flow Normal",
+        sopCallout2: "F/O: 'Lightoff indicated, starter cutout at 50% N2, idle stable.'"
+      },
+      { 
+        id: 2, 
+        name: "Flaps 15 & Flight Controls", 
+        startTime: 26, 
+        endTime: 38, 
+        atc: "Flight Deck: 'Flaps set 15. Flight controls check: Rudder left, right, elevators full up, down.'",
+        sopLine1: "Flaps 15 Takeoff Setting",
+        sopCallout1: "F/O: 'Flaps selected 15, green transit to detent.'",
+        sopLine2: "Flight Controls Full Deflection Check",
+        sopCallout2: "CAPT: 'Rudder left, right, elevators full up, full down, neutral.'"
+      },
+      { 
+        id: 3, 
+        name: "Taxi to Runway 23", 
+        startTime: 38, 
+        endTime: 66, 
+        atc: "YYZ Ground: 'Air Canada 1 Heavy, taxi via Alpha, Victor, hold short Runway 23.'",
+        sopLine1: "Taxi Clearance Acknowledged",
+        sopCallout1: "F/O: 'Taxi via Alpha, Victor, hold short 23, Air Canada 1.'",
+        sopLine2: "Nose Taxi Light ON • Brakes Check",
+        sopCallout2: "CAPT: 'Brakes checked, nosewheel steering positive.'"
+      },
+      { 
+        id: 4, 
+        name: "Runway Line-Up & Hold", 
+        startTime: 66, 
+        endTime: 78, 
+        atc: "YYZ Tower: 'Air Canada 1, wind 240 at 14 knots, Runway 23, line up and wait.'",
+        sopLine1: "Runway 23 Verified Centerline",
+        sopCallout1: "CAPT: 'Heading 230 verified, lined up on centerline.'",
+        sopLine2: "Strobes ON • Transponder TA/RA",
+        sopCallout2: "F/O: 'Landing lights full ON, cabin crew seats for takeoff.'"
+      },
+      { 
+        id: 5, 
+        name: "Takeoff Roll (TOGA Thrust)", 
+        startTime: 78, 
+        endTime: 96, 
+        atc: "YYZ Tower: 'Air Canada 1 Heavy, cleared for takeoff Runway 23. Direct Tokyo departure.'",
+        sopLine1: "Takeoff Thrust Set (TOGA)",
+        sopCallout1: "CAPT: 'Advancing throttles, set TOGA 98% N1.'",
+        sopLine2: "80 Knots • V1 (145kt) • Vr (160kt)",
+        sopCallout2: "F/O: 'Thrust set, 80 knots crosscheck... V1... ROTATE!'"
+      },
+      { 
+        id: 6, 
+        name: "Rotation & Liftoff", 
+        startTime: 96, 
+        endTime: 106, 
+        atc: "Flight Deck: '80 knots... V1... Rotate... V2... Positive rate of climb.'",
+        sopLine1: "Rotate to +15° Pitch Attitude",
+        sopCallout1: "CAPT: 'Smooth rotation, tracking flight director pitch.'",
+        sopLine2: "Positive Rate of Climb Verified",
+        sopCallout2: "F/O: 'Positive rate, altimeter climbing.'"
+      },
+      { 
+        id: 7, 
+        name: "Landing Gear Retraction", 
+        startTime: 106, 
+        endTime: 118, 
+        atc: "Flight Deck: 'Gear up. YYZ Departure: Air Canada 1 Heavy, radar contact, climb 5,000.'",
+        sopLine1: "Landing Gear Lever UP",
+        sopCallout1: "CAPT: 'Gear UP.'",
+        sopLine2: "Gear Stowed & Doors Locked",
+        sopCallout2: "F/O: 'Gear selected UP, transit complete, gear locked.'"
+      },
+      { 
+        id: 8, 
+        name: "Flaps Retraction", 
+        startTime: 118, 
+        endTime: 128, 
+        atc: "Flight Deck: 'Flaps up, climbing passing 2,500 ft, speed 250 knots.'",
+        sopLine1: "Passing Acceleration Altitude 1,000ft",
+        sopCallout1: "F/O: 'Speed 220 knots, retracting flaps to UP.'",
+        sopLine2: "After-Takeoff Checklist Completed",
+        sopCallout2: "CAPT: 'Flaps UP indicated, climb thrust set.'"
+      },
+      { 
+        id: 9, 
+        name: "Bank & Turn to Tokyo (Polar)", 
+        startTime: 128, 
+        endTime: 140, 
+        atc: "YYZ Departure: 'Air Canada 1 Heavy, turn right heading 315, direct polar track to Tokyo.'",
+        sopLine1: "Turn Right Heading 315° Tokyo",
+        sopCallout1: "CAPT: 'Bank 25 degrees right, intercepting Tokyo airway.'",
+        sopLine2: "LNAV & VNAV Autopilot Engaged",
+        sopCallout2: "F/O: 'Autopilot A engaged, LNAV/VNAV active, climbing FL340.'"
+      }
+    ];
+
+    let currentPhaseIndex = 0;
+
+    let scene, camera, renderer, controls;
+    let airplaneGroup;
+    let pushbackTugGroup;
+    let environmentGroup;
+    let lights = {};
+
+    let leftFlap, rightFlap;
+    let leftAileron, rightAileron;
+    let leftElevator, rightElevator;
+    let rudder;
+    let noseGearGroup, leftMainGearGroup, rightMainGearGroup;
+    let leftFanRotor, rightFanRotor;
+    let beaconLightTop, beaconLightBottom;
+    let landingLights = [];
+
+    // Cockpit Articulated Controls & Pilots
+    let throttleLeversGroup;
+    let flapLeverMesh;
+    let gearLeverMesh;
+    let captYokeGroup, foYokeGroup;
+    let captRightArm, foRightArm;
+    let pfdCanvas, pfdCtx, pfdTexture;
+
+    let activeCameraView = 'orbit';
+    const cameraOffsets = {
+      orbit: { x: 38, y: 16, z: 45 },
+      cockpit: { x: 0, y: 6.35, z: 26.6 },
+      cabin: { x: -3.4, y: 5.6, z: 6.0 },
+      tower: { x: -90, y: 82, z: 60 },
+      runway: { x: 220, y: 3.5, z: 1050 },
+      chase: { x: 0, y: 9, z: -52 }
+    };
+
+    let clock = new THREE.Clock();
+
+    /* ==========================================================================
+       PROCEDURAL WEB AUDIO JET ENGINE SYNTHESIZER
+       ========================================================================== */
+    class JetAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.isMuted = false;
+        this.masterGain = null;
+        
+        this.starterOsc = null;
+        this.starterGain = null;
+        this.spoolWhineOsc1 = null;
+        this.spoolWhineOsc2 = null;
+        this.spoolGain = null;
+        this.jetNoiseGain = null;
+        this.noiseFilter = null;
+        this.airHissGain = null;
+
+        this.initialized = false;
+      }
+
+      init() {
+        if (this.initialized) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContext();
+
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.setValueAtTime(0.7, this.ctx.currentTime);
+        this.masterGain.connect(this.ctx.destination);
+
+        const bufferSize = 2 * this.ctx.sampleRate;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          b0 = 0.99886 * b0 + white * 0.0555179;
+          b1 = 0.99332 * b1 + white * 0.0750759;
+          b2 = 0.96900 * b2 + white * 0.1538520;
+          b3 = 0.86650 * b3 + white * 0.3104856;
+          b4 = 0.55000 * b4 + white * 0.5329522;
+          b5 = -0.7616 * b5 - white * 0.0168980;
+          output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+          b6 = white * 0.115926;
+        }
+
+        const noiseSrc = this.ctx.createBufferSource();
+        noiseSrc.buffer = noiseBuffer;
+        noiseSrc.loop = true;
+
+        this.noiseFilter = this.ctx.createBiquadFilter();
+        this.noiseFilter.type = 'lowpass';
+        this.noiseFilter.frequency.setValueAtTime(140, this.ctx.currentTime);
+
+        this.jetNoiseGain = this.ctx.createGain();
+        this.jetNoiseGain.gain.setValueAtTime(0.001, this.ctx.currentTime);
+
+        noiseSrc.connect(this.noiseFilter);
+        this.noiseFilter.connect(this.jetNoiseGain);
+        this.jetNoiseGain.connect(this.masterGain);
+        noiseSrc.start();
+
+        const hissSrc = this.ctx.createBufferSource();
+        hissSrc.buffer = noiseBuffer;
+        hissSrc.loop = true;
+        const hissFilter = this.ctx.createBiquadFilter();
+        hissFilter.type = 'bandpass';
+        hissFilter.frequency.setValueAtTime(2200, this.ctx.currentTime);
+        hissFilter.Q.setValueAtTime(1.5, this.ctx.currentTime);
+        this.airHissGain = this.ctx.createGain();
+        this.airHissGain.gain.setValueAtTime(0.001, this.ctx.currentTime);
+        hissSrc.connect(hissFilter);
+        hissFilter.connect(this.airHissGain);
+        this.airHissGain.connect(this.masterGain);
+        hissSrc.start();
+
+        this.spoolWhineOsc1 = this.ctx.createOscillator();
+        this.spoolWhineOsc1.type = 'sawtooth';
+        this.spoolWhineOsc1.frequency.setValueAtTime(80, this.ctx.currentTime);
+
+        this.spoolWhineOsc2 = this.ctx.createOscillator();
+        this.spoolWhineOsc2.type = 'sine';
+        this.spoolWhineOsc2.frequency.setValueAtTime(160, this.ctx.currentTime);
+
+        const spoolFilter = this.ctx.createBiquadFilter();
+        spoolFilter.type = 'bandpass';
+        spoolFilter.frequency.setValueAtTime(350, this.ctx.currentTime);
+        spoolFilter.Q.setValueAtTime(3.0, this.ctx.currentTime);
+
+        this.spoolGain = this.ctx.createGain();
+        this.spoolGain.gain.setValueAtTime(0.001, this.ctx.currentTime);
+
+        this.spoolWhineOsc1.connect(spoolFilter);
+        this.spoolWhineOsc2.connect(spoolFilter);
+        spoolFilter.connect(this.spoolGain);
+        this.spoolGain.connect(this.masterGain);
+
+        this.spoolWhineOsc1.start();
+        this.spoolWhineOsc2.start();
+
+        this.starterOsc = this.ctx.createOscillator();
+        this.starterOsc.type = 'triangle';
+        this.starterOsc.frequency.setValueAtTime(180, this.ctx.currentTime);
+        this.starterGain = this.ctx.createGain();
+        this.starterGain.gain.setValueAtTime(0.001, this.ctx.currentTime);
+        this.starterOsc.connect(this.starterGain);
+        this.starterGain.connect(this.masterGain);
+        this.starterOsc.start();
+
+        this.initialized = true;
+      }
+
+      playCabinChime() {
+        if (!this.initialized || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc1.type = 'sine';
+        osc2.type = 'sine';
+        osc1.frequency.setValueAtTime(587.33, now);
+        osc2.frequency.setValueAtTime(440.00, now + 0.35);
+
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.3, now + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc1.start(now);
+        osc1.stop(now + 0.4);
+        osc2.start(now + 0.35);
+        osc2.stop(now + 1.3);
+      }
+
+      update(engineN1, isStarting, viewType) {
+        if (!this.initialized || this.isMuted) return;
+        const now = this.ctx.currentTime;
+
+        let viewAttenuation = 1.0;
+        let filterCutoffMod = 1.0;
+        if (viewType === 'cockpit') {
+          viewAttenuation = 0.55;
+          filterCutoffMod = 0.6;
+        } else if (viewType === 'cabin') {
+          viewAttenuation = 0.85;
+          filterCutoffMod = 0.8;
+        } else if (viewType === 'runway') {
+          viewAttenuation = 1.25;
+        }
+
+        if (isStarting) {
+          const starterFreq = 160 + (engineN1 / 24) * 520;
+          this.starterOsc.frequency.setTargetAtTime(starterFreq, now, 0.1);
+          this.starterGain.gain.setTargetAtTime(0.22 * viewAttenuation, now, 0.1);
+        } else {
+          this.starterGain.gain.setTargetAtTime(0.0001, now, 0.2);
+        }
+
+        const n1Ratio = Math.max(0, Math.min(1, engineN1 / 100));
+
+        if (engineN1 > 2) {
+          const noiseVolume = (0.05 + Math.pow(n1Ratio, 2.2) * 0.78) * viewAttenuation;
+          const noiseFreq = (200 + Math.pow(n1Ratio, 1.8) * 1450) * filterCutoffMod;
+
+          this.jetNoiseGain.gain.setTargetAtTime(noiseVolume, now, 0.08);
+          this.noiseFilter.frequency.setTargetAtTime(noiseFreq, now, 0.08);
+
+          const hissVol = (0.02 + n1Ratio * 0.36) * viewAttenuation;
+          this.airHissGain.gain.setTargetAtTime(hissVol, now, 0.08);
+
+          const whineFreq1 = (110 + n1Ratio * 520);
+          const whineFreq2 = (220 + n1Ratio * 1040);
+          const whineVol = (0.04 + Math.pow(n1Ratio, 1.5) * 0.4) * viewAttenuation;
+
+          this.spoolWhineOsc1.frequency.setTargetAtTime(whineFreq1, now, 0.08);
+          this.spoolWhineOsc2.frequency.setTargetAtTime(whineFreq2, now, 0.08);
+          this.spoolGain.gain.setTargetAtTime(whineVol, now, 0.08);
+        } else {
+          this.jetNoiseGain.gain.setTargetAtTime(0.0001, now, 0.2);
+          this.airHissGain.gain.setTargetAtTime(0.0001, now, 0.2);
+          this.spoolGain.gain.setTargetAtTime(0.0001, now, 0.2);
+        }
+      }
+
+      setMute(mute) {
+        this.isMuted = mute;
+        if (!this.masterGain) return;
+        if (mute) {
+          this.masterGain.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.05);
+        } else {
+          this.masterGain.gain.setTargetAtTime(0.7, this.ctx.currentTime, 0.05);
+        }
+      }
+    }
+
+    const soundEngine = new JetAudioEngine();
+
+    function initAndEnableAudio() {
+      soundEngine.init();
+      soundEngine.setMute(false);
+      document.getElementById('audio-prompt').style.opacity = '0';
+      setTimeout(() => {
+        document.getElementById('audio-prompt').style.display = 'none';
+      }, 400);
+      updateSoundUI(true);
+      soundEngine.playCabinChime();
+    }
+
+    function toggleAudio() {
+      if (!soundEngine.initialized) {
+        initAndEnableAudio();
+        return;
+      }
+      const newMuted = !soundEngine.isMuted;
+      soundEngine.setMute(newMuted);
+      updateSoundUI(!newMuted);
+    }
+
+    function updateSoundUI(isActive) {
+      const pulse = document.getElementById('soundPulse');
+      const label = document.getElementById('soundLabel');
+      if (isActive) {
+        pulse.classList.remove('muted');
+        label.innerText = 'Sound ON';
+      } else {
+        pulse.classList.add('muted');
+        label.innerText = 'Muted';
+      }
+    }
+
+    /* ==========================================================================
+       THREE.JS SCENE SETUP
+       ========================================================================== */
+    function initThreeScene() {
+      const container = document.getElementById('webgl-container');
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a1424);
+      scene.fog = new THREE.FogExp2(0x0e1b2d, 0.00075);
+
+      camera = new THREE.PerspectiveCamera(52, width / height, 0.5, 5000);
+      camera.position.set(cameraOffsets.orbit.x, cameraOffsets.orbit.y, cameraOffsets.orbit.z);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.maxPolarAngle = Math.PI / 2 - 0.02;
+      controls.minDistance = 6;
+      controls.maxDistance = 650;
+      controls.target.set(-260, 5, -200);
+
+      setupLighting();
+      buildAirportEnvironment();
+      buildBoeing777();
+      buildPushbackTug();
+
+      window.addEventListener('resize', onWindowResize);
+      window.addEventListener('keydown', onKeyDown);
+    }
+
+    function setupLighting() {
+      lights.ambient = new THREE.AmbientLight(0x8fa4c0, 0.6);
+      scene.add(lights.ambient);
+
+      lights.sun = new THREE.DirectionalLight(0xffeedd, 1.45);
+      lights.sun.position.set(300, 240, 350);
+      lights.sun.castShadow = true;
+      lights.sun.shadow.mapSize.width = 2048;
+      lights.sun.shadow.mapSize.height = 2048;
+      lights.sun.shadow.camera.near = 10;
+      lights.sun.shadow.camera.far = 1200;
+      const d = 220;
+      lights.sun.shadow.camera.left = -d;
+      lights.sun.shadow.camera.right = d;
+      lights.sun.shadow.camera.top = d;
+      lights.sun.shadow.camera.bottom = -d;
+      lights.sun.shadow.bias = -0.0004;
+      scene.add(lights.sun);
+
+      lights.hemi = new THREE.HemisphereLight(0x38bdf8, 0x1e293b, 0.45);
+      scene.add(lights.hemi);
+    }
+
+    let isDuskMode = true;
+    function toggleLighting() {
+      isDuskMode = !isDuskMode;
+      const label = document.getElementById('lightingLabel');
+      if (isDuskMode) {
+        scene.background = new THREE.Color(0x0a1424);
+        scene.fog.color = new THREE.Color(0x0e1b2d);
+        lights.sun.color.setHex(0xffeedd);
+        lights.sun.intensity = 1.45;
+        lights.ambient.color.setHex(0x8fa4c0);
+        lights.ambient.intensity = 0.6;
+        label.innerText = 'Dusk / Sunset';
+      } else {
+        scene.background = new THREE.Color(0x87ceeb);
+        scene.fog.color = new THREE.Color(0x9bd8f5);
+        lights.sun.color.setHex(0xffffff);
+        lights.sun.intensity = 2.0;
+        lights.ambient.color.setHex(0xb0c4de);
+        lights.ambient.intensity = 0.85;
+        label.innerText = 'Bright Day';
+      }
+    }
+
+    /* --------------------------------------------------------------------------
+       AIRPORT ENVIRONMENT
+       -------------------------------------------------------------------------- */
+    function buildAirportEnvironment() {
+      environmentGroup = new THREE.Group();
+
+      const groundGeo = new THREE.PlaneGeometry(7000, 7000);
+      const groundMat = new THREE.MeshStandardMaterial({
+        color: 0x18201a,
+        roughness: 0.95,
+        metalness: 0.05
+      });
+      const ground = new THREE.Mesh(groundGeo, groundMat);
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = -0.02;
+      ground.receiveShadow = true;
+      environmentGroup.add(ground);
+
+      // Terminal Apron & Ramp (West Area: X = -260)
+      const apronGeo = new THREE.PlaneGeometry(280, 500);
+      const apronMat = new THREE.MeshStandardMaterial({
+        color: 0x272b30,
+        roughness: 0.85
+      });
+      const apron = new THREE.Mesh(apronGeo, apronMat);
+      apron.rotation.x = -Math.PI / 2;
+      apron.position.set(-240, 0.02, -150);
+      apron.receiveShadow = true;
+      environmentGroup.add(apron);
+
+      // Terminal 1 Building (At X = -330)
+      const termGeo = new THREE.BoxGeometry(70, 24, 380);
+      const termMat = new THREE.MeshStandardMaterial({
+        color: 0x222a36,
+        metalness: 0.6,
+        roughness: 0.35
+      });
+      const terminal = new THREE.Mesh(termGeo, termMat);
+      terminal.position.set(-330, 12, -150);
+      terminal.castShadow = true;
+      terminal.receiveShadow = true;
+      environmentGroup.add(terminal);
+
+      const termWinGeo = new THREE.PlaneGeometry(12, 360);
+      const termWinMat = new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.55 });
+      const termWin = new THREE.Mesh(termWinGeo, termWinMat);
+      termWin.rotation.y = Math.PI / 2;
+      termWin.position.set(-294.8, 13, -150);
+      environmentGroup.add(termWin);
+
+      // Gate 172 Jet Bridge
+      const jetbridgeGeo = new THREE.BoxGeometry(40, 4.5, 6);
+      const jetbridgeMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.5 });
+      const jetbridge = new THREE.Mesh(jetbridgeGeo, jetbridgeMat);
+      jetbridge.position.set(-276, 7.2, -188);
+      jetbridge.castShadow = true;
+      environmentGroup.add(jetbridge);
+
+      // Taxiway Alpha (North-South Apron Taxiway at X = -190)
+      const taxiAlphaMat = new THREE.MeshStandardMaterial({ color: 0x1f2328, roughness: 0.85 });
+      const taxiAlpha = new THREE.Mesh(new THREE.PlaneGeometry(45, 520), taxiAlphaMat);
+      taxiAlpha.rotation.x = -Math.PI / 2;
+      taxiAlpha.position.set(-190, 0.04, -100);
+      taxiAlpha.receiveShadow = true;
+      environmentGroup.add(taxiAlpha);
+
+      const taxiLineMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+      const alphaLine = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 520), taxiLineMat);
+      alphaLine.rotation.x = -Math.PI / 2;
+      alphaLine.position.set(-190, 0.06, -100);
+      environmentGroup.add(alphaLine);
+
+      // Connector Taxiway
+      const connect = new THREE.Mesh(new THREE.PlaneGeometry(280, 45), taxiAlphaMat);
+      connect.rotation.x = -Math.PI / 2;
+      connect.position.set(-60, 0.04, 120);
+      connect.receiveShadow = true;
+      environmentGroup.add(connect);
+
+      const connectLine = new THREE.Mesh(new THREE.PlaneGeometry(280, 0.8), taxiLineMat);
+      connectLine.rotation.x = -Math.PI / 2;
+      connectLine.position.set(-60, 0.06, 120);
+      environmentGroup.add(connectLine);
+
+      // Parallel Taxiway Victor (X = 60)
+      const taxiVic = new THREE.Mesh(new THREE.PlaneGeometry(45, 650), taxiAlphaMat);
+      taxiVic.rotation.x = -Math.PI / 2;
+      taxiVic.position.set(60, 0.04, 250);
+      taxiVic.receiveShadow = true;
+      environmentGroup.add(taxiVic);
+
+      const vicLine = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 650), taxiLineMat);
+      vicLine.rotation.x = -Math.PI / 2;
+      vicLine.position.set(60, 0.06, 250);
+      environmentGroup.add(vicLine);
+
+      // Runway 23 Entrance Link
+      const entryLink = new THREE.Mesh(new THREE.PlaneGeometry(140, 50), taxiAlphaMat);
+      entryLink.rotation.x = -Math.PI / 2;
+      entryLink.position.set(120, 0.04, 360);
+      entryLink.receiveShadow = true;
+      environmentGroup.add(entryLink);
+
+      // Runway 23 (At X = 180)
+      const runwayLength = 3400;
+      const runwayWidth = 65;
+      const runway = new THREE.Mesh(new THREE.PlaneGeometry(runwayWidth, runwayLength), new THREE.MeshStandardMaterial({ color: 0x181a1e, roughness: 0.8 }));
+      runway.rotation.x = -Math.PI / 2;
+      runway.position.set(180, 0.05, 1400);
+      runway.receiveShadow = true;
+      environmentGroup.add(runway);
+
+      // Centerline Dashes
+      const whiteLineMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc });
+      const dashGeo = new THREE.PlaneGeometry(2.5, 25);
+      for (let i = 0; i < 68; i++) {
+        const dash = new THREE.Mesh(dashGeo, whiteLineMat);
+        dash.rotation.x = -Math.PI / 2;
+        const zPos = 1400 - (runwayLength / 2) + i * 50 + 12.5;
+        dash.position.set(180, 0.07, zPos);
+        environmentGroup.add(dash);
+      }
+
+      // Runway 23 Threshold Piano Keys (Z = 360)
+      const thresholdZ = 360;
+      const keyGeo = new THREE.PlaneGeometry(1.8, 38);
+      for (let i = 0; i < 14; i++) {
+        const key = new THREE.Mesh(keyGeo, whiteLineMat);
+        key.rotation.x = -Math.PI / 2;
+        key.position.set(180 - 22 + i * 3.4, 0.07, thresholdZ + 20);
+        environmentGroup.add(key);
+      }
+
+      // Runway Edge Lights
+      const edgeLightGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.6, 8);
+      const edgeLightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      for (let z = thresholdZ; z < thresholdZ + runwayLength; z += 45) {
+        const leftLight = new THREE.Mesh(edgeLightGeo, edgeLightMat);
+        leftLight.position.set(180 - runwayWidth / 2 - 1.2, 0.3, z);
+        environmentGroup.add(leftLight);
+
+        const rightLight = new THREE.Mesh(edgeLightGeo, edgeLightMat);
+        rightLight.position.set(180 + runwayWidth / 2 + 1.2, 0.3, z);
+        environmentGroup.add(rightLight);
+      }
+
+      // Green Threshold Lights
+      const greenLightMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+      for (let x = 180 - runwayWidth / 2; x <= 180 + runwayWidth / 2; x += 3.5) {
+        const gLight = new THREE.Mesh(edgeLightGeo, greenLightMat);
+        gLight.position.set(x, 0.3, thresholdZ);
+        environmentGroup.add(gLight);
+      }
+
+      // ATC Tower
+      const towerBase = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 7.5, 75, 16), new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.4 }));
+      towerBase.position.set(-90, 37.5, 60);
+      towerBase.castShadow = true;
+      environmentGroup.add(towerBase);
+
+      const towerCab = new THREE.Mesh(
+        new THREE.CylinderGeometry(11, 8.5, 10, 16),
+        new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.8, roughness: 0.15, transparent: true, opacity: 0.85 })
+      );
+      towerCab.position.set(-90, 80, 60);
+      environmentGroup.add(towerCab);
+
+      const radome = new THREE.Mesh(new THREE.SphereGeometry(3.5, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      radome.position.set(-90, 87, 60);
+      environmentGroup.add(radome);
+
+      // Distant Skyline & CN Tower
+      const skylineGroup = new THREE.Group();
+      const cnShaft = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 7.5, 190, 8), new THREE.MeshStandardMaterial({ color: 0x1f2937 }));
+      cnShaft.position.set(1300, 95, -1200);
+      skylineGroup.add(cnShaft);
+
+      const cnPod = new THREE.Mesh(new THREE.CylinderGeometry(14, 12, 18, 16), new THREE.MeshStandardMaterial({ color: 0x374151 }));
+      cnPod.position.set(1300, 140, -1200);
+      skylineGroup.add(cnPod);
+
+      const cnSpire = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 2.5, 70, 8), new THREE.MeshStandardMaterial({ color: 0xd1d5db }));
+      cnSpire.position.set(1300, 180, -1200);
+      skylineGroup.add(cnSpire);
+
+      for (let b = 0; b < 24; b++) {
+        const bHeight = 40 + Math.random() * 90;
+        const bldg = new THREE.Mesh(new THREE.BoxGeometry(20 + Math.random() * 25, bHeight, 20 + Math.random() * 25), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 }));
+        bldg.position.set(1100 + (b - 12) * 36, bHeight / 2, -1200 + (Math.random() - 0.5) * 120);
+        skylineGroup.add(bldg);
+      }
+      environmentGroup.add(skylineGroup);
+
+      scene.add(environmentGroup);
+    }
+
+    /* --------------------------------------------------------------------------
+       DETAILED BOEING 777-300ER (AIR CANADA LIVERY)
+       -------------------------------------------------------------------------- */
+    function buildBoeing777() {
+      airplaneGroup = new THREE.Group();
+
+      const fuselageMat = new THREE.MeshStandardMaterial({
+        color: 0xf8f9fa,
+        roughness: 0.25,
+        metalness: 0.12
+      });
+
+      const acBlackMat = new THREE.MeshStandardMaterial({
+        color: 0x090a0c,
+        roughness: 0.35,
+        metalness: 0.15
+      });
+
+      const acRedMat = new THREE.MeshStandardMaterial({
+        color: 0xdf1632,
+        roughness: 0.35,
+        metalness: 0.1
+      });
+
+      const wingMat = new THREE.MeshStandardMaterial({
+        color: 0xdce1e8,
+        roughness: 0.38,
+        metalness: 0.15
+      });
+
+      const glassMat = new THREE.MeshStandardMaterial({
+        color: 0x0f172a,
+        roughness: 0.05,
+        metalness: 0.9,
+        transparent: true,
+        opacity: 0.85
+      });
+
+      const metalChromeMat = new THREE.MeshStandardMaterial({
+        color: 0xe2e8f0,
+        roughness: 0.15,
+        metalness: 0.92
+      });
+
+      const rubberMat = new THREE.MeshStandardMaterial({
+        color: 0x1c1c1e,
+        roughness: 0.92
+      });
+
+      // 1. SEAMLESS AERODYNAMIC FUSELAGE
+      const fusePoints = [];
+      fusePoints.push(new THREE.Vector2(0.001, 35.0));
+      fusePoints.push(new THREE.Vector2(0.8, 34.4));
+      fusePoints.push(new THREE.Vector2(1.6, 33.2));
+      fusePoints.push(new THREE.Vector2(2.4, 31.5));
+      fusePoints.push(new THREE.Vector2(2.9, 29.0));
+      fusePoints.push(new THREE.Vector2(3.1, 26.0));
+      fusePoints.push(new THREE.Vector2(3.1, -16.0));
+      fusePoints.push(new THREE.Vector2(2.95, -22.0));
+      fusePoints.push(new THREE.Vector2(2.6, -27.0));
+      fusePoints.push(new THREE.Vector2(2.0, -31.5));
+      fusePoints.push(new THREE.Vector2(1.2, -34.5));
+      fusePoints.push(new THREE.Vector2(0.5, -36.5));
+      fusePoints.push(new THREE.Vector2(0.001, -36.6));
+
+      const fuseGeo = new THREE.LatheGeometry(fusePoints, 36);
+      fuseGeo.computeVertexNormals();
+      const fuselage = new THREE.Mesh(fuseGeo, fuselageMat);
+      fuselage.rotation.x = Math.PI / 2;
+      fuselage.position.set(0, 5.2, 0);
+      fuselage.castShadow = true;
+      fuselage.receiveShadow = true;
+      airplaneGroup.add(fuselage);
+
+      // APU Tail Nozzle
+      const apuShroud = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.55, 0.8, 16), metalChromeMat);
+      apuShroud.rotation.x = Math.PI / 2;
+      apuShroud.position.set(0, 5.2, -36.7);
+      airplaneGroup.add(apuShroud);
+
+      const apuHole = new THREE.Mesh(new THREE.CircleGeometry(0.35, 16), new THREE.MeshBasicMaterial({ color: 0x050505 }));
+      apuHole.position.set(0, 5.2, -37.11);
+      airplaneGroup.add(apuHole);
+
+      // Cockpit Raccoon Mask & Windshield Outer Glass
+      const maskGeo = new THREE.BoxGeometry(4.4, 1.4, 3.4);
+      const maskMesh = new THREE.Mesh(maskGeo, acBlackMat);
+      maskMesh.position.set(0, 6.55, 27.5);
+      maskMesh.rotation.x = 0.28;
+      airplaneGroup.add(maskMesh);
+
+      const windshield = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 1.25), glassMat);
+      windshield.position.set(0, 6.72, 28.8);
+      windshield.rotation.x = 0.32;
+      airplaneGroup.add(windshield);
+
+      // Dual Windshield Wipers
+      const wiperMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+      const wiperL = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.9, 6), wiperMat);
+      wiperL.position.set(-0.85, 6.65, 28.7);
+      wiperL.rotation.z = 0.45;
+      wiperL.rotation.x = 0.32;
+      airplaneGroup.add(wiperL);
+
+      const wiperR = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.9, 6), wiperMat);
+      wiperR.position.set(0.85, 6.65, 28.7);
+      wiperR.rotation.z = -0.45;
+      wiperR.rotation.x = 0.32;
+      airplaneGroup.add(wiperR);
+
+      // Air Canada Branding
+      const brandGeo = new THREE.PlaneGeometry(16, 1.3);
+      const brandCanvas = document.createElement('canvas');
+      brandCanvas.width = 512;
+      brandCanvas.height = 64;
+      const bCtx = brandCanvas.getContext('2d');
+      bCtx.fillStyle = 'rgba(0,0,0,0)';
+      bCtx.fillRect(0, 0, 512, 64);
+      bCtx.fillStyle = '#0c0d0e';
+      bCtx.font = 'bold 36px "Inter", sans-serif';
+      bCtx.letterSpacing = '4px';
+      bCtx.fillText('AIR CANADA', 30, 44);
+      const brandTexture = new THREE.CanvasTexture(brandCanvas);
+      const brandMat = new THREE.MeshBasicMaterial({ map: brandTexture, transparent: true });
+
+      const leftBrand = new THREE.Mesh(brandGeo, brandMat);
+      leftBrand.position.set(-3.15, 6.0, 10);
+      leftBrand.rotation.y = -Math.PI / 2;
+      airplaneGroup.add(leftBrand);
+
+      const rightBrand = new THREE.Mesh(brandGeo, brandMat);
+      rightBrand.position.set(3.15, 6.0, 10);
+      rightBrand.rotation.y = Math.PI / 2;
+      airplaneGroup.add(rightBrand);
+
+      // Cabin Windows Rows
+      const windowRowGeo = new THREE.PlaneGeometry(36, 0.45);
+      const winCanvas = document.createElement('canvas');
+      winCanvas.width = 512;
+      winCanvas.height = 32;
+      const wCtx = winCanvas.getContext('2d');
+      wCtx.fillStyle = 'rgba(0,0,0,0)';
+      wCtx.fillRect(0, 0, 512, 32);
+      wCtx.fillStyle = '#ffd591';
+      for (let i = 0; i < 48; i++) {
+        wCtx.fillRect(i * 10 + 4, 6, 6, 18);
+      }
+      const winTexture = new THREE.CanvasTexture(winCanvas);
+      const winMat = new THREE.MeshBasicMaterial({ map: winTexture, transparent: true });
+
+      const leftWin = new THREE.Mesh(windowRowGeo, winMat);
+      leftWin.position.set(-3.14, 5.6, 2);
+      leftWin.rotation.y = -Math.PI / 2;
+      airplaneGroup.add(leftWin);
+
+      const rightWin = new THREE.Mesh(windowRowGeo, winMat);
+      rightWin.position.set(3.14, 5.6, 2);
+      rightWin.rotation.y = Math.PI / 2;
+      airplaneGroup.add(rightWin);
+
+      // ========================================================================
+      // 2. DETAILED COCKPIT FLIGHT DECK INTERIOR WITH SEATED PILOTS
+      // ========================================================================
+      const cockpitGroup = new THREE.Group();
+
+      // Flight Deck Floor
+      const floorMat = new THREE.MeshStandardMaterial({ color: 0x1e242c, roughness: 0.8 });
+      const cockpitFloor = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.15, 4.5), floorMat);
+      cockpitFloor.position.set(0, 5.15, 26.8);
+      cockpitGroup.add(cockpitFloor);
+
+      // Cockpit Aft Bulkhead
+      const bulkhead = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.2, 0.15), floorMat);
+      bulkhead.position.set(0, 6.2, 24.6);
+      cockpitGroup.add(bulkhead);
+
+      // Glareshield & Main Dashboard
+      const dashMat = new THREE.MeshStandardMaterial({ color: 0x14181f, roughness: 0.85 });
+      const glareshield = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.25, 1.4), dashMat);
+      glareshield.position.set(0, 6.35, 28.0);
+      glareshield.rotation.x = -0.08;
+      cockpitGroup.add(glareshield);
+
+      // Mode Control Panel (MCP / Autopilot Bar with Glowing Digits)
+      const mcpMat = new THREE.MeshStandardMaterial({ color: 0x0b1118, roughness: 0.5 });
+      const mcpPanel = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.22, 0.35), mcpMat);
+      mcpPanel.position.set(0, 6.42, 27.8);
+      cockpitGroup.add(mcpPanel);
+
+      // MCP Green Autopilot Indicators
+      const ledMat = new THREE.MeshBasicMaterial({ color: 0x00ff66 });
+      for (let m = -1.0; m <= 1.0; m += 0.5) {
+        const led = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.02), ledMat);
+        led.position.set(m, 6.43, 27.98);
+        cockpitGroup.add(led);
+      }
+
+      // Center Pedestal Console
+      const pedestal = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.65, 1.8), dashMat);
+      pedestal.position.set(0, 5.35, 26.8);
+      pedestal.rotation.x = -0.15;
+      cockpitGroup.add(pedestal);
+
+      // Animated Boeing 777 Throttle Levers (TOGA Quadrant)
+      throttleLeversGroup = new THREE.Group();
+      throttleLeversGroup.position.set(0, 5.72, 27.0);
+
+      const throttleBase = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.08, 0.45), acBlackMat);
+      throttleLeversGroup.add(throttleBase);
+
+      const leverMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.8, roughness: 0.2 });
+      const leftLever = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.28, 0.08), leverMat);
+      leftLever.position.set(-0.08, 0.12, 0);
+      throttleLeversGroup.add(leftLever);
+
+      const leftKnob = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.06, 0.14), acBlackMat);
+      leftKnob.position.set(-0.08, 0.26, 0);
+      throttleLeversGroup.add(leftKnob);
+
+      const rightLever = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.28, 0.08), leverMat);
+      rightLever.position.set(0.08, 0.12, 0);
+      throttleLeversGroup.add(rightLever);
+
+      const rightKnob = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.06, 0.14), acBlackMat);
+      rightKnob.position.set(0.08, 0.26, 0);
+      throttleLeversGroup.add(rightKnob);
+
+      cockpitGroup.add(throttleLeversGroup);
+
+      // Animated Flap Lever
+      const flapTrack = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 0.35), acBlackMat);
+      flapTrack.position.set(0.26, 5.65, 26.85);
+      cockpitGroup.add(flapTrack);
+
+      flapLeverMesh = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.18, 0.04), leverMat);
+      flapLeverMesh.position.set(0.26, 5.72, 26.95);
+      cockpitGroup.add(flapLeverMesh);
+
+      // Landing Gear Lever on Instrument Panel
+      gearLeverMesh = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.04), leverMat);
+      gearLeverMesh.position.set(0.42, 6.08, 28.25);
+      cockpitGroup.add(gearLeverMesh);
+
+      const gearKnob = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.06, 12), rubberMat);
+      gearKnob.rotation.z = Math.PI / 2;
+      gearKnob.position.set(0.42, 6.16, 28.25);
+      cockpitGroup.add(gearKnob);
+
+      // Real-Time Captain PFD Screen (Primary Flight Display with live Artificial Horizon)
+      pfdCanvas = document.createElement('canvas');
+      pfdCanvas.width = 256;
+      pfdCanvas.height = 256;
+      pfdCtx = pfdCanvas.getContext('2d');
+      pfdTexture = new THREE.CanvasTexture(pfdCanvas);
+      const pfdMat = new THREE.MeshBasicMaterial({ map: pfdTexture });
+
+      const captPFD = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.55), pfdMat);
+      captPFD.position.set(-1.0, 5.95, 28.32);
+      captPFD.rotation.x = -0.15;
+      cockpitGroup.add(captPFD);
+
+      // Navigation Display (ND Canvas showing Heading & Route to Tokyo)
+      const ndCanvas = document.createElement('canvas');
+      ndCanvas.width = 256;
+      ndCanvas.height = 256;
+      const ndCtx = ndCanvas.getContext('2d');
+      ndCtx.fillStyle = '#050c18';
+      ndCtx.fillRect(0, 0, 256, 256);
+      ndCtx.strokeStyle = '#00e5ff';
+      ndCtx.lineWidth = 2;
+      ndCtx.arc(128, 160, 90, Math.PI * 0.9, Math.PI * 2.1);
+      ndCtx.stroke();
+      ndCtx.fillStyle = '#ff0033';
+      ndCtx.font = 'bold 16px "JetBrains Mono", monospace';
+      ndCtx.fillText('HND (TOKYO)', 85, 60);
+      ndCtx.strokeStyle = '#ff0055';
+      ndCtx.setLineDash([6, 4]);
+      ndCtx.beginPath();
+      ndCtx.moveTo(128, 160);
+      ndCtx.lineTo(128, 70);
+      ndCtx.stroke();
+      const ndTexture = new THREE.CanvasTexture(ndCanvas);
+
+      const captND = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.55), new THREE.MeshBasicMaterial({ map: ndTexture }));
+      captND.position.set(-0.45, 5.95, 28.32);
+      captND.rotation.x = -0.15;
+      cockpitGroup.add(captND);
+
+      // Center Upper EICAS Engine Display
+      const eicasCanvas = document.createElement('canvas');
+      eicasCanvas.width = 256;
+      eicasCanvas.height = 256;
+      const eCtx = eicasCanvas.getContext('2d');
+      eCtx.fillStyle = '#090f1a';
+      eCtx.fillRect(0, 0, 256, 256);
+      eCtx.fillStyle = '#00ff66';
+      eCtx.font = 'bold 16px "JetBrains Mono", monospace';
+      eCtx.fillText('GE90-115B N1', 65, 35);
+      eCtx.strokeStyle = '#00ff66';
+      eCtx.lineWidth = 3;
+      eCtx.beginPath();
+      eCtx.arc(80, 100, 45, 0, Math.PI * 1.5);
+      eCtx.stroke();
+      eCtx.beginPath();
+      eCtx.arc(175, 100, 45, 0, Math.PI * 1.5);
+      eCtx.stroke();
+      eCtx.fillText('ENG 1', 60, 180);
+      eCtx.fillText('ENG 2', 155, 180);
+      const eicasTexture = new THREE.CanvasTexture(eicasCanvas);
+
+      const upperEICAS = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.55), new THREE.MeshBasicMaterial({ map: eicasTexture }));
+      upperEICAS.position.set(0.15, 5.95, 28.32);
+      upperEICAS.rotation.x = -0.15;
+      cockpitGroup.add(upperEICAS);
+
+      // First Officer PFD
+      const foPFD = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.55), pfdMat);
+      foPFD.position.set(1.0, 5.95, 28.32);
+      foPFD.rotation.x = -0.15;
+      cockpitGroup.add(foPFD);
+
+      // Overhead System Panel (Roof)
+      const overheadMat = new THREE.MeshStandardMaterial({ color: 0x171d26, roughness: 0.7 });
+      const overheadPanel = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.15, 1.8), overheadMat);
+      overheadPanel.position.set(0, 7.15, 27.2);
+      overheadPanel.rotation.x = 0.25;
+      cockpitGroup.add(overheadPanel);
+
+      // Overhead Switches & Annunciators
+      for (let s = -0.9; s <= 0.9; s += 0.3) {
+        const sw = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.08), ledMat);
+        sw.position.set(s, 7.18, 27.1);
+        cockpitGroup.add(sw);
+      }
+
+      // Crew Pilot Seats (Sheepskin covered flight deck seats)
+      const seatMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9 });
+      const cushionMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.95 });
+
+      function buildPilotSeat(xPos) {
+        const seatGroup = new THREE.Group();
+        seatGroup.position.set(xPos, 5.25, 26.5);
+
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.4, 8), metalChromeMat);
+        base.position.set(0, 0.2, 0);
+        seatGroup.add(base);
+
+        const cushion = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.15, 0.65), cushionMat);
+        cushion.position.set(0, 0.45, 0);
+        seatGroup.add(cushion);
+
+        const backrest = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.85, 0.14), cushionMat);
+        backrest.position.set(0, 0.92, -0.28);
+        backrest.rotation.x = 0.08;
+        seatGroup.add(backrest);
+
+        const headrest = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.25, 0.12), seatMat);
+        headrest.position.set(0, 1.42, -0.32);
+        seatGroup.add(headrest);
+
+        return seatGroup;
+      }
+
+      const captSeat = buildPilotSeat(-0.85);
+      cockpitGroup.add(captSeat);
+      const foSeat = buildPilotSeat(0.85);
+      cockpitGroup.add(foSeat);
+
+      // Dual Control Columns (Yokes)
+      function buildYoke(xPos) {
+        const yokeGroup = new THREE.Group();
+        yokeGroup.position.set(xPos, 5.3, 27.6);
+
+        const column = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.65, 8), acBlackMat);
+        column.position.set(0, 0.32, 0);
+        column.rotation.x = -0.15;
+        yokeGroup.add(column);
+
+        const wheel = new THREE.Group();
+        wheel.position.set(0, 0.65, 0.05);
+
+        const gripL = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.28, 8), acBlackMat);
+        gripL.position.set(-0.2, 0, 0);
+        wheel.add(gripL);
+
+        const gripR = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.28, 8), acBlackMat);
+        gripR.position.set(0.2, 0, 0);
+        wheel.add(gripR);
+
+        const centerBar = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.04, 0.04), acBlackMat);
+        wheel.add(centerBar);
+
+        yokeGroup.add(wheel);
+        yokeGroup.wheel = wheel;
+        return yokeGroup;
+      }
+
+      captYokeGroup = buildYoke(-0.85);
+      cockpitGroup.add(captYokeGroup);
+      foYokeGroup = buildYoke(0.85);
+      cockpitGroup.add(foYokeGroup);
+
+      // ========================================================================
+      // TWO PILOTS IN AIR CANADA UNIFORMS (CAPTAIN & FIRST OFFICER)
+      // ========================================================================
+      const uniformShirtMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6 });
+      const uniformPantsMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.6 });
+      const hairMat = new THREE.MeshStandardMaterial({ color: 0x221814, roughness: 0.9 });
+      const goldStripeMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.2 });
+
+      // Captain (Left Seat: 4 Gold Stripes, Pilot Flying)
+      const captainGroup = new THREE.Group();
+      captainGroup.position.set(-0.85, 5.3, 26.6);
+
+      // Torso in white pilot shirt
+      const captTorso = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.72, 0.36), uniformShirtMat);
+      captTorso.position.set(0, 0.72, 0);
+      captainGroup.add(captTorso);
+
+      // Black tie
+      const tie = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 0.02), acBlackMat);
+      tie.position.set(0, 0.74, 0.19);
+      captainGroup.add(tie);
+
+      // 4 Gold Captain Epaulettes
+      for (let s = 0; s < 4; s++) {
+        const stripeL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.015, 0.03), goldStripeMat);
+        stripeL.position.set(-0.25, 1.05, -0.06 + s * 0.04);
+        captainGroup.add(stripeL);
+
+        const stripeR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.015, 0.03), goldStripeMat);
+        stripeR.position.set(0.25, 1.05, -0.06 + s * 0.04);
+        captainGroup.add(stripeR);
+      }
+
+      // Head with headset
+      const captHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), skinMat);
+      captHead.position.set(0, 1.25, 0);
+      captainGroup.add(captHead);
+
+      const captHair = new THREE.Mesh(new THREE.SphereGeometry(0.185, 12, 12), hairMat);
+      captHair.position.set(0, 1.29, -0.03);
+      captainGroup.add(captHair);
+
+      // Pilot Headset & Boom Mic
+      const headsetBand = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.02, 8, 16, Math.PI), acBlackMat);
+      headsetBand.rotation.x = Math.PI / 2;
+      headsetBand.position.set(0, 1.34, 0);
+      captainGroup.add(headsetBand);
+
+      const earL = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.05, 8), acBlackMat);
+      earL.rotation.z = Math.PI / 2;
+      earL.position.set(-0.19, 1.25, 0);
+      captainGroup.add(earL);
+
+      const earR = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.05, 8), acBlackMat);
+      earR.rotation.z = Math.PI / 2;
+      earR.position.set(0.19, 1.25, 0);
+      captainGroup.add(earR);
+
+      // Left Arm holding control yoke
+      const captLeftArm = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.42, 0.14), uniformShirtMat);
+      captLeftArm.position.set(-0.35, 0.65, 0.28);
+      captLeftArm.rotation.x = 0.85;
+      captainGroup.add(captLeftArm);
+
+      // Right Arm (Animated to reach throttles on TOGA!)
+      captRightArm = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.46, 0.14), uniformShirtMat);
+      captRightArm.position.set(0.35, 0.65, 0.22);
+      captRightArm.rotation.x = 0.65;
+      captainGroup.add(captRightArm);
+
+      cockpitGroup.add(captainGroup);
+
+      // First Officer (Right Seat: 3 Gold Stripes, Pilot Monitoring with EFB Tablet)
+      const foGroup = new THREE.Group();
+      foGroup.position.set(0.85, 5.3, 26.6);
+
+      const foTorso = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.72, 0.36), uniformShirtMat);
+      foTorso.position.set(0, 0.72, 0);
+      foGroup.add(foTorso);
+
+      const foTie = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 0.02), acBlackMat);
+      foTie.position.set(0, 0.74, 0.19);
+      foGroup.add(foTie);
+
+      // 3 Gold First Officer Epaulettes
+      for (let s = 0; s < 3; s++) {
+        const stripeL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.015, 0.035), goldStripeMat);
+        stripeL.position.set(-0.25, 1.05, -0.04 + s * 0.05);
+        foGroup.add(stripeL);
+
+        const stripeR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.015, 0.035), goldStripeMat);
+        stripeR.position.set(0.25, 1.05, -0.04 + s * 0.05);
+        foGroup.add(stripeR);
+      }
+
+      const foHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), skinMat);
+      foHead.position.set(0, 1.25, 0);
+      foGroup.add(foHead);
+
+      const foHair = new THREE.Mesh(new THREE.SphereGeometry(0.185, 12, 12), new THREE.MeshStandardMaterial({ color: 0x4a321e }));
+      foHair.position.set(0, 1.29, -0.03);
+      foGroup.add(foHair);
+
+      // Headset
+      const foHeadsetBand = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.02, 8, 16, Math.PI), acBlackMat);
+      foHeadsetBand.rotation.x = Math.PI / 2;
+      foHeadsetBand.position.set(0, 1.34, 0);
+      foGroup.add(foHeadsetBand);
+
+      const foEarL = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.05, 8), acBlackMat);
+      foEarL.rotation.z = Math.PI / 2;
+      foEarL.position.set(-0.19, 1.25, 0);
+      foGroup.add(foEarL);
+
+      const foEarR = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.05, 8), acBlackMat);
+      foEarR.rotation.z = Math.PI / 2;
+      foEarR.position.set(0.19, 1.25, 0);
+      foGroup.add(foEarR);
+
+      // FO Arms holding Electronic Flight Bag (iPad Tablet)
+      const foLeftArm = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.42, 0.14), uniformShirtMat);
+      foLeftArm.position.set(-0.28, 0.65, 0.3);
+      foLeftArm.rotation.x = 0.85;
+      foLeftArm.rotation.y = -0.3;
+      foGroup.add(foLeftArm);
+
+      foRightArm = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.42, 0.14), uniformShirtMat);
+      foRightArm.position.set(0.28, 0.65, 0.3);
+      foRightArm.rotation.x = 0.85;
+      foRightArm.rotation.y = 0.3;
+      foGroup.add(foRightArm);
+
+      // EFB Tablet (Departure Chart & Checklist)
+      const efbCanvas = document.createElement('canvas');
+      efbCanvas.width = 128;
+      efbCanvas.height = 128;
+      const efbCtx = efbCanvas.getContext('2d');
+      efbCtx.fillStyle = '#0f172a';
+      efbCtx.fillRect(0, 0, 128, 128);
+      efbCtx.fillStyle = '#38bdf8';
+      efbCtx.font = 'bold 12px monospace';
+      efbCtx.fillText('YYZ DEP 23', 10, 24);
+      efbCtx.fillStyle = '#22c55e';
+      efbCtx.font = '9px monospace';
+      efbCtx.fillText('ROUTE: HND', 10, 44);
+      efbCtx.fillText('CHK: COMPLETE', 10, 64);
+      efbCtx.fillStyle = '#e2e8f0';
+      efbCtx.fillText('FLAPS 15', 10, 84);
+      efbCtx.fillText('V1:145 VR:160', 10, 104);
+      const efbTexture = new THREE.CanvasTexture(efbCanvas);
+
+      const efbTablet = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.24, 0.02), new THREE.MeshBasicMaterial({ map: efbTexture }));
+      efbTablet.position.set(0, 0.68, 0.45);
+      efbTablet.rotation.x = -0.45;
+      foGroup.add(efbTablet);
+
+      cockpitGroup.add(foGroup);
+
+      airplaneGroup.add(cockpitGroup);
+
+      // 3. VERTICAL FIN (SEAMLESSLY ATTACHED TO BACK OF PLANE)
+      const finShape = new THREE.Shape();
+      finShape.moveTo(20.0, 7.8);
+      finShape.lineTo(23.0, 7.5);
+      finShape.lineTo(32.5, 19.5);
+      finShape.lineTo(36.2, 19.0);
+      finShape.lineTo(36.2, 5.0);
+      finShape.lineTo(20.0, 7.8);
+      finShape.closePath();
+
+      const finGeo = new THREE.ExtrudeGeometry(finShape, {
+        depth: 0.6,
+        bevelEnabled: true,
+        bevelThickness: 0.08,
+        bevelSize: 0.08,
+        bevelSegments: 2
+      });
+      const finMesh = new THREE.Mesh(finGeo, acBlackMat);
+      finMesh.rotation.y = Math.PI / 2;
+      finMesh.position.set(-0.3, 0, 0);
+      finMesh.castShadow = true;
+      airplaneGroup.add(finMesh);
+
+      // Red Maple Leaf Rondelles on Fin
+      const rondelleGeo = new THREE.CircleGeometry(2.4, 32);
+      const rondelleL = new THREE.Mesh(rondelleGeo, acRedMat);
+      rondelleL.position.set(-0.35, 14.5, -30.0);
+      rondelleL.rotation.y = -Math.PI / 2;
+      airplaneGroup.add(rondelleL);
+
+      const rondelleR = new THREE.Mesh(rondelleGeo, acRedMat);
+      rondelleR.position.set(0.35, 14.5, -30.0);
+      rondelleR.rotation.y = Math.PI / 2;
+      airplaneGroup.add(rondelleR);
+
+      // Articulated Rudder
+      const rudderGroup = new THREE.Group();
+      rudderGroup.position.set(0, 12.0, -36.2);
+      const rudderMesh = new THREE.Mesh(new THREE.BoxGeometry(0.42, 13.0, 2.0), acBlackMat);
+      rudderMesh.position.set(0, 0, -1.0);
+      rudderGroup.add(rudderMesh);
+      airplaneGroup.add(rudderGroup);
+      rudder = rudderGroup;
+
+      // 4. HORIZONTAL STABILIZERS
+      const hStabGeo = new THREE.BoxGeometry(12.5, 0.45, 4.8);
+
+      const leftStabGroup = new THREE.Group();
+      leftStabGroup.position.set(-1.2, 5.6, -30.5);
+      leftStabGroup.rotation.y = -0.45;
+      leftStabGroup.rotation.z = 0.08;
+      const leftStabMesh = new THREE.Mesh(hStabGeo, wingMat);
+      leftStabMesh.position.set(-6.25, 0, 0);
+      leftStabMesh.castShadow = true;
+      leftStabGroup.add(leftStabMesh);
+
+      leftElevator = new THREE.Mesh(new THREE.BoxGeometry(12.0, 0.35, 1.8), wingMat);
+      leftElevator.position.set(-6.25, 0, -2.8);
+      leftStabGroup.add(leftElevator);
+      airplaneGroup.add(leftStabGroup);
+
+      const rightStabGroup = new THREE.Group();
+      rightStabGroup.position.set(1.2, 5.6, -30.5);
+      rightStabGroup.rotation.y = 0.45;
+      rightStabGroup.rotation.z = -0.08;
+      const rightStabMesh = new THREE.Mesh(hStabGeo, wingMat);
+      rightStabMesh.position.set(6.25, 0, 0);
+      rightStabMesh.castShadow = true;
+      rightStabGroup.add(rightStabMesh);
+
+      rightElevator = new THREE.Mesh(new THREE.BoxGeometry(12.0, 0.35, 1.8), wingMat);
+      rightElevator.position.set(6.25, 0, -2.8);
+      rightStabGroup.add(rightElevator);
+      airplaneGroup.add(rightStabGroup);
+
+      // 5. MAIN WINGS & FLAPS
+      const wingHalfSpan = 29;
+
+      const leftWingGroup = new THREE.Group();
+      leftWingGroup.position.set(-2.6, 4.4, 2.5);
+      leftWingGroup.rotation.z = 0.085;
+      leftWingGroup.rotation.y = -0.48;
+
+      const wingMainGeo = new THREE.BoxGeometry(wingHalfSpan, 0.65, 8.5);
+      const leftWingMain = new THREE.Mesh(wingMainGeo, wingMat);
+      leftWingMain.position.set(-wingHalfSpan / 2, 0, 0);
+      leftWingMain.castShadow = true;
+      leftWingMain.receiveShadow = true;
+      leftWingGroup.add(leftWingMain);
+
+      const rakedTipGeo = new THREE.BoxGeometry(4.5, 0.4, 3.8);
+      const leftRakedTip = new THREE.Mesh(rakedTipGeo, acRedMat);
+      leftRakedTip.position.set(-wingHalfSpan - 1.8, 0.2, -2.5);
+      leftRakedTip.rotation.y = -0.3;
+      leftWingGroup.add(leftRakedTip);
+
+      for (let f = 1; f <= 3; f++) {
+        const canoe = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.15, 6, 8), metalChromeMat);
+        canoe.rotation.x = Math.PI / 2;
+        canoe.position.set(-f * 6.5, -0.65, -2.5);
+        leftWingGroup.add(canoe);
+      }
+
+      leftFlap = new THREE.Mesh(new THREE.BoxGeometry(16, 0.45, 2.8), wingMat);
+      leftFlap.position.set(-11, -0.15, -4.5);
+      leftWingGroup.add(leftFlap);
+
+      leftAileron = new THREE.Mesh(new THREE.BoxGeometry(8, 0.35, 2.2), wingMat);
+      leftAileron.position.set(-24, 0, -4.2);
+      leftWingGroup.add(leftAileron);
+
+      const redNav = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff0022 }));
+      redNav.position.set(-wingHalfSpan - 3.8, 0.2, -1.5);
+      leftWingGroup.add(redNav);
+
+      airplaneGroup.add(leftWingGroup);
+
+      const rightWingGroup = new THREE.Group();
+      rightWingGroup.position.set(2.6, 4.4, 2.5);
+      rightWingGroup.rotation.z = -0.085;
+      rightWingGroup.rotation.y = 0.48;
+
+      const rightWingMain = new THREE.Mesh(wingMainGeo, wingMat);
+      rightWingMain.position.set(wingHalfSpan / 2, 0, 0);
+      rightWingMain.castShadow = true;
+      rightWingMain.receiveShadow = true;
+      rightWingGroup.add(rightWingMain);
+
+      const rightRakedTip = new THREE.Mesh(rakedTipGeo, acRedMat);
+      rightRakedTip.position.set(wingHalfSpan + 1.8, 0.2, -2.5);
+      rightRakedTip.rotation.y = 0.3;
+      rightWingGroup.add(rightRakedTip);
+
+      for (let f = 1; f <= 3; f++) {
+        const canoe = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.15, 6, 8), metalChromeMat);
+        canoe.rotation.x = Math.PI / 2;
+        canoe.position.set(f * 6.5, -0.65, -2.5);
+        rightWingGroup.add(canoe);
+      }
+
+      rightFlap = new THREE.Mesh(new THREE.BoxGeometry(16, 0.45, 2.8), wingMat);
+      rightFlap.position.set(11, -0.15, -4.5);
+      rightWingGroup.add(rightFlap);
+
+      rightAileron = new THREE.Mesh(new THREE.BoxGeometry(8, 0.35, 2.2), wingMat);
+      rightAileron.position.set(24, 0, -4.2);
+      rightWingGroup.add(rightAileron);
+
+      const greenNav = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshBasicMaterial({ color: 0x00ff44 }));
+      greenNav.position.set(wingHalfSpan + 3.8, 0.2, -1.5);
+      rightWingGroup.add(greenNav);
+
+      airplaneGroup.add(rightWingGroup);
+
+      // 6. GE90-115B ENGINES
+      const engineRadius = 2.1;
+      const engineLength = 8.5;
+
+      const leftEngineGroup = new THREE.Group();
+      leftEngineGroup.position.set(-11.5, 2.4, 7.5);
+
+      const nacelleGeo = new THREE.CylinderGeometry(engineRadius, engineRadius * 0.95, engineLength, 24, 1, true);
+      const nacelleLeft = new THREE.Mesh(nacelleGeo, acBlackMat);
+      nacelleLeft.rotation.x = Math.PI / 2;
+      nacelleLeft.castShadow = true;
+      leftEngineGroup.add(nacelleLeft);
+
+      const intakeRimL = new THREE.Mesh(new THREE.TorusGeometry(engineRadius, 0.2, 12, 32), metalChromeMat);
+      intakeRimL.position.set(0, 0, engineLength / 2);
+      leftEngineGroup.add(intakeRimL);
+
+      const engLogoL = new THREE.Mesh(new THREE.CircleGeometry(0.9, 16), acRedMat);
+      engLogoL.position.set(-engineRadius - 0.05, 0, 0);
+      engLogoL.rotation.y = -Math.PI / 2;
+      leftEngineGroup.add(engLogoL);
+
+      const pylonL = new THREE.Mesh(new THREE.BoxGeometry(0.65, 2.4, 5.5), wingMat);
+      pylonL.position.set(0, 1.8, -0.8);
+      leftEngineGroup.add(pylonL);
+
+      leftFanRotor = new THREE.Group();
+      leftFanRotor.position.set(0, 0, engineLength / 2 - 0.4);
+      const fanSpinner = new THREE.Mesh(new THREE.ConeGeometry(0.65, 1.5, 16), acBlackMat);
+      fanSpinner.rotation.x = Math.PI / 2;
+      leftFanRotor.add(fanSpinner);
+
+      for (let b = 0; b < 22; b++) {
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.45, 0.35), metalChromeMat);
+        const angle = (b / 22) * Math.PI * 2;
+        blade.position.set(Math.cos(angle) * 1.1, Math.sin(angle) * 1.1, 0);
+        blade.rotation.z = angle + 0.35;
+        blade.rotation.x = 0.25;
+        leftFanRotor.add(blade);
+      }
+      leftEngineGroup.add(leftFanRotor);
+
+      const exhaustL = new THREE.Mesh(new THREE.ConeGeometry(0.9, 2.2, 16), metalChromeMat);
+      exhaustL.rotation.x = -Math.PI / 2;
+      exhaustL.position.set(0, 0, -engineLength / 2 - 0.8);
+      leftEngineGroup.add(exhaustL);
+
+      airplaneGroup.add(leftEngineGroup);
+
+      const rightEngineGroup = new THREE.Group();
+      rightEngineGroup.position.set(11.5, 2.4, 7.5);
+
+      const nacelleRight = new THREE.Mesh(nacelleGeo, acBlackMat);
+      nacelleRight.rotation.x = Math.PI / 2;
+      nacelleRight.castShadow = true;
+      rightEngineGroup.add(nacelleRight);
+
+      const intakeRimR = new THREE.Mesh(new THREE.TorusGeometry(engineRadius, 0.2, 12, 32), metalChromeMat);
+      intakeRimR.position.set(0, 0, engineLength / 2);
+      rightEngineGroup.add(intakeRimR);
+
+      const engLogoR = new THREE.Mesh(new THREE.CircleGeometry(0.9, 16), acRedMat);
+      engLogoR.position.set(engineRadius + 0.05, 0, 0);
+      engLogoR.rotation.y = Math.PI / 2;
+      rightEngineGroup.add(engLogoR);
+
+      const pylonR = new THREE.Mesh(new THREE.BoxGeometry(0.65, 2.4, 5.5), wingMat);
+      pylonR.position.set(0, 1.8, -0.8);
+      rightEngineGroup.add(pylonR);
+
+      rightFanRotor = new THREE.Group();
+      rightFanRotor.position.set(0, 0, engineLength / 2 - 0.4);
+      const fanSpinnerR = new THREE.Mesh(new THREE.ConeGeometry(0.65, 1.5, 16), acBlackMat);
+      fanSpinnerR.rotation.x = Math.PI / 2;
+      rightFanRotor.add(fanSpinnerR);
+
+      for (let b = 0; b < 22; b++) {
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.45, 0.35), metalChromeMat);
+        const angle = (b / 22) * Math.PI * 2;
+        blade.position.set(Math.cos(angle) * 1.1, Math.sin(angle) * 1.1, 0);
+        blade.rotation.z = angle + 0.35;
+        blade.rotation.x = 0.25;
+        rightFanRotor.add(blade);
+      }
+      rightEngineGroup.add(rightFanRotor);
+
+      const exhaustR = new THREE.Mesh(new THREE.ConeGeometry(0.9, 2.2, 16), metalChromeMat);
+      exhaustR.rotation.x = -Math.PI / 2;
+      exhaustR.position.set(0, 0, -engineLength / 2 - 0.8);
+      rightEngineGroup.add(exhaustR);
+
+      airplaneGroup.add(rightEngineGroup);
+
+      // 7. DETAILED LANDING GEAR SYSTEM
+      noseGearGroup = new THREE.Group();
+      noseGearGroup.position.set(0, 2.4, 22.0);
+
+      const noseStrut = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 3.8, 12), metalChromeMat);
+      noseStrut.position.set(0, -1.0, 0);
+      noseGearGroup.add(noseStrut);
+
+      const noseSteerPivot = new THREE.Group();
+      noseSteerPivot.position.set(0, -1.75, 0);
+
+      const noseAxle = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.6, 8), metalChromeMat);
+      noseAxle.rotation.z = Math.PI / 2;
+      noseSteerPivot.add(noseAxle);
+
+      const noseTireGeo = new THREE.CylinderGeometry(0.65, 0.65, 0.42, 16);
+      const leftNoseTire = new THREE.Mesh(noseTireGeo, rubberMat);
+      leftNoseTire.rotation.z = Math.PI / 2;
+      leftNoseTire.position.set(-0.65, 0, 0);
+      noseSteerPivot.add(leftNoseTire);
+
+      const rightNoseTire = new THREE.Mesh(noseTireGeo, rubberMat);
+      rightNoseTire.rotation.z = Math.PI / 2;
+      rightNoseTire.position.set(0.65, 0, 0);
+      noseSteerPivot.add(rightNoseTire);
+
+      const hubGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.44, 12);
+      const leftHub = new THREE.Mesh(hubGeo, metalChromeMat);
+      leftHub.rotation.z = Math.PI / 2;
+      leftHub.position.set(-0.65, 0, 0);
+      noseSteerPivot.add(leftHub);
+
+      const rightHub = new THREE.Mesh(hubGeo, metalChromeMat);
+      rightHub.rotation.z = Math.PI / 2;
+      rightHub.position.set(0.65, 0, 0);
+      noseSteerPivot.add(rightHub);
+
+      const noseLight = new THREE.SpotLight(0xffffff, 2.5, 120, Math.PI / 6, 0.4);
+      noseLight.position.set(0, 0.5, 0.4);
+      noseLight.target.position.set(0, -2, 40);
+      noseSteerPivot.add(noseLight);
+      noseSteerPivot.add(noseLight.target);
+      landingLights.push(noseLight);
+
+      noseGearGroup.add(noseSteerPivot);
+      noseGearGroup.steeringPivot = noseSteerPivot;
+
+      const doorL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.2, 3.2), fuselageMat);
+      doorL.position.set(-0.8, -0.6, 0);
+      doorL.rotation.z = -0.35;
+      noseGearGroup.add(doorL);
+
+      const doorR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.2, 3.2), fuselageMat);
+      doorR.position.set(0.8, -0.6, 0);
+      doorR.rotation.z = 0.35;
+      noseGearGroup.add(doorR);
+
+      airplaneGroup.add(noseGearGroup);
+
+      // LEFT 6-WHEEL ARTICULATED MAIN GEAR BOGIE
+      leftMainGearGroup = new THREE.Group();
+      leftMainGearGroup.position.set(-5.4, 2.4, -2.2);
+
+      const mainStrutL = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 3.6, 12), metalChromeMat);
+      mainStrutL.position.set(0, -0.9, 0);
+      leftMainGearGroup.add(mainStrutL);
+
+      const leftTruckBeam = new THREE.Group();
+      leftTruckBeam.position.set(0, -1.55, 0);
+
+      const beamBodyL = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.38, 4.2), metalChromeMat);
+      leftTruckBeam.add(beamBodyL);
+
+      const mainTireGeo = new THREE.CylinderGeometry(0.85, 0.85, 0.52, 18);
+      const mainHubGeo = new THREE.CylinderGeometry(0.45, 0.45, 0.54, 14);
+      const axlePositions = [-1.4, 0, 1.4];
+
+      axlePositions.forEach(zOffset => {
+        const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 2.4, 8), metalChromeMat);
+        axle.rotation.z = Math.PI / 2;
+        axle.position.set(0, 0, zOffset);
+        leftTruckBeam.add(axle);
+
+        const tireOut = new THREE.Mesh(mainTireGeo, rubberMat);
+        tireOut.rotation.z = Math.PI / 2;
+        tireOut.position.set(-1.1, 0, zOffset);
+        leftTruckBeam.add(tireOut);
+
+        const hubOut = new THREE.Mesh(mainHubGeo, metalChromeMat);
+        hubOut.rotation.z = Math.PI / 2;
+        hubOut.position.set(-1.1, 0, zOffset);
+        leftTruckBeam.add(hubOut);
+
+        const tireIn = new THREE.Mesh(mainTireGeo, rubberMat);
+        tireIn.rotation.z = Math.PI / 2;
+        tireIn.position.set(1.1, 0, zOffset);
+        leftTruckBeam.add(tireIn);
+
+        const hubIn = new THREE.Mesh(mainHubGeo, metalChromeMat);
+        hubIn.rotation.z = Math.PI / 2;
+        hubIn.position.set(1.1, 0, zOffset);
+        leftTruckBeam.add(hubIn);
+      });
+
+      leftMainGearGroup.add(leftTruckBeam);
+      leftMainGearGroup.truckBeam = leftTruckBeam;
+
+      const mainDoorL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.8, 4.4), fuselageMat);
+      mainDoorL.position.set(1.8, -0.6, 0);
+      mainDoorL.rotation.z = -0.4;
+      leftMainGearGroup.add(mainDoorL);
+
+      airplaneGroup.add(leftMainGearGroup);
+
+      // RIGHT 6-WHEEL ARTICULATED MAIN GEAR BOGIE
+      rightMainGearGroup = new THREE.Group();
+      rightMainGearGroup.position.set(5.4, 2.4, -2.2);
+
+      const mainStrutR = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 3.6, 12), metalChromeMat);
+      mainStrutR.position.set(0, -0.9, 0);
+      rightMainGearGroup.add(mainStrutR);
+
+      const rightTruckBeam = new THREE.Group();
+      rightTruckBeam.position.set(0, -1.55, 0);
+
+      const beamBodyR = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.38, 4.2), metalChromeMat);
+      rightTruckBeam.add(beamBodyR);
+
+      axlePositions.forEach(zOffset => {
+        const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 2.4, 8), metalChromeMat);
+        axle.rotation.z = Math.PI / 2;
+        axle.position.set(0, 0, zOffset);
+        rightTruckBeam.add(axle);
+
+        const tireOut = new THREE.Mesh(mainTireGeo, rubberMat);
+        tireOut.rotation.z = Math.PI / 2;
+        tireOut.position.set(1.1, 0, zOffset);
+        rightTruckBeam.add(tireOut);
+
+        const hubOut = new THREE.Mesh(mainHubGeo, metalChromeMat);
+        hubOut.rotation.z = Math.PI / 2;
+        hubOut.position.set(1.1, 0, zOffset);
+        rightTruckBeam.add(hubOut);
+
+        const tireIn = new THREE.Mesh(mainTireGeo, rubberMat);
+        tireIn.rotation.z = Math.PI / 2;
+        tireIn.position.set(-1.1, 0, zOffset);
+        rightTruckBeam.add(tireIn);
+
+        const hubIn = new THREE.Mesh(mainHubGeo, metalChromeMat);
+        hubIn.rotation.z = Math.PI / 2;
+        hubIn.position.set(-1.1, 0, zOffset);
+        rightTruckBeam.add(hubIn);
+      });
+
+      rightMainGearGroup.add(rightTruckBeam);
+      rightMainGearGroup.truckBeam = rightTruckBeam;
+
+      const mainDoorR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.8, 4.4), fuselageMat);
+      mainDoorR.position.set(-1.8, -0.6, 0);
+      mainDoorR.rotation.z = 0.4;
+      rightMainGearGroup.add(mainDoorR);
+
+      airplaneGroup.add(rightMainGearGroup);
+
+      // Wing-Root Landing Lights
+      const leftWingLight = new THREE.SpotLight(0xfffae0, 3.5, 240, Math.PI / 7, 0.3);
+      leftWingLight.position.set(-3.5, 3.8, 6.0);
+      leftWingLight.target.position.set(-8, -1, 120);
+      airplaneGroup.add(leftWingLight);
+      airplaneGroup.add(leftWingLight.target);
+      landingLights.push(leftWingLight);
+
+      const rightWingLight = new THREE.SpotLight(0xfffae0, 3.5, 240, Math.PI / 7, 0.3);
+      rightWingLight.position.set(3.5, 3.8, 6.0);
+      rightWingLight.target.position.set(8, -1, 120);
+      airplaneGroup.add(rightWingLight);
+      airplaneGroup.add(rightWingLight.target);
+      landingLights.push(rightWingLight);
+
+      // Anti-Collision Beacons
+      const beaconGeo = new THREE.SphereGeometry(0.35, 8, 8);
+      const beaconMat = new THREE.MeshBasicMaterial({ color: 0xff1122 });
+      beaconLightTop = new THREE.Mesh(beaconGeo, beaconMat);
+      beaconLightTop.position.set(0, 8.4, 3.5);
+      airplaneGroup.add(beaconLightTop);
+
+      beaconLightBottom = new THREE.Mesh(beaconGeo, beaconMat);
+      beaconLightBottom.position.set(0, 1.9, 1.5);
+      airplaneGroup.add(beaconLightBottom);
+
+      airplaneGroup.position.set(-260, 0, -188);
+      airplaneGroup.rotation.y = 0;
+      scene.add(airplaneGroup);
+    }
+
+    /* --------------------------------------------------------------------------
+       PUSHBACK TUG
+       -------------------------------------------------------------------------- */
+    function buildPushbackTug() {
+      pushbackTugGroup = new THREE.Group();
+
+      const tugBodyMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.5 });
+      const tugCabMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.2 });
+      const tugTireMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+
+      const chassis = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.2, 7.5), tugBodyMat);
+      chassis.position.set(0, 0.8, 0);
+      chassis.castShadow = true;
+      pushbackTugGroup.add(chassis);
+
+      const cab = new THREE.Mesh(new THREE.BoxGeometry(3.0, 1.1, 2.5), tugCabMat);
+      cab.position.set(0, 1.8, -1.8);
+      pushbackTugGroup.add(cab);
+
+      const wheelGeo = new THREE.CylinderGeometry(0.65, 0.65, 0.6, 16);
+      const wheelPositions = [
+        [-1.8, 0.65, 2.0], [1.8, 0.65, 2.0],
+        [-1.8, 0.65, -2.0], [1.8, 0.65, -2.0]
+      ];
+      wheelPositions.forEach(pos => {
+        const wheel = new THREE.Mesh(wheelGeo, tugTireMat);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(pos[0], pos[1], pos[2]);
+        pushbackTugGroup.add(wheel);
+      });
+
+      const towbar = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.12, 0.12, 5.2, 8),
+        new THREE.MeshStandardMaterial({ color: 0xef4444 })
+      );
+      towbar.rotation.x = Math.PI / 2;
+      towbar.position.set(0, 0.7, 4.8);
+      pushbackTugGroup.add(towbar);
+
+      const tugBeacon = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.2, 0.2, 0.35, 8),
+        new THREE.MeshBasicMaterial({ color: 0xfbbf24 })
+      );
+      tugBeacon.position.set(0, 2.45, -1.8);
+      pushbackTugGroup.add(tugBeacon);
+
+      pushbackTugGroup.position.set(-260, 0, -160);
+      scene.add(pushbackTugGroup);
+    }
+
+    /* --------------------------------------------------------------------------
+       REAL-TIME PFD INSTRUMENT CANVAS DRAWING
+       -------------------------------------------------------------------------- */
+    function updatePFDCanvas(pitchDeg, rollRad, speedKIAS, altitudeFt) {
+      if (!pfdCtx) return;
+
+      pfdCtx.fillStyle = '#080d16';
+      pfdCtx.fillRect(0, 0, 256, 256);
+
+      // Artificial Horizon
+      pfdCtx.save();
+      pfdCtx.translate(128, 128);
+      pfdCtx.rotate(-rollRad);
+
+      const pitchPx = pitchDeg * 4.2;
+
+      // Sky Blue
+      pfdCtx.fillStyle = '#1e68b8';
+      pfdCtx.fillRect(-110, -110 + pitchPx, 220, 110 - pitchPx);
+
+      // Ground Brown
+      pfdCtx.fillStyle = '#6d4822';
+      pfdCtx.fillRect(-110, pitchPx, 220, 110);
+
+      // White Horizon Bar
+      pfdCtx.strokeStyle = '#ffffff';
+      pfdCtx.lineWidth = 2.5;
+      pfdCtx.beginPath();
+      pfdCtx.moveTo(-90, pitchPx);
+      pfdCtx.lineTo(90, pitchPx);
+      pfdCtx.stroke();
+
+      // Pitch Ladder Marks
+      pfdCtx.strokeStyle = '#ffffff';
+      pfdCtx.lineWidth = 1.5;
+      for (let d = -20; d <= 20; d += 5) {
+        if (d === 0) continue;
+        const y = pitchPx - d * 4.2;
+        if (y >= -95 && y <= 95) {
+          const w = (d % 10 === 0) ? 28 : 16;
+          pfdCtx.beginPath();
+          pfdCtx.moveTo(-w, y);
+          pfdCtx.lineTo(w, y);
+          pfdCtx.stroke();
+        }
+      }
+
+      pfdCtx.restore();
+
+      // Fixed Yellow Boresight Aircraft Reference Symbol
+      pfdCtx.strokeStyle = '#facc15';
+      pfdCtx.lineWidth = 3.5;
+      pfdCtx.beginPath();
+      pfdCtx.moveTo(88, 128);
+      pfdCtx.lineTo(112, 128);
+      pfdCtx.lineTo(112, 134);
+      pfdCtx.moveTo(168, 128);
+      pfdCtx.lineTo(144, 128);
+      pfdCtx.lineTo(144, 134);
+      pfdCtx.moveTo(125, 128);
+      pfdCtx.lineTo(131, 128);
+      pfdCtx.stroke();
+
+      // Airspeed Tape Box (Left)
+      pfdCtx.fillStyle = '#0f172a';
+      pfdCtx.fillRect(10, 24, 48, 208);
+      pfdCtx.strokeStyle = '#38bdf8';
+      pfdCtx.lineWidth = 1.5;
+      pfdCtx.strokeRect(10, 24, 48, 208);
+      pfdCtx.fillStyle = '#00ff66';
+      pfdCtx.font = 'bold 15px "JetBrains Mono", monospace';
+      pfdCtx.fillText(`${speedKIAS}`, 16, 133);
+
+      // Altimeter Tape Box (Right)
+      pfdCtx.fillStyle = '#0f172a';
+      pfdCtx.fillRect(198, 24, 50, 208);
+      pfdCtx.strokeStyle = '#38bdf8';
+      pfdCtx.strokeRect(198, 24, 50, 208);
+      pfdCtx.fillStyle = '#00ff66';
+      pfdCtx.font = 'bold 12px "JetBrains Mono", monospace';
+      pfdCtx.fillText(`${altitudeFt}`, 202, 133);
+
+      pfdTexture.needsUpdate = true;
+    }
+
+    /* ==========================================================================
+       FLIGHT KINEMATICS & TIMELINE CONTROLLER
+       ========================================================================== */
+    function updateFlightSimulation(dt) {
+      if (isPlaying) {
+        simTime += dt * timeScale;
+        if (simTime >= TOTAL_DURATION) {
+          simTime = TOTAL_DURATION;
+          isPlaying = false;
+          updatePlayPauseUI();
+        }
+      }
+
+      let phase = PHASES[0];
+      for (let i = 0; i < PHASES.length; i++) {
+        if (simTime >= PHASES[i].startTime && simTime <= PHASES[i].endTime) {
+          phase = PHASES[i];
+          currentPhaseIndex = i;
+          break;
+        }
+      }
+
+      document.getElementById('currentPhaseName').innerText = `${phase.id + 1}. ${phase.name}`;
+      document.getElementById('atcText').innerText = phase.atc;
+
+      // Update Cockpit SOP Checklist display
+      document.getElementById('chkPhaseTag').innerText = `PHASE ${phase.id + 1}`;
+      document.getElementById('chkLine1').innerText = phase.sopLine1;
+      document.getElementById('chkCallout1').innerText = phase.sopCallout1;
+      document.getElementById('chkLine2').innerText = phase.sopLine2;
+      document.getElementById('chkCallout2').innerText = phase.sopCallout2;
+
+      const progressPct = (simTime / TOTAL_DURATION) * 100;
+      document.getElementById('timelineProgress').style.width = `${progressPct}%`;
+      const curM = Math.floor(simTime / 60);
+      const curS = Math.floor(simTime % 60);
+      const totM = Math.floor(TOTAL_DURATION / 60);
+      const totS = Math.floor(TOTAL_DURATION % 60);
+      document.getElementById('flightTimeStr').innerText = 
+        `${curM.toString().padStart(2, '0')}:${curS.toString().padStart(2, '0')} / ${totM.toString().padStart(2, '0')}:${totS.toString().padStart(2, '0')}`;
+
+      const phaseBtns = document.querySelectorAll('.phase-step-btn');
+      phaseBtns.forEach((btn, idx) => {
+        if (idx === currentPhaseIndex) btn.classList.add('current');
+        else btn.classList.remove('current');
+      });
+
+      const beaconFlash = Math.sin(simTime * 5.0) > 0.4;
+      beaconLightTop.visible = beaconFlash;
+      beaconLightBottom.visible = beaconFlash;
+
+      let planePos = new THREE.Vector3();
+      let planeRot = new THREE.Euler(0, 0, 0, 'YXZ');
+      let speedKIAS = 0;
+      let altitudeFt = 569;
+      let headingDeg = 360;
+      let engineN1 = 0;
+      let isStartingEngines = false;
+      let flapsDeflection = 0;
+      let gearRetractProgress = 0;
+      let rudderAngle = 0;
+      let aileronAngle = 0;
+      let elevatorAngle = 0;
+      let noseSteerAngle = 0;
+
+      // ------------------------------------------------------------------------
+      // PHASE 0: Gate 172 Pushback (0 to 14s)
+      // ------------------------------------------------------------------------
+      if (simTime < 14) {
+        const t = simTime / 14;
+        const posX = -260 + t * 70;
+        const posZ = -188 - Math.sin(t * Math.PI * 0.5) * 47;
+        planePos.set(posX, 0, posZ);
+        planeRot.set(0, t * (Math.PI / 2), 0);
+        speedKIAS = 4 * Math.sin(t * Math.PI);
+        engineN1 = 0;
+        noseSteerAngle = 0.25 * Math.sin(t * Math.PI);
+
+        pushbackTugGroup.visible = true;
+        pushbackTugGroup.position.set(planePos.x + Math.sin(planeRot.y) * 27, 0, planePos.z + Math.cos(planeRot.y) * 27);
+        pushbackTugGroup.rotation.y = planeRot.y + Math.PI;
+        headingDeg = Math.round((planeRot.y * 180 / Math.PI)) % 360;
+      }
+
+      // ------------------------------------------------------------------------
+      // PHASE 1: GE90 Engines Start on Taxiway Alpha (14 to 26s)
+      // ------------------------------------------------------------------------
+      else if (simTime >= 14 && simTime < 26) {
+        const t = (simTime - 14) / 12;
+        planePos.set(-190, 0, -235);
+        planeRot.set(0, 0, 0);
+        speedKIAS = 0;
+        isStartingEngines = true;
+        engineN1 = t * 24;
+        pushbackTugGroup.visible = false;
+        headingDeg = 360;
+      }
+
+      // ------------------------------------------------------------------------
+      // PHASE 2: Flaps 15 & Flight Controls Test (26 to 38s)
+      // ------------------------------------------------------------------------
+      else if (simTime >= 26 && simTime < 38) {
+        const t = (simTime - 26) / 12;
+        planePos.set(-190, 0, -235);
+        planeRot.set(0, 0, 0);
+        speedKIAS = 0;
+        engineN1 = 24;
+        flapsDeflection = Math.min(1.0, t * 1.8);
+
+        if (t < 0.35) {
+          rudderAngle = Math.sin(t * Math.PI * 6) * 0.35;
+        } else if (t < 0.7) {
+          aileronAngle = Math.sin((t - 0.35) * Math.PI * 6) * 0.4;
+        } else {
+          elevatorAngle = Math.sin((t - 0.7) * Math.PI * 6) * 0.35;
+        }
+        headingDeg = 360;
+      }
+
+      // ------------------------------------------------------------------------
+      // PHASE 3: Taxi via Alpha & Victor to Runway 23 (38 to 66s)
+      // ------------------------------------------------------------------------
+      else if (simTime >= 38 && simTime < 66) {
+        const t = (simTime - 38) / 28;
+        speedKIAS = 18;
+        engineN1 = 32;
+        flapsDeflection = 1.0;
+
+        if (t < 0.45) {
+          const subT = t / 0.45;
+          planePos.set(-190, 0, -235 + subT * 355);
+          planeRot.set(0, 0, 0);
+          headingDeg = 360;
+          noseSteerAngle = 0;
+        } else if (t < 0.75) {
+          const subT = (t - 0.45) / 0.30;
+          planePos.set(-190 + subT * 250, 0, 120);
+          planeRot.set(0, subT * (Math.PI / 2), 0);
+          headingDeg = 90;
+          noseSteerAngle = 0.2;
+        } else {
+          const subT = (t - 0.75) / 0.25;
+          planePos.set(60, 0, 120 + subT * 240);
+          planeRot.set(0, 0, 0);
+          headingDeg = 360;
+          noseSteerAngle = -0.15 * (1 - subT);
+        }
+      }
+
+      // ------------------------------------------------------------------------
+      // PHASE 4: Runway 23 Line-Up & Wait (66 to 78s)
+      // ------------------------------------------------------------------------
+      else if (simTime >= 66 && simTime < 78) {
+        const t = (simTime - 66) / 12;
+        flapsDeflection = 1.0;
+        const posX = 60 + t * 120;
+        const posZ = 360 + Math.sin(t * Math.PI * 0.5) * 20;
+        planePos.set(posX, 0, posZ);
+        planeRot.set(0, (1 - t) * 0.4, 0);
+        speedKIAS = Math.max(0, 12 * (1 - t));
+        engineN1 = 25;
+        noseSteerAngle = 0.2 * (1 - t);
+        headingDeg = 230;
+      }
+
+      // ------------------------------------------------------------------------
+      // PHASE 5: Takeoff Roll (TOGA Thrust) (78 to 96s)
+      // ------------------------------------------------------------------------
+      else if (simTime >= 78 && simTime < 96) {
+        const t = (simTime - 78) / 18;
+        engineN1 = 25 + t * 73;
+        flapsDeflection = 1.0;
+        noseSteerAngle = 0;
+        speedKIAS = Math.floor(t * 165);
+
+        const rollDist = 0.5 * 1.8 * Math.pow(t * 18, 2) * 4.4;
+        planePos.set(180, 0, 380 + rollDist);
+        planeRot.set(0, 0, (Math.random() - 0.5) * 0.005);
+        headingDeg = 230;
+      }
+
+      // ------------------------------------------------------------------------
+      // PHASE 6: Rotation & Liftoff (96 to 106s)
+      // ------------------------------------------------------------------------
+      else if (simTime >= 96 && simTime < 106) {
+        const t = (simTime - 96) / 10;
+        engineN1 = 98;
+        flapsDeflection = 1.0;
+        speedKIAS = 165 + Math.floor(t * 25);
+        elevatorAngle = -0.35;
+
+        const climbDist = 1270 + t * 450;
+        const climbAlt = Math.pow(t, 1.6) * 48;
+        planePos.set(180, climbAlt, 380 + climbDist);
+
+        const pitchAngle = Math.min(0.26, t * 0.28);
+        planeRot.set(-pitchAngle, 0, 0);
+
+        if (leftMainGearGroup.truckBeam) {
+          leftMainGearGroup.truckBeam.rotation.x = t * 0.38;
+          rightMainGearGroup.truckBeam.rotation.x = t * 0.38;
+        }
+        headingDeg = 230;
+      }
+
+      // ------------------------------------------------------------------------
+      // PHASE 7: Landing Gear Retraction (106 to 118s)
+      // ------------------------------------------------------------------------
+      else if (simTime >= 106 && simTime < 118) {
+        const t = (simTime - 106) / 12;
+        engineN1 = 96;
+        flapsDeflection = 1.0;
+        speedKIAS = 190 + Math.floor(t * 30);
+        gearRetractProgress = t;
+
+        const climbDist = 1720 + t * 680;
+        const climbAlt = 48 + t * 125;
+        planePos.set(180, climbAlt, 380 + climbDist);
+        planeRot.set(-0.24, 0, 0);
+
+        noseGearGroup.rotation.x = -t * (Math.PI / 2);
+        leftMainGearGroup.rotation.z = -t * (Math.PI / 2);
+        rightMainGearGroup.rotation.z = t * (Math.PI / 2);
+        headingDeg = 230;
+      }
+
+      // ------------------------------------------------------------------------
+      // PHASE 8: Flaps Retraction & Initial Climb (118 to 128s)
+      // ------------------------------------------------------------------------
+      else if (simTime >= 118 && simTime < 128) {
+        const t = (simTime - 118) / 10;
+        engineN1 = 92;
+        gearRetractProgress = 1.0;
+        flapsDeflection = 1.0 - t;
+        speedKIAS = 220 + Math.floor(t * 30);
+
+        const climbDist = 2400 + t * 760;
+        const climbAlt = 173 + t * 155;
+        planePos.set(180, climbAlt, 380 + climbDist);
+        planeRot.set(-0.20, 0, 0);
+
+        noseGearGroup.visible = false;
+        leftMainGearGroup.visible = false;
+        rightMainGearGroup.visible = false;
+        headingDeg = 230;
+      }
+
+      // ------------------------------------------------------------------------
+      // PHASE 9: Bank & Turn to Tokyo (Polar Route) (128 to 140s)
+      // ------------------------------------------------------------------------
+      else if (simTime >= 128) {
+        const t = (simTime - 128) / 12;
+        engineN1 = 90;
+        gearRetractProgress = 1.0;
+        flapsDeflection = 0.0;
+        speedKIAS = 250 + Math.floor(t * 20);
+
+        noseGearGroup.visible = false;
+        leftMainGearGroup.visible = false;
+        rightMainGearGroup.visible = false;
+
+        const bankAngle = Math.sin(t * Math.PI) * 0.44;
+        const turnHeading = t * 1.48;
+        aileronAngle = bankAngle * 0.6;
+        rudderAngle = -bankAngle * 0.3;
+
+        const forwardDist = 3160 + t * 950;
+        const curveX = 180 - Math.sin(turnHeading) * 460;
+        const climbAlt = 328 + t * 250;
+
+        planePos.set(curveX, climbAlt, 380 + forwardDist);
+        planeRot.set(-0.16, -turnHeading, -bankAngle);
+
+        headingDeg = Math.round(230 + (turnHeading * 180 / Math.PI)) % 360;
+      }
+
+      if (gearRetractProgress < 1.0) {
+        noseGearGroup.visible = true;
+        leftMainGearGroup.visible = true;
+        rightMainGearGroup.visible = true;
+        if (gearRetractProgress === 0) {
+          noseGearGroup.rotation.set(0, 0, 0);
+          leftMainGearGroup.rotation.set(0, 0, 0);
+          rightMainGearGroup.rotation.set(0, 0, 0);
+          if (simTime < 96 && leftMainGearGroup.truckBeam) {
+            leftMainGearGroup.truckBeam.rotation.x = 0;
+            rightMainGearGroup.truckBeam.rotation.x = 0;
+          }
+        }
+      }
+
+      airplaneGroup.position.copy(planePos);
+      airplaneGroup.rotation.copy(planeRot);
+
+      if (noseGearGroup.steeringPivot) {
+        noseGearGroup.steeringPivot.rotation.y = noseSteerAngle;
+      }
+
+      const fanRPM = (engineN1 / 100) * 45.0;
+      leftFanRotor.rotation.z += fanRPM * dt;
+      rightFanRotor.rotation.z += fanRPM * dt;
+
+      leftFlap.position.z = -4.5 - flapsDeflection * 1.5;
+      leftFlap.rotation.x = flapsDeflection * 0.35;
+      rightFlap.position.z = -4.5 - flapsDeflection * 1.5;
+      rightFlap.rotation.x = flapsDeflection * 0.35;
+
+      leftAileron.rotation.x = aileronAngle;
+      rightAileron.rotation.x = -aileronAngle;
+      leftElevator.rotation.x = elevatorAngle;
+      rightElevator.rotation.x = elevatorAngle;
+      rudder.rotation.y = rudderAngle;
+
+      // ========================================================================
+      // COCKPIT ARTICULATED PILOT & CONTROLS ANIMATION
+      // ========================================================================
+      // Throttles advance forward to TOGA detent
+      const throttleAngle = (engineN1 / 100) * 0.55;
+      if (throttleLeversGroup) {
+        throttleLeversGroup.rotation.x = throttleAngle;
+      }
+
+      // Flap lever slides to detent 15, then back to UP
+      if (flapLeverMesh) {
+        flapLeverMesh.position.z = 26.95 - flapsDeflection * 0.18;
+      }
+
+      // Gear lever snaps UP when gear is retracting
+      if (gearLeverMesh) {
+        gearLeverMesh.rotation.x = (gearRetractProgress > 0) ? -0.7 : 0;
+      }
+
+      // Control Yokes respond to pitch and roll
+      if (captYokeGroup && captYokeGroup.wheel) {
+        captYokeGroup.rotation.x = -elevatorAngle * 0.6;
+        captYokeGroup.wheel.rotation.z = -aileronAngle * 1.4;
+        foYokeGroup.rotation.x = -elevatorAngle * 0.6;
+        foYokeGroup.wheel.rotation.z = -aileronAngle * 1.4;
+      }
+
+      // Captain arm reaches for throttles during takeoff spool
+      if (captRightArm) {
+        captRightArm.rotation.x = 0.55 + throttleAngle * 0.3;
+      }
+
+      // Real-time Captain PFD Canvas update
+      altitudeFt = Math.round(569 + planePos.y * 3.28);
+      const pitchDeg = -(planeRot.x * (180 / Math.PI)).toFixed(1);
+      updatePFDCanvas(parseFloat(pitchDeg), planeRot.z, speedKIAS, altitudeFt);
+
+      soundEngine.update(engineN1, isStartingEngines, activeCameraView);
+
+      // UI Telemetry
+      document.getElementById('hudSpeed').innerHTML = `${speedKIAS} <span class="unit">KIAS</span>`;
+      document.getElementById('hudAlt').innerHTML = `${altitudeFt} <span class="unit">FT</span>`;
+      document.getElementById('hudHdg').innerHTML = `${headingDeg} <span class="unit">°</span>`;
+      document.getElementById('hudPitch').innerHTML = `${Math.abs(pitchDeg)} <span class="unit">°</span>`;
+
+      const n1Display = Math.round(engineN1);
+      document.getElementById('eng1Val').innerText = `${n1Display}% N1`;
+      document.getElementById('eng2Val').innerText = `${n1Display}% N1`;
+      document.getElementById('eng1Bar').style.width = `${n1Display}%`;
+      document.getElementById('eng2Bar').style.width = `${n1Display}%`;
+
+      const badgeFlaps = document.getElementById('badgeFlaps');
+      if (flapsDeflection > 0.05) {
+        badgeFlaps.className = 'status-badge active';
+        badgeFlaps.innerText = 'FLAPS 15°';
+      } else {
+        badgeFlaps.className = 'status-badge';
+        badgeFlaps.innerText = 'FLAPS UP';
+      }
+
+      const badgeGear = document.getElementById('badgeGear');
+      if (gearRetractProgress >= 1.0) {
+        badgeGear.className = 'status-badge';
+        badgeGear.innerText = 'GEAR UP';
+      } else if (gearRetractProgress > 0) {
+        badgeGear.className = 'status-badge alert';
+        badgeGear.innerText = 'GEAR IN TRANSIT';
+      } else {
+        badgeGear.className = 'status-badge active';
+        badgeGear.innerText = 'GEAR DOWN';
+      }
+
+      updateCameraPosition(planePos, planeRot);
+    }
+
+    /* --------------------------------------------------------------------------
+       CAMERA CONTROLLER
+       -------------------------------------------------------------------------- */
+    function setCameraView(viewName) {
+      activeCameraView = viewName;
+
+      const buttons = document.querySelectorAll('.cam-btn');
+      buttons.forEach(btn => {
+        if (btn.dataset.cam === viewName) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+
+      const checklistCard = document.getElementById('cockpit-checklist-card');
+      const cabinOverlay = document.getElementById('cabin-window-overlay');
+      checklistCard.style.display = (viewName === 'cockpit') ? 'block' : 'none';
+      cabinOverlay.style.display = (viewName === 'cabin') ? 'block' : 'none';
+
+      if (viewName === 'orbit') {
+        controls.enabled = true;
+      } else {
+        controls.enabled = false;
+      }
+    }
+
+    function updateCameraPosition(planePos, planeRot) {
+      if (activeCameraView === 'orbit') {
+        controls.target.lerp(new THREE.Vector3(planePos.x, planePos.y + 4.5, planePos.z), 0.1);
+        controls.update();
+      } 
+      else if (activeCameraView === 'cockpit') {
+        // Cockpit view looking over pilots' shoulders toward the front windshield
+        const offset = new THREE.Vector3(0, 6.35, 26.6);
+        offset.applyEuler(planeRot);
+        camera.position.copy(planePos).add(offset);
+
+        const lookAtTarget = new THREE.Vector3(0, 6.25, 80);
+        lookAtTarget.applyEuler(planeRot);
+        camera.lookAt(planePos.clone().add(lookAtTarget));
+      } 
+      else if (activeCameraView === 'cabin') {
+        const offset = new THREE.Vector3(-3.2, 5.8, 6.5);
+        offset.applyEuler(planeRot);
+        camera.position.copy(planePos).add(offset);
+
+        const lookTarget = new THREE.Vector3(-14, 2.5, -4.5);
+        lookTarget.applyEuler(planeRot);
+        camera.lookAt(planePos.clone().add(lookTarget));
+      } 
+      else if (activeCameraView === 'tower') {
+        camera.position.set(-90, 82, 60);
+        camera.lookAt(planePos.x, planePos.y + 4, planePos.z);
+      } 
+      else if (activeCameraView === 'runway') {
+        camera.position.set(220, 3.5, 1050);
+        camera.lookAt(planePos.x, planePos.y + 4, planePos.z);
+      } 
+      else if (activeCameraView === 'chase') {
+        const offset = new THREE.Vector3(0, 10, -56);
+        offset.applyEuler(planeRot);
+        const desiredPos = planePos.clone().add(offset);
+        camera.position.lerp(desiredPos, 0.12);
+        camera.lookAt(planePos.x, planePos.y + 4, planePos.z + 20);
+      }
+    }
+
+    /* --------------------------------------------------------------------------
+       PLAYBACK & TIMELINE CONTROLS
+       -------------------------------------------------------------------------- */
+    function togglePlayPause() {
+      isPlaying = !isPlaying;
+      updatePlayPauseUI();
+    }
+
+    function updatePlayPauseUI() {
+      const playIcon = document.getElementById('playIcon');
+      const pauseIcon = document.getElementById('pauseIcon');
+      if (isPlaying) {
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+      } else {
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+      }
+    }
+
+    function restartFlight() {
+      simTime = 0;
+      isPlaying = true;
+      updatePlayPauseUI();
+    }
+
+    function setSpeed(spd) {
+      timeScale = spd;
+      const speedBtns = document.querySelectorAll('.speed-btn');
+      speedBtns.forEach(btn => {
+        if (parseFloat(btn.innerText) === spd) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+    }
+
+    function jumpToPhase(phaseIdx) {
+      if (PHASES[phaseIdx]) {
+        simTime = PHASES[phaseIdx].startTime + 0.1;
+        isPlaying = true;
+        updatePlayPauseUI();
+        if (phaseIdx === 1) soundEngine.playCabinChime();
+      }
+    }
+
+    function scrubTimeline(e) {
+      const rect = document.getElementById('timelineTrack').getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const pct = Math.max(0, Math.min(1, clickX / rect.width));
+      simTime = pct * TOTAL_DURATION;
+      isPlaying = true;
+      updatePlayPauseUI();
+    }
+
+    function onKeyDown(e) {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlayPause();
+      } else if (e.key === '1') setCameraView('orbit');
+      else if (e.key === '2') setCameraView('cockpit');
+      else if (e.key === '3') setCameraView('cabin');
+      else if (e.key === '4') setCameraView('tower');
+      else if (e.key === '5') setCameraView('runway');
+      else if (e.key === '6') setCameraView('chase');
+      else if (e.key === 'm' || e.key === 'M') toggleAudio();
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
+      updateFlightSimulation(dt);
+      renderer.render(scene, camera);
+    }
+
+    window.onload = function() {
+      initThreeScene();
+      animate();
+
+      window.addEventListener('click', function unlockAudioOnce() {
+        if (!soundEngine.initialized) {
+          initAndEnableAudio();
+        }
+        window.removeEventListener('click', unlockAudioOnce);
+      }, { once: true });
+    };
+  </script>
+</body>
+</html>

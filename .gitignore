@@ -1,0 +1,6 @@
+node_modules/
+__pycache__/
+records.txt
+.DS_Store
+maomi.jpg
+githubcred.txt
