@@ -1,35 +1,15 @@
-# Neon Breaker - Maomi Queen Edition 🎮
+# Godzilla: Coastal Nuclear Cataclysm - Fusion Strike ☢️🦖
 
-A retro synthwave arcade brick breaker game featuring power-ups, multi-balls, screen shake effects, and the ultimate Level 10 challenge against the Maomi Queen!
+A self-contained cinematic video simulation created for the OMA-Animation project by **Freddy**.
 
-## 🚀 How to Play
+## 🎬 Overview
+Depicts a colossal hybrid titan (MonsterVerse mass × Shin Godzilla morphology) emerging in a coastal seawater lagoon, charging from neon cyan to intense violet, and firing a razor-sharp cutting laser at a modern coastal twin-dome nuclear installation. The attack triggers a prompt-critical thermal runaway, molten corium core breach, steam geysers, and a cataclysmic megaton thermonuclear detonation with delayed supersonic shockwave acoustics.
 
-### Prerequisites
-Make sure you have Python 3 installed. You will also need to install the `pygame-ce` library to run the game.
+## ✨ Features
+- **Visuals**: High-resolution 60 FPS HTML5 Canvas engine with multi-stage pyroclastic mushroom cloud, debris physics, Cherenkov blue-violet ionization sky column, and dynamic camera shake.
+- **Audio**: Procedural Web Audio API sound design (howling coastal winds, high-frequency laser whine, total flash silence, and delayed concussive supersonic blast boom).
+- **Controls**: Full video scrubber, scene jump chips, live telemetry HUD (radiation dosimeter, containment pressure, beam frequency), and fullscreen mode.
+- **Export Video**: In-browser **Record Video** button that records the Canvas stream and procedural audio directly into a downloadable `.webm` video file.
 
-```bash
-pip install pygame-ce
-```
-
-### Running the Game
-To start the game, simply run the Python script from your terminal:
-
-```bash
-python3 brick_breaker.py
-```
-
-> [!NOTE]
-> Upon running the script, the terminal will ask for a password to unlock the secure game assets. You must enter the correct password to play the game.
-
-
-### 🎮 Controls
-* **Mouse**: Move your mouse left and right to steer the paddle.
-* **Click / Spacebar**: Launch the ball.
-* **P / ESC**: Pause or resume the game.
-
-
-## 🏆 Level 10 Challenge
-Reach Level 10 to face the Maomi Queen. If you survive (or die trying), you can submit your score to the local Leaderboard!
-
-## 📁 Repository Setup
-If you are cloning this repository, make sure the `src/soundtracks/` folder and `maomi.jpg` remain in the same directory as the game script for the audio and visuals to load correctly.
+## 🚀 How to Run
+Open `index.html` directly in any modern web browser (Chrome, Edge, Firefox, Safari). No external dependencies or build steps required.
