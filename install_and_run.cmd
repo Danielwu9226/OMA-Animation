@@ -1,0 +1,6 @@
+@echo off
+cd /d "c:\Users\STEMstudent\Downloads\New folder"
+echo Installing 3D Monster Studio dependencies...
+call npm install
+echo Starting 3D Monster Studio dev server...
+call npm run dev
